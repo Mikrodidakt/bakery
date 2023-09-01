@@ -17,7 +17,7 @@ mod tests {
     #[test]
     fn test_get_build_command() {
         let cmd_handler: CmdHandler = CmdHandler::new();
-        let cmd: Result<&Box<dyn Command>, &'static str> = cmd_handler.get_cmd("build");
+        let cmd: Result<&Box<dyn BCommand>, &'static str> = cmd_handler.get_cmd("build");
 
         match cmd {
             Ok(command) => {
@@ -32,7 +32,7 @@ mod tests {
     #[test]
     fn test_get_clean_command() {
         let cmd_handler: CmdHandler = CmdHandler::new();
-        let cmd: Result<&Box<dyn Command>, &'static str> = cmd_handler.get_cmd("clean");
+        let cmd: Result<&Box<dyn BCommand>, &'static str> = cmd_handler.get_cmd("clean");
 
         match cmd {
             Ok(command) => {
@@ -47,7 +47,7 @@ mod tests {
     #[test]
     fn test_get_invalid_command() {
         let cmd_handler: CmdHandler = CmdHandler::new();
-        let cmd: Result<&Box<dyn Command>, &'static str> = cmd_handler.get_cmd("invalid");
+        let cmd: Result<&Box<dyn BCommand>, &'static str> = cmd_handler.get_cmd("invalid");
 
         match cmd {
             Ok(command) => {
