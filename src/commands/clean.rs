@@ -21,8 +21,6 @@ impl BCommand for CleanCommand {
 impl CleanCommand {
     pub fn new() -> Self {
         let subcmd: clap::Command = clap::Command::new(BCOMMAND)
-            .short_flag('c')
-            .long_flag(BCOMMAND)
             .about(BCOMMAND_ABOUT);
         /*
             .arg_required_else_help(true);

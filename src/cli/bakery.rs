@@ -1,9 +1,9 @@
 use crate::commands::{CmdHandler, BCommand};
-use std::process;
 use clap::Command;
 pub struct Bakery {
+    _cli: clap::Command,
     _cli_matches: clap::ArgMatches,
-    _cmdhandler: CmdHandler,
+    _cmd_handler: CmdHandler,
 }
 
 impl Bakery {
@@ -19,7 +19,7 @@ impl Bakery {
             .arg_required_else_help(true)
             .about("Build engine for the Yocto/OE")
             .author("bakery by Mikrodidakt(mikro.io)");
-        let cmdhandler = CmdHandler::new();
+        let cmd_handler = CmdHandler::new();
         /*
             We clone the cli because it is owned by the bakery.
             I am not sure if this is the right way have not fully
@@ -38,38 +38,46 @@ impl Bakery {
             ,in our case the cli, we have to clone cli and then we call
             the get_matches() on it.
         */
-        let matches = cmdhandler.build_cli(cli.clone()).get_matches();
+        //cli = clap_autocomplete::add_subcommand(cli);
+        let matches = cmd_handler.build_cli(cli.clone()).get_matches();
         Bakery {
+            _cli: cli,
             _cli_matches: matches,
-            _cmdhandler: cmdhandler,
+            _cmd_handler: cmd_handler,
         }
     }
 
     pub fn bake(&self) {
-        let cmd_name = self._cli_matches.subcommand_name();
-        let cmd: Result<&Box<dyn BCommand>, &'static str> = self._cmdhandler.get_cmd(cmd_name.unwrap());
-
-        match cmd {
-            Ok(command) => {
-                // Use the command object as needed
-                command.execute();
+        /*
+        We need to revisit this later seems like the clap_autocomplete is not fully working.
+        It is adding a "complete" subcommand and then it should have added a "--print" flag
+        but for some reason it is not added so when trying to generate the shell autocomplete
+        file it fails because it cannot find the "--print" flag. Might be they way I am calling
+        it because I cannot call it exactly as in the example.
+        // Setup autocompletion in the shell for bakery
+        if let Some(result) = clap_autocomplete::test_subcommand(&self._cli_matches, self._cli.clone()) {
+            if let Err(err) = result {
+                eprintln!("Insufficient permissions: {err}");
+                std::process::exit(1);
+            } else {
+                std::process::exit(0);
             }
-            Err(err_msg) => {
-                println!("Error: {}", err_msg);
+        // Execute the bakery subcommand
+        } else {
+        */
+            let cmd_name = self._cli_matches.subcommand_name();
+            let cmd: Result<&Box<dyn BCommand>, &'static str> = self._cmd_handler.get_cmd(cmd_name.unwrap());
+    
+            match cmd {
+                Ok(command) => {
+                    // Use the command object as needed
+                    command.execute();
+                }
+                Err(err_msg) => {
+                    println!("Error: {}", err_msg);
+                }
             }
-        }
-        /*let cmd_handler: CmdHandler = CmdHandler::new();
-        let cmd: Result<&Box<dyn BCommand>, &'static str> = cmd_handler.get_cmd("build");
-
-        match cmd {
-            Ok(command) => {
-                // Use the command object as needed
-                command.execute();
-            }
-            Err(err_msg) => {
-                println!("Error: {}", err_msg);
-            }
-        }*/
-        process::exit(0);
+            std::process::exit(0);
+        //}
     }
 }

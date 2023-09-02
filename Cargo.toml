@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 clap = "4.4.2"
+clap_autocomplete = "0.4.1"
