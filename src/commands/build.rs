@@ -1,4 +1,6 @@
-use crate::commands::BCommand;
+use std::env;
+
+use crate::commands::{BCommand, BError, Executer, Workspace};
 
 static BCOMMAND: &str = "build";
 static BCOMMAND_ABOUT: &str = "Build one of the components";
@@ -15,6 +17,14 @@ impl BCommand for BuildCommand {
 
     fn subcommand(&self) -> &clap::Command {
         &self._subcmd
+    }
+
+    fn execute(&self, cli_matches: &clap::ArgMatches) -> Result<(), BError>{
+        let exec: Executer = Executer::new(Workspace{});
+        let cmd_line = format!("{}", BCOMMAND);
+        exec.execute(&cmd_line, env::vars(), "", "", true)?;
+        println!("Execute command {}", cli_matches.subcommand_name().unwrap());
+        Ok(())
     }
 }
 

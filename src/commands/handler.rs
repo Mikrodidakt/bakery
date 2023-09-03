@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::commands::BCommand;
+use crate::commands::{BCommand, BError};
 
 use super::get_supported_cmds;
 
@@ -14,10 +14,10 @@ impl CmdHandler {
         }
     }
 
-    pub fn get_cmd(&self, cmd_str: &str) -> Result<&Box<dyn BCommand>, &'static str> {
+    pub fn get_cmd(&self, cmd_str: &str) -> Result<&Box<dyn BCommand>, BError> {
         match self._cmds.get(cmd_str) {
             Some(command) => Ok(command),
-            None => Err("Invalid command"),
+            None => Err(BError{ code: 0, message: String::from("Invalid command") }),
         }
     }
 

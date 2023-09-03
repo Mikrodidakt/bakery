@@ -1,4 +1,4 @@
-use crate::commands::{CmdHandler, BCommand};
+use crate::commands::{CmdHandler, BCommand, BError};
 use clap::Command;
 pub struct Bakery {
     _cli: clap::Command,
@@ -66,15 +66,22 @@ impl Bakery {
         } else {
         */
             let cmd_name = self._cli_matches.subcommand_name();
-            let cmd: Result<&Box<dyn BCommand>, &'static str> = self._cmd_handler.get_cmd(cmd_name.unwrap());
+            let cmd: Result<&Box<dyn BCommand>, BError> = self._cmd_handler.get_cmd(cmd_name.unwrap());
     
             match cmd {
                 Ok(command) => {
-                    // Use the command object as needed
-                    command.execute(&self._cli_matches);
+                    let error: Result<(), BError> = command.execute(&self._cli_matches);
+                    match error {
+                        Err(err) => {
+                            eprintln!("{}", err);
+                            std::process::exit(1);
+                        }
+                        Ok(()) => {}
+                    }
                 }
-                Err(err_msg) => {
-                    println!("Error: {}", err_msg);
+                Err(err) => {
+                    eprintln!("{}", err);
+                    std::process::exit(1);
                 }
             }
             std::process::exit(0);

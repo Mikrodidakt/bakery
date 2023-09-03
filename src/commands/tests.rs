@@ -17,7 +17,7 @@ mod tests {
     #[test]
     fn test_get_build_command() {
         let cmd_handler: CmdHandler = CmdHandler::new();
-        let cmd: Result<&Box<dyn BCommand>, &'static str> = cmd_handler.get_cmd("build");
+        let cmd: Result<&Box<dyn BCommand>, BError> = cmd_handler.get_cmd("build");
 
         match cmd {
             Ok(command) => {
@@ -32,14 +32,14 @@ mod tests {
     #[test]
     fn test_get_clean_command() {
         let cmd_handler: CmdHandler = CmdHandler::new();
-        let cmd: Result<&Box<dyn BCommand>, &'static str> = cmd_handler.get_cmd("clean");
+        let cmd: Result<&Box<dyn BCommand>, BError> = cmd_handler.get_cmd("clean");
 
         match cmd {
             Ok(command) => {
                 assert_eq!(command.cmd_str(), "clean");
             }
-            Err(err_msg) => {
-                assert!(false, "Expected OK result, but got an error '{}'", err_msg);
+            Err(err) => {
+                assert!(false, "Expected OK result, but got an error '{}'", err);
             }
         } 
     }
@@ -47,14 +47,15 @@ mod tests {
     #[test]
     fn test_get_invalid_command() {
         let cmd_handler: CmdHandler = CmdHandler::new();
-        let cmd: Result<&Box<dyn BCommand>, &'static str> = cmd_handler.get_cmd("invalid");
+        let cmd: Result<&Box<dyn BCommand>, BError> = cmd_handler.get_cmd("invalid");
 
         match cmd {
             Ok(command) => {
                 assert!(false, "Expected an error, but got an command '{}'", command.cmd_str());
             }
-            Err(err_msg) => {
-                assert_eq!("Invalid command", err_msg);
+            Err(err) => {
+                // TODO: we should make sure that BError is using PartialEq and Eq Traits
+                assert_eq!("Invalid command", err.message);
             }
         } 
     }
