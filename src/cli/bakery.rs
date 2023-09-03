@@ -71,7 +71,7 @@ impl Bakery {
             match cmd {
                 Ok(command) => {
                     // Use the command object as needed
-                    command.execute();
+                    command.execute(&self._cli_matches);
                 }
                 Err(err_msg) => {
                     println!("Error: {}", err_msg);

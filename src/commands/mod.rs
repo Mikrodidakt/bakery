@@ -7,8 +7,8 @@ use std::collections::HashMap;
 
 // Bakery SubCommand
 pub trait BCommand {
-    fn execute(&self) {
-        println!("Execute command {}", self.cmd_str())
+    fn execute(&self, cli_matches: &clap::ArgMatches) {
+        println!("Execute command {}", cli_matches.subcommand_name().unwrap())
     }
 
     // Return a clap sub-command containing the args
