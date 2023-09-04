@@ -1,20 +1,19 @@
-use crate::commands::BCommand;
+use crate::commands::{BCommand, BBaseCommand};
 
 static BCOMMAND: &str = "clean";
 static BCOMMAND_ABOUT: &str = "Clean one of the components";
 pub struct CleanCommand {
-    _cmd_str: String,
-    _subcmd: clap::Command,
+    cmd: BBaseCommand,
     // Your struct fields and methods here
 }
 
 impl BCommand for CleanCommand {
     fn cmd_str(&self) -> &str {
-        &self._cmd_str
+        &self.cmd._cmd_str
     }
 
     fn subcommand(&self) -> &clap::Command {
-        &self._subcmd
+        &self.cmd._subcmd
     }
 }
 
@@ -36,8 +35,11 @@ impl CleanCommand {
         // Initialize and return a new BuildCommand instance
         CleanCommand {
             // Initialize fields if any
-            _cmd_str: String::from(BCOMMAND),
-            _subcmd: subcmd,
+            cmd : BBaseCommand {
+                _cmd_str: String::from(BCOMMAND),
+                _subcmd: subcmd,
+                _interactive: true,
+            }
         }
     }
 }

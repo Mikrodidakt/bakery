@@ -33,9 +33,16 @@ pub trait BCommand {
 
     // Return a clap sub-command containing the args
     // for the bakery command
-    fn subcommand(&self) -> &clap::Command; 
+    fn subcommand(&self) -> &clap::Command;
 
     fn cmd_str(&self) -> &str;
+}
+
+pub struct BBaseCommand {
+    _cmd_str: String,
+    _subcmd: clap::Command,
+    _interactive: bool,
+    //_env: Vars,
 }
 
 pub fn get_supported_cmds() -> HashMap<&'static str, Box<dyn BCommand>> {

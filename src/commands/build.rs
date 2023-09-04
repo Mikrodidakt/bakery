@@ -1,29 +1,26 @@
 use std::env;
 
-use crate::commands::{BCommand, BError, Executer, Workspace};
+use crate::commands::{BCommand, BError, Executer, Workspace, BBaseCommand};
 
 static BCOMMAND: &str = "build";
 static BCOMMAND_ABOUT: &str = "Build one of the components";
 pub struct BuildCommand {
-    _cmd_str: String,
-    _subcmd: clap::Command,
+    cmd: BBaseCommand,
     // Your struct fields and methods here
 }
 
 impl BCommand for BuildCommand {
     fn cmd_str(&self) -> &str {
-        &self._cmd_str
+        &self.cmd._cmd_str
     }
 
     fn subcommand(&self) -> &clap::Command {
-        &self._subcmd
+        &self.cmd._subcmd
     }
 
-    fn execute(&self, cli_matches: &clap::ArgMatches) -> Result<(), BError>{
-        let exec: Executer = Executer::new(Workspace{});
-        let cmd_line = format!("{}", BCOMMAND);
-        exec.execute(&cmd_line, env::vars(), "", "", true)?;
-        println!("Execute command {}", cli_matches.subcommand_name().unwrap());
+    fn execute(&self, _cli_matches: &clap::ArgMatches) -> Result<(), BError>{
+        let exec: Executer = Executer::new(Workspace{ _work_dir: String::from("test") });
+        exec.execute(self.cmd_str(), env::vars(), None, None, self.cmd._interactive)?;
         Ok(())
     }
 }
@@ -46,8 +43,11 @@ impl BuildCommand {
         // Initialize and return a new BuildCommand instance
         BuildCommand {
             // Initialize fields if any
-            _cmd_str: String::from(BCOMMAND),
-            _subcmd: subcmd,
+            cmd : BBaseCommand {
+                _cmd_str: String::from(BCOMMAND),
+                _subcmd: subcmd,
+                _interactive: true
+            }
         }
     }
 }
