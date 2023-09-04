@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use crate::commands::{BCommand, BError};
+use crate::commands::BCommand;
+use crate::error::BError;
 
 use super::get_supported_cmds;
 

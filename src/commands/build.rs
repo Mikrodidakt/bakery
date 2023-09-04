@@ -1,6 +1,8 @@
 use std::env;
 
-use crate::commands::{BCommand, BError, Executer, Workspace, BBaseCommand};
+use crate::commands::{BCommand, BError, Executer, BBaseCommand};
+use crate::docker::{DockerImage, Docker};
+use crate::workspace::Workspace;
 
 static BCOMMAND: &str = "build";
 static BCOMMAND_ABOUT: &str = "Build one of the components";
@@ -19,8 +21,14 @@ impl BCommand for BuildCommand {
     }
 
     fn execute(&self, _cli_matches: &clap::ArgMatches) -> Result<(), BError>{
-        let exec: Executer = Executer::new(Workspace{ _work_dir: String::from("test") });
-        exec.execute(self.cmd_str(), env::vars(), None, None, self.cmd._interactive)?;
+        let workspace: Workspace = Workspace{ _work_dir: String::from("test") };
+        let exec: Executer = Executer::new(&workspace);
+        let docker_image: DockerImage = DockerImage {
+            registry: String::from("registry"),
+            image: String::from("test"),
+            tag: String::from("0.1"),
+        };
+        exec.execute(self.cmd_str(), env::vars(), Some(String::from("test2")), Some(docker_image), self.cmd._interactive)?;
         Ok(())
     }
 }

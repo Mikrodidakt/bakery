@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::commands::*;
+    use crate::error::BError;
     
     #[test]
     fn test_build_command() {

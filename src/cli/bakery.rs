@@ -1,4 +1,6 @@
-use crate::commands::{CmdHandler, BCommand, BError};
+use crate::commands::{CmdHandler, BCommand};
+use crate::error::BError;
+
 use clap::Command;
 pub struct Bakery {
     _cli: clap::Command,
