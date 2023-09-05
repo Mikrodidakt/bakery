@@ -1,5 +1,6 @@
 use crate::commands::{CmdHandler, BCommand};
 use crate::error::BError;
+use crate::logger::BLogger;
 
 use clap::Command;
 pub struct Bakery {
@@ -59,7 +60,7 @@ impl Bakery {
         // Setup autocompletion in the shell for bakery
         if let Some(result) = clap_autocomplete::test_subcommand(&self._cli_matches, self._cli.clone()) {
             if let Err(err) = result {
-                eprintln!("Insufficient permissions: {err}");
+                BLogger::error(format_args!("Insufficient permissions: {}", err));
                 std::process::exit(1);
             } else {
                 std::process::exit(0);
@@ -75,14 +76,14 @@ impl Bakery {
                     let error: Result<(), BError> = command.execute(&self._cli_matches);
                     match error {
                         Err(err) => {
-                            eprintln!("{}", err);
+                            BLogger::error(format_args!("{}", err.message));
                             std::process::exit(1);
                         }
                         Ok(()) => {}
                     }
                 }
                 Err(err) => {
-                    eprintln!("{}", err);
+                    BLogger::error(format_args!("{}", err.message));
                     std::process::exit(1);
                 }
             }

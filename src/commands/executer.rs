@@ -3,6 +3,7 @@ use std::env::Vars;
 use crate::error::BError;
 use crate::docker::{Docker, DockerImage};
 use crate::workspace::Workspace;
+use crate::logger::BLogger;
 
 pub struct Executer<'a> {
     _workspace: &'a Workspace,
@@ -16,9 +17,8 @@ impl<'a> Executer<'a> {
     }
 
     pub fn execute(&self, cmd: &str, _env: Vars, dir: Option<String>, docker_image: Option<DockerImage>, interactive: bool) -> Result<(), BError> {
-        //check_call(cmd);
         let mut cmd_line: String = String::from(cmd);
-        let mut exec_dir: String = String::from("");
+        let exec_dir: String;
 
         // If no directory is specified we should use the Workspace work directory
         // as the directory to execute the command from
@@ -38,7 +38,7 @@ impl<'a> Executer<'a> {
                 Docker::new(self._workspace, &image, interactive).run_cmd(cmd_line, exec_dir)?;
             },
             None => {
-                println!("Execute '{}'", cmd_line);
+                BLogger::info(format_args!("Execute '{}'", cmd_line));
             }  
         }
 

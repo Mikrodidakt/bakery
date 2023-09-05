@@ -3,6 +3,7 @@ mod commands;
 mod docker;
 mod workspace;
 mod error;
+mod logger;
 
 use crate::cli::bakery::Bakery;
 
