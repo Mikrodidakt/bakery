@@ -16,7 +16,7 @@ impl<'a> Executer<'a> {
         }
     }
 
-    pub fn execute(&self, cmd: &str, _env: Vars, dir: Option<String>, docker_image: Option<DockerImage>, interactive: bool) -> Result<(), BError> {
+    pub fn execute(&self, cmd: &str, _env: Vars, dir: Option<String>, docker: Option<Docker>, interactive: bool) -> Result<(), BError> {
         let mut cmd_line: String = String::from(cmd);
         let exec_dir: String;
 
@@ -33,9 +33,9 @@ impl<'a> Executer<'a> {
             }
         }
 
-        match docker_image {
-            Some(image) => {
-                Docker::new(self._workspace, &image, interactive).run_cmd(cmd_line, exec_dir)?;
+        match docker {
+            Some(docker) => {
+                docker.run_cmd(cmd_line, exec_dir)?;
             },
             None => {
                 BLogger::info(format_args!("Execute '{}'", cmd_line));

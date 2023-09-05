@@ -28,7 +28,8 @@ impl BCommand for BuildCommand {
             image: String::from("test"),
             tag: String::from("0.1"),
         };
-        exec.execute(self.cmd_str(), env::vars(), Some(String::from("test2")), Some(docker_image), self.cmd._interactive)?;
+        let docker: Docker = Docker::new(&workspace, &docker_image, true);
+        exec.execute(self.cmd_str(), env::vars(), Some(String::from("test2")), Some(docker), self.cmd._interactive)?;
         Ok(())
     }
 }
