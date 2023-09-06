@@ -2,6 +2,8 @@
 mod tests {
     use crate::commands::*;
     use crate::error::BError;
+    use crate::cli::*;
+    use crate::workspace::Workspace;
     
     #[test]
     fn test_build_command() {
@@ -59,5 +61,15 @@ mod tests {
                 assert_eq!("Invalid command", err.message);
             }
         } 
+    }
+
+    #[test]
+    fn test_executer() {
+        let mut mocked_logger: MockLogger = MockLogger::new();
+        mocked_logger.expect_info().with(mockall::predicate::eq("Execute 'cd test2 && test'".to_owned())).once().returning(|_x|());
+        let workspace: Workspace = Workspace{ _work_dir: String::from("test") };
+        let cli: Cli = Cli::new(Box::new(mocked_logger));
+        let exec: Executer = Executer::new(&workspace, &cli);
+        let _result: Result<(), BError> = exec.execute("test", std::env::vars(), Some(String::from("test2")), None, true); 
     }
 }

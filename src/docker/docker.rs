@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::workspace::Workspace;
 use crate::error::BError;
-use crate::logger::BLogger;
+use crate::cli::Cli;
 
 pub struct Docker<'a> {
     workspace: &'a Workspace,
@@ -31,8 +31,8 @@ impl<'a> Docker<'a> {
         }
     }
 
-    pub fn run_cmd(&self, cmd_line: String, _dir: String) -> Result<(), BError> {
-        BLogger::info(format_args!("Execute inside docker image {} '{}'", self.image , cmd_line));
+    pub fn run_cmd(&self, cmd_line: String, _dir: String, cli: &Cli) -> Result<(), BError> {
+        cli.info(format!("Execute inside docker image {} '{}'", self.image , cmd_line));
         Ok(())
     }
 }

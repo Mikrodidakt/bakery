@@ -1,18 +1,20 @@
 use std::env::Vars;
 
 use crate::error::BError;
-use crate::docker::{Docker, DockerImage};
+use crate::docker::Docker;
 use crate::workspace::Workspace;
-use crate::logger::BLogger;
+use crate::cli::Cli;
 
 pub struct Executer<'a> {
     _workspace: &'a Workspace,
+    cli: &'a Cli,
 }
 
 impl<'a> Executer<'a> {
-    pub fn new(workspace: &'a Workspace) -> Self {
+    pub fn new(workspace: &'a Workspace, cli: &'a Cli) -> Self {
         Executer {
             _workspace: workspace,
+            cli: cli,
         }
     }
 
@@ -35,10 +37,10 @@ impl<'a> Executer<'a> {
 
         match docker {
             Some(docker) => {
-                docker.run_cmd(cmd_line, exec_dir)?;
+                docker.run_cmd(cmd_line, exec_dir, &self.cli)?;
             },
             None => {
-                BLogger::info(format_args!("Execute '{}'", cmd_line));
+                self.cli.info(format!("Execute '{}'", cmd_line));
             }  
         }
 

@@ -6,12 +6,12 @@ pub mod executer;
 
 use std::collections::HashMap;
 use crate::error::BError;
-use crate::logger::BLogger;
+use crate::cli::Cli;
 
 // Bakery SubCommand
 pub trait BCommand {
-    fn execute(&self, cli_matches: &clap::ArgMatches) -> Result<(), BError> {
-        BLogger::info(format_args!("Execute command {}", cli_matches.subcommand_name().unwrap()));
+    fn execute(&self, cli: &Cli) -> Result<(), BError> {
+        cli.info(format!("Execute command {}", self.cmd_str()));
         Ok(())
     }
 
