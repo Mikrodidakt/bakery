@@ -79,7 +79,13 @@ mod tests {
         let test_cmd = String::from("test_cmd");
         let verification_str = format!("Execute 'cd {} && {}'", test_build_dir, test_cmd);
         let workspace: Workspace = Workspace{ _work_dir: test_work_dir };
-        let result: Result<(), BError> = helper_test_executer(&verification_str, &test_cmd, Some(test_build_dir), None, &workspace);
+        let result: Result<(), BError> = helper_test_executer(
+            &verification_str,
+            &test_cmd,
+            Some(test_build_dir),
+            None,
+            &workspace
+        );
         match result {
             Err(err) => {
                 assert_eq!("Executer failed", err.message);
@@ -94,7 +100,13 @@ mod tests {
         let test_cmd = String::from("test_cmd");
         let verification_str = format!("Execute 'cd {} && {}'", test_work_dir, test_cmd);
         let workspace: Workspace = Workspace{ _work_dir: test_work_dir };
-        let result: Result<(), BError> = helper_test_executer(&verification_str, &test_cmd, None, None, &workspace);
+        let result: Result<(), BError> = helper_test_executer(
+            &verification_str,
+            &test_cmd,
+            None,
+            None,
+            &workspace
+        );
         match result {
             Err(err) => {
                 assert_eq!("Executer failed", err.message);
@@ -115,7 +127,13 @@ mod tests {
         let verification_str = format!("Execute inside docker image {} 'cd {} && {}'", docker_image, test_work_dir, test_cmd);
         let workspace: Workspace = Workspace{ _work_dir: test_work_dir };
         let docker: Docker = Docker::new(&workspace, &docker_image, true);
-        let result: Result<(), BError> = helper_test_executer(&verification_str, &test_cmd, None, Some(docker), &workspace);
+        let result: Result<(), BError> = helper_test_executer(
+            &verification_str,
+            &test_cmd,
+            None,
+            Some(docker),
+            &workspace
+        );
         match result {
             Err(err) => {
                 assert_eq!("Executer failed", err.message);
