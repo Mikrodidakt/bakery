@@ -2,7 +2,6 @@ pub mod build;
 pub mod clean;
 pub mod tests;
 pub mod handler;
-pub mod executer;
 
 use std::collections::HashMap;
 use crate::error::BError;
@@ -44,4 +43,3 @@ pub fn get_supported_cmds() -> HashMap<&'static str, Box<dyn BCommand>> {
 pub use build::BuildCommand;
 pub use clean::CleanCommand;
 pub use handler::CmdHandler;
-pub use executer::Executer;

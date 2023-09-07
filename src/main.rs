@@ -1,8 +1,8 @@
 mod cli;
 mod commands;
-mod docker;
 mod workspace;
 mod error;
+mod executers;
 
 use crate::cli::bakery::Bakery;
 

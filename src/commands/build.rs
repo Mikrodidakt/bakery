@@ -1,7 +1,7 @@
 use std::env;
 
-use crate::commands::{BCommand, BError, Executer, BBaseCommand};
-use crate::docker::{DockerImage, Docker};
+use crate::commands::{BCommand, BError, BBaseCommand};
+use crate::executers::{DockerImage, Docker, Executer};
 use crate::workspace::Workspace;
 use crate::cli::Cli;
 
