@@ -39,6 +39,15 @@ is for configuring the initial docker image that will be used to bootstrap the b
 the main docker image used so unless the build config contains specific docker images for a component
 then this image will be used when building.
 */
+
+// Not the ideal solution we should see if it is possible to
+// read them from the Cargo.toml and then incorporate them
+// into the binary and read them out in runtime.
+pub const BAKERY_DOCKER_ARGS: [&str; 2] = ["--rm=true", "-t"];                                                                          
+pub const BAKERY_DOCKER_IMAGE: &str = "bakery-workspace";                                                                           
+pub const BAKERY_DOCKER_TAG: &str = "0.68";                                                                                      
+pub const BAKERY_DOCKER_REGISTRY: &str = "strixos";
+
 pub struct Settings {
     workspace: Value,
     docker: Value,
@@ -61,7 +70,7 @@ impl Settings {
 
     fn get_ws_dir(&self, dir: &str) -> String {
         let work_dir = self.workspace_dir();
-        // TODO: we should consider to maybe have the default cache dir as .cache
+        // TODO: we should consider to maybe have the default cache dir as .cache currently it will be cache
         let key = format!("{}dir", dir);
         let default_value = format!("{}/{}", work_dir, dir);
         if !self.workspace.is_null() {
@@ -95,6 +104,79 @@ impl Settings {
 
     pub fn workspace_cache_dir(&self) -> String {
         self.get_ws_dir("cache")
+    }
+
+    pub fn docker_image(&self) -> String {
+        let default_value = String::from(BAKERY_DOCKER_IMAGE);
+        if !self.docker.is_null() {
+            if self.docker["image"].is_null() {
+                return default_value;
+            }
+            return String::from(self.docker["image"].as_str().unwrap());
+        }
+        return default_value; 
+    }
+
+    pub fn docker_tag(&self) -> String {
+        let default_value = String::from(BAKERY_DOCKER_TAG);
+        if !self.docker.is_null() {
+            if self.docker["tag"].is_null() {
+                return default_value;
+            }
+            return String::from(self.docker["tag"].as_str().unwrap());
+        }
+        return default_value; 
+    }
+
+    pub fn docker_registry(&self) -> String {
+        let default_value = String::from(BAKERY_DOCKER_REGISTRY);
+        if !self.docker.is_null() {
+            if self.docker["registry"].is_null() {
+                return default_value;
+            }
+            return String::from(self.docker["registry"].as_str().unwrap());
+        }
+        return default_value; 
+    }
+
+    pub fn docker_args(&self) -> Vec<String> {
+        let default_value = BAKERY_DOCKER_ARGS.iter().map(|&s| s.to_string()).collect();
+        if !self.docker.is_null() {
+            if self.docker["args"].is_null() {
+                return default_value;
+            }
+
+            let docker_args: Vec<String> = self.docker["args"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| s.to_owned())
+                .collect();
+
+            return docker_args;
+        }
+        return default_value;
+    }
+
+    pub fn supported_build_configs(&self) -> Vec<String> {
+        let default_value = Vec::new();
+        if !self.build.is_null() {
+            if self.build["supported"].is_null() {
+                return default_value;
+            }
+
+            let supported_values: Vec<String> = self.build["supported"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| s.to_owned())
+                .collect();
+
+            return supported_values;
+        }
+        return default_value;
     }
 }
 
