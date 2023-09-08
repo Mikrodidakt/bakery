@@ -27,7 +27,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_configs_dir(),  "work_dir/configs_test");
+        assert_eq!(settings.workspace_configs_dir(),  "configs_test");
     }
 
     #[test]
@@ -40,7 +40,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_configs_dir(),  "work_dir/configs");
+        assert_eq!(settings.workspace_configs_dir(),  "configs");
     }
 
     #[test]
@@ -50,7 +50,7 @@ mod tests {
             "version": 4
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_configs_dir(),  "work_dir/configs");
+        assert_eq!(settings.workspace_configs_dir(),  "configs");
     }
 
     #[test]
@@ -63,7 +63,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_builds_dir(),  "work_dir/builds_test");
+        assert_eq!(settings.workspace_builds_dir(),  "builds_test");
     }
 
     #[test]
@@ -76,7 +76,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_builds_dir(),  "work_dir/builds");
+        assert_eq!(settings.workspace_builds_dir(),  "builds");
     }
 
     #[test]
@@ -86,7 +86,7 @@ mod tests {
             "version": 4
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_builds_dir(),  "work_dir/builds");
+        assert_eq!(settings.workspace_builds_dir(),  "builds");
     }
 
     #[test]
@@ -99,7 +99,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_artifacts_dir(),  "work_dir/artifacts_test");
+        assert_eq!(settings.workspace_artifacts_dir(), "artifacts_test");
     }
 
     #[test]
@@ -112,7 +112,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_artifacts_dir(),  "work_dir/artifacts");
+        assert_eq!(settings.workspace_artifacts_dir(), "artifacts");
     }
 
     #[test]
@@ -122,7 +122,7 @@ mod tests {
             "version": 4
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_artifacts_dir(),  "work_dir/artifacts");
+        assert_eq!(settings.workspace_artifacts_dir(), "artifacts");
     }
 
     #[test]
@@ -135,7 +135,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_scripts_dir(),  "work_dir/scripts_test");
+        assert_eq!(settings.workspace_scripts_dir(), "scripts_test");
     }
 
     #[test]
@@ -148,7 +148,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_scripts_dir(),  "work_dir/scripts");
+        assert_eq!(settings.workspace_scripts_dir(), "scripts");
     }
 
     #[test]
@@ -158,7 +158,7 @@ mod tests {
             "version": 4
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_scripts_dir(),  "work_dir/scripts");
+        assert_eq!(settings.workspace_scripts_dir(), "scripts");
     }
 
     #[test]
@@ -171,7 +171,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_docker_dir(),  "work_dir/docker_test");
+        assert_eq!(settings.workspace_docker_dir(), "docker_test");
     }
 
     #[test]
@@ -184,7 +184,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_docker_dir(),  "work_dir/docker");
+        assert_eq!(settings.workspace_docker_dir(), "docker");
     }
 
     #[test]
@@ -194,7 +194,7 @@ mod tests {
             "version": 4
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_docker_dir(),  "work_dir/docker");
+        assert_eq!(settings.workspace_docker_dir(), "docker");
     }
 
     #[test]
@@ -207,7 +207,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_cache_dir(),  "work_dir/cache_test");
+        assert_eq!(settings.workspace_cache_dir(), "cache_test");
     }
 
     #[test]
@@ -220,7 +220,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_cache_dir(),  "work_dir/cache");
+        assert_eq!(settings.workspace_cache_dir(), "cache");
     }
 
     #[test]
@@ -230,7 +230,7 @@ mod tests {
             "version": 4
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_cache_dir(),  "work_dir/cache");
+        assert_eq!(settings.workspace_cache_dir(), "cache");
     }
 
     #[test]
@@ -243,7 +243,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_image(),  "test-workspace");
+        assert_eq!(settings.docker_image(), "test-workspace");
     }
 
     #[test]
@@ -256,7 +256,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_image(),  "bakery-workspace");
+        assert_eq!(settings.docker_image(), "bakery-workspace");
     }
 
     #[test]
@@ -266,7 +266,7 @@ mod tests {
             "version": 4
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_image(),  "bakery-workspace");
+        assert_eq!(settings.docker_image(), "bakery-workspace");
     }
 
     #[test]
@@ -279,7 +279,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_tag(),  "0.1");
+        assert_eq!(settings.docker_tag(), "0.1");
     }
 
     #[test]
@@ -302,7 +302,7 @@ mod tests {
             "version": 4
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_tag(),  "0.68");
+        assert_eq!(settings.docker_tag(), "0.68");
     }
 
     #[test]
@@ -315,7 +315,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_registry(),  "test-registry");
+        assert_eq!(settings.docker_registry(), "test-registry");
     }
 
     #[test]
@@ -328,7 +328,7 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_registry(),  "strixos");
+        assert_eq!(settings.docker_registry(), "strixos");
     }
 
     #[test]
@@ -338,7 +338,7 @@ mod tests {
             "version": 4
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_registry(),  "strixos");
+        assert_eq!(settings.docker_registry(), "strixos");
     }
 
     #[test]

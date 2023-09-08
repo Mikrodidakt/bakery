@@ -64,20 +64,15 @@ impl Settings {
         Ok(Settings { workspace, docker, build })
     }
 
-    pub fn workspace_dir(&self) -> String {
-        return String::from("work_dir");
-    }
-
     fn get_ws_dir(&self, dir: &str) -> String {
-        let work_dir = self.workspace_dir();
         // TODO: we should consider to maybe have the default cache dir as .cache currently it will be cache
         let key = format!("{}dir", dir);
-        let default_value = format!("{}/{}", work_dir, dir);
+        let default_value = String::from(dir);
         if !self.workspace.is_null() {
             if self.workspace[key.clone()].is_null() {
                 return default_value;
             }
-            return format!("{}/{}", work_dir, self.workspace[key.clone()].as_str().unwrap());
+            return String::from(self.workspace[key.clone()].as_str().unwrap());
         }
         return default_value;    
     }
