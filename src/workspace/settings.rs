@@ -1,5 +1,3 @@
-use serde_json::Value;
-
 /*
 The settings file named settings.json or workspace.json should be placed
 in the root of the workspace. The current format is
@@ -40,6 +38,8 @@ the main docker image used so unless the build config contains specific docker i
 then this image will be used when building.
 */
 
+use serde_json::Value;
+
 // Not the ideal solution we should see if it is possible to
 // read them from the Cargo.toml and then incorporate them
 // into the binary and read them out in runtime.
@@ -57,6 +57,7 @@ pub struct Settings {
 impl Settings {
     pub fn from_str(json_string: &str) -> Result<Self, serde_json::Error> {
         let data: Value = serde_json::from_str(json_string)?;
+        // TODO we should define how to handle the version of the file
         //let version: String = String::from(data["version"].as_str().unwrap());
         let workspace: Value = data["workspace"].clone();
         let docker: Value = data["docker"].clone();
