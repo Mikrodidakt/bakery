@@ -180,21 +180,7 @@ trait Config {
     }
 }
 
-pub struct BuildConfig {
-    version: String,
-    name: String,
-    description: String,
-    arch: String,
-    machine: String, // Optional but if there is a task with type bitbake defined it might fail
-    distro: String, // Optional but if there is a task with type bitbake defined it might fail
-    deploydir: String, // Optional if not set the default deploy dir will be used builds/tmp/deploydir
-    context: HashMap<String, String>,
-    bb_layers_conf: Vec<String>, // Optional but if there is a task with type bitbake defined it will fail without a bblayers.conf
-    bb_local_conf: Vec<String>, // Optional but if there is a task with type bitbake defined it will fail without a local.conf
-    tasks: Vec<Task>, // The tasks don't have to be defined in the main build config if that is the case this will be empty
-}
-
-pub struct Task {
+pub struct TaskConfig {
     index: String,
     name: String,
     ttype: String, // Optional if not set for the task the default type 'bitbake' is used
@@ -206,10 +192,16 @@ pub struct Task {
     artifacts: Value, // For some tasks there might not be any artifacts to collect then this will be empty
 }
 
-impl Config for BuildConfig {}
+impl Config for TaskConfig {
+}
 
-impl BuildConfig {
-    fn parse_task(data: &Value) -> Result<Task, BError> {
+impl TaskConfig {
+    pub fn from_str(json_string: &str) -> Result<Self, BError> {
+        let data: Value = Self::parse(json_string)?;
+        Self::from_value(&data)
+    }
+
+    pub fn from_value(data: &Value) -> Result<Self, BError> {
         let index: String = Self::get_str_value("index", &data, None)?;
         let name: String = Self::get_str_value("name", &data, None)?;
         let ttype: String = Self::get_str_value("type", &data, Some(String::from("bitbake")))?;
@@ -219,7 +211,7 @@ impl BuildConfig {
         let clean: String = Self::get_str_value("clean", &data, Some(String::from("")))?;
         let recipes: Vec<String> = Self::get_array_value("recipes", &data, Some(vec![]))?;
         let artifacts: &Value = Self::get_value("artifacts", &data)?;
-        Ok(Task {
+        Ok(TaskConfig {
             index,
             name,
             ttype,
@@ -231,16 +223,72 @@ impl BuildConfig {
             artifacts: artifacts.clone(),
         })
     }
+    
+    pub fn index(&self) -> &String {
+        &self.index
+    }
 
-    fn get_tasks(data: &Value) -> Result<Vec<Task>, BError> {
+    pub fn name(&self) -> &String {
+        &self.name
+    }
+
+    pub fn ttype(&self) -> &String {
+        &self.ttype
+    }
+
+    pub fn disabled(&self) -> &String {
+        &self.disabled
+    }
+
+    pub fn builddir(&self) -> &String {
+        &self.builddir
+    }
+
+    pub fn build(&self) -> &String {
+        &self.build
+    }
+
+    pub fn clean(&self) -> &String {
+        &self.clean
+    }
+
+    pub fn recipes(&self) -> &Vec<String> {
+        &self.recipes
+    }
+
+    pub fn artifacts(&self) -> &Value {
+        // TODO: we should most likely change this so that artifacts is a struct just like
+        // we have done with the TaskConfig struct we should setup a ArtifactsConfig and
+        // have this method return a &HashMap<String, ArtifactsConfig>
+        &self.artifacts
+    }
+}
+pub struct BuildConfig {
+    version: String,
+    name: String,
+    description: String,
+    arch: String,
+    machine: String, // Optional but if there is a task with type bitbake defined it might fail
+    distro: String, // Optional but if there is a task with type bitbake defined it might fail
+    deploydir: String, // Optional if not set the default deploy dir will be used builds/tmp/deploydir
+    context: HashMap<String, String>, // Optional if not set default is an empty map
+    bb_layers_conf: Vec<String>, // Optional but if there is a task with type bitbake defined it will fail without a bblayers.conf
+    bb_local_conf: Vec<String>, // Optional but if there is a task with type bitbake defined it will fail without a local.conf
+    tasks: HashMap<String, TaskConfig>, // The tasks don't have to be defined in the main build config if that is the case this will be empty
+}
+
+impl Config for BuildConfig {}
+
+impl BuildConfig {
+    fn get_tasks(data: &Value) -> Result<HashMap<String, TaskConfig>, BError> {
         match data.get("tasks") {
             Some(value) => {
                 if value.is_object() {
                     if let Some(task_map) = value.as_object() {
-                        let mut tasks: Vec<Task> = Vec::new();
-                        for (_task_name, task_data) in task_map.iter() {
-                            let t: Task = Self::parse_task(&task_data)?;
-                            tasks.push(t);
+                        let mut tasks: HashMap<String, TaskConfig> = HashMap::new();
+                        for (task_name, task_data) in task_map.iter() {
+                            let t: TaskConfig = TaskConfig::from_value(&task_data)?;
+                            tasks.insert(task_name.clone(), t);
                         }
                         return Ok(tasks);
                     }
@@ -250,7 +298,7 @@ impl BuildConfig {
                 }
             }
             None => {
-                return Ok(vec![]);
+                return Ok(HashMap::new());
             }
         }
     }
@@ -267,7 +315,7 @@ impl BuildConfig {
         let deploydir: String = Self::get_str_value("deploydir", &bb_data, Some(String::from("tmp/deploy/images")))?;
         let bb_layers_conf: Vec<String> = Self::get_array_value("bblayersconf", &bb_data, Some(vec![]))?;
         let bb_local_conf: Vec<String> = Self::get_array_value("localconf", &bb_data, Some(vec![]))?;
-        let tasks: Vec<Task> = Self::get_tasks(&data)?;
+        let tasks: HashMap<String, TaskConfig> = Self::get_tasks(&data)?;
         let context: HashMap<String, String> = Self::get_hashmap_value("context", &data)?;
         Ok(BuildConfig {
             version,
@@ -320,17 +368,22 @@ impl BuildConfig {
         &self.bb_local_conf
     }
 
-    pub fn tasks(&self) -> &Vec<Task> {
+    pub fn tasks(&self) -> &HashMap<String, TaskConfig> {
         &self.tasks
-    } 
+    }
+
+    pub fn context(&self) -> &HashMap<String, String> {
+        &self.context
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::workspace::BuildConfig;
+    use crate::workspace::{BuildConfig, TaskConfig};
     use crate::error::BError;
+    use std::collections::HashMap;
 
-    fn helper_config_from_str(json_test_str: &str) -> BuildConfig {
+    fn helper_build_config_from_str(json_test_str: &str) -> BuildConfig {
         let result: Result<BuildConfig, BError> = BuildConfig::from_str(json_test_str);
         match result {
             Ok(rconfig) => {
@@ -354,7 +407,7 @@ mod tests {
             "bb": {}
         }
         "#;
-        let config = helper_config_from_str(json_test_str);
+        let config = helper_build_config_from_str(json_test_str);
         assert_eq!(config.version(), "4");
         assert_eq!(config.name(), "test-name");
         assert_eq!(config.description(), "Test Description");
@@ -372,6 +425,7 @@ mod tests {
             "bb": {
                 "machine": "test-machine",                                                                                           
                 "distro": "test-distro",
+                "deploydir": "tmp/test/deploy",
                 "bblayersconf": [
                     "BB_LAYERS_CONF_TEST_LINE_1",
                     "BB_LAYERS_CONF_TEST_LINE_2",
@@ -385,9 +439,10 @@ mod tests {
             }
         }
         "#;
-        let config = helper_config_from_str(json_test_str);
+        let config = helper_build_config_from_str(json_test_str);
         assert_eq!(config.machine(), "test-machine");
         assert_eq!(config.distro(), "test-distro");
+        assert_eq!(config.deploydir(), "tmp/test/deploy");
         assert_eq!(config.bblayersconf(), &vec![
             String::from("BB_LAYERS_CONF_TEST_LINE_1"),
             String::from("BB_LAYERS_CONF_TEST_LINE_2"),
@@ -398,5 +453,86 @@ mod tests {
             String::from("BB_LOCAL_CONF_TEST_LINE_2"),
             String::from("BB_LOCAL_CONF_TEST_LINE_3")
         ]);
+    }
+
+    #[test]
+    fn test_build_config_optional() {
+        let json_test_str = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {}
+        }
+        "#;
+        let config = helper_build_config_from_str(json_test_str);
+        assert_eq!(config.machine(), "");
+        assert_eq!(config.distro(), "");
+        assert_eq!(config.deploydir(), "tmp/deploy/images");
+        assert!(config.bblayersconf().is_empty());
+        assert!(config.localconf().is_empty());
+        assert!(config.tasks().is_empty());
+        assert!(config.context().is_empty());
+    }
+
+    #[test]
+    fn test_build_config_tasks() {
+        let json_test_str = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {},
+            "tasks": { 
+                "task1": {
+                    "index": "0",
+                    "name": "task1-name",
+                    "disabled": "false",
+                    "type": "non-bitbake",
+                    "builddir": "test/builddir",
+                    "build": "build-cmd",
+                    "clean": "clean-cmd",
+                    "artifacts": [   
+                        {
+                            "source": "${BB_DEPLOY_DIR}/${MACHINE}/test-image-${MACHINE}.test-sdimg"
+                        }
+                    ]
+                },
+                "task2": {
+                    "index": "1",
+                    "name": "task2-name",
+                    "disabled": "false",
+                    "type": "bitbake",
+                    "recipes": [
+                        "test-image",
+                        "test-image:do_populate_sdk"
+                    ],
+                    "artifacts": [   
+                        {
+                            "source": "${BB_DEPLOY_DIR}/${MACHINE}/test-image-${MACHINE}.test-sdimg"
+                        }
+                    ]
+                }
+            }
+        }
+        "#;
+        let config = helper_build_config_from_str(json_test_str);
+        let tasks: &HashMap<String, TaskConfig> = config.tasks();
+        let task: &TaskConfig = tasks.get("task1").unwrap();
+        assert_eq!(task.index(), "0");
+        assert_eq!(task.name(), "task1-name");
+        assert_eq!(task.disabled(), "false");
+        assert_eq!(task.ttype(), "non-bitbake");
+        assert_eq!(task.builddir(), "test/builddir");
+        assert_eq!(task.build(), "build-cmd");
+        assert_eq!(task.clean(), "clean-cmd");
+        let task: &TaskConfig = tasks.get("task2").unwrap();
+        assert_eq!(task.index(), "1");
+        assert_eq!(task.name(), "task2-name");
+        assert_eq!(task.disabled(), "false");
+        assert_eq!(task.ttype(), "bitbake");
+        assert_eq!(task.recipes(), &vec![String::from("test-image"), String::from("test-image:do_populate_sdk")]);
     }
 }
