@@ -325,7 +325,7 @@ mod tests {
             }
             Err(e) => {
                 assert_eq!(e.message, String::from("Invalid 'artifact' format in build config. Invalid type 'invalid'"));
-            } 
+            }
         }
     }
 }
