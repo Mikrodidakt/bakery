@@ -90,9 +90,12 @@ impl TaskConfig {
         let clean: String = Self::get_str_value("clean", &data, Some(String::from("")))?;
         let recipes: Vec<String> = Self::get_array_value("recipes", &data, Some(vec![]))?;
         let artifacts: Vec<ArtifactConfig> = Self::get_artifacts(&data)?;
+        if ttype != "bitbake" && ttype != "non-bitbake" {
+            return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. Invalid type '{}'", ttype)}); 
+        }
         // if the task type is bitbake then at least one recipe is required
         if recipes.is_empty() && ttype == "bitbake" {
-            return Err(BError{ code: 0, message: format!("Invalid Tasks format in build config")});
+            return Err(BError{ code: 0, message: format!("Invalid 'task' format in build config. The 'bitbake' type requires at least one entry in 'recipes'")});
         }
         Ok(TaskConfig {
             index,
@@ -175,12 +178,7 @@ mod tests {
             "type": "non-bitbake",
             "builddir": "test/builddir",
             "build": "build-cmd",
-            "clean": "clean-cmd",
-            "artifacts": [   
-                {
-                    "source": "${BB_DEPLOY_DIR}/${MACHINE}/test-image-${MACHINE}.test-sdimg"
-                }
-            ]
+            "clean": "clean-cmd"
         }
         "#;
         let config = helper_task_config_from_str(json_test_str);
@@ -204,11 +202,6 @@ mod tests {
             "recipes": [
                 "test-image",
                 "test-image:do_populate_sdk"
-            ],
-            "artifacts": [   
-                {
-                    "source": "${BB_DEPLOY_DIR}/${MACHINE}/test-image-${MACHINE}.test-sdimg"
-                }
             ]
         }
         "#;
@@ -228,10 +221,44 @@ mod tests {
             "name": "task1-name",
             "recipes": [
                 "test-image"
+            ]
+        }
+        "#;
+        let config = helper_task_config_from_str(json_test_str);
+        assert_eq!(config.index(), "0");
+        assert_eq!(config.name(), "task1-name");
+        assert_eq!(config.disabled(), "false");
+        assert_eq!(config.ttype(), "bitbake");
+        assert_eq!(config.recipes(), &vec![String::from("test-image")]);
+    }
+
+    #[test]
+    fn test_task_config_artifacts() {
+        let json_test_str = r#"
+        {
+            "index": "0",
+            "name": "task1-name",
+            "recipes": [
+                "test-image"
             ],
-            "artifacts": [   
+            "artifacts": [
                 {
-                    "source": "${BB_DEPLOY_DIR}/${MACHINE}/test-image-${MACHINE}.test-sdimg"
+                    "type": "archive",
+                    "name": "test.zip",
+                    "artifacts": [
+                        {
+                            "type": "directory",
+                            "name": "dir-name",
+                            "artifacts": [
+                                {
+                                    "source": "file1.txt"
+                                },
+                                {
+                                    "source": "file2.txt"
+                                }
+                            ]
+                        }
+                    ]
                 }
             ]
         }
@@ -242,5 +269,63 @@ mod tests {
         assert_eq!(config.disabled(), "false");
         assert_eq!(config.ttype(), "bitbake");
         assert_eq!(config.recipes(), &vec![String::from("test-image")]);
+        assert!(!config.artifacts().is_empty());
+        let artifacts = config.artifacts();
+        assert_eq!(artifacts[0].ttype(), "archive");
+        assert_eq!(artifacts[0].name(), "test.zip");
+        let dir_artifacts = artifacts[0].artifacts();
+        assert_eq!(dir_artifacts[0].ttype(), "directory");
+        assert_eq!(dir_artifacts[0].name(), "dir-name");
+        assert!(!dir_artifacts[0].artifacts().is_empty());
+        let files = dir_artifacts[0].artifacts();
+        let mut i = 1;
+        for f in files.iter() {
+            assert_eq!(f.ttype(), "file");
+            assert!(f.name().is_empty());
+            assert_eq!(f.source(), &format!("file{}.txt", i));
+            assert!(f.dest().is_empty());
+            i += 1;
+        }
+
+    }
+
+    #[test]
+    fn test_task_config_error_no_recipes() {
+        let json_test_str = r#"
+        {
+            "index": "0",
+            "name": "task1-name",
+            "type": "bitbake"
+        }
+        "#;
+        let result: Result<TaskConfig, BError> = TaskConfig::from_str(json_test_str);
+        match result {
+            Ok(_rconfig) => {
+                panic!("We should have recived an error because we have no recipes defined!");
+            }
+            Err(e) => {
+                assert_eq!(e.message, String::from("Invalid 'task' format in build config. The 'bitbake' type requires at least one entry in 'recipes'"));
+            } 
+        }
+    }
+
+    #[test]
+    fn test_task_config_error_invalid_type() {
+        let json_test_str = r#"
+        {
+            "index": "0",
+            "name": "task1-name",
+            "type": "invalid"
+        }
+        "#;
+        let result: Result<TaskConfig, BError> = TaskConfig::from_str(json_test_str);
+        match result {
+            Ok(_rconfig) => {
+                panic!("We should have recived an error because we have no recipes defined!");
+            }
+            Err(e) => {
+                assert_eq!(e.message, String::from("Invalid 'artifact' format in build config. Invalid type 'invalid'"));
+            } 
+        }
     }
 }

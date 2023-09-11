@@ -43,13 +43,25 @@ impl ArtifactConfig {
     }
 
     pub fn from_value(data: &Value) -> Result<Self, BError> {
-        // TODO: we should add a check where we verify that the 'ttype' is one of the supported types
-        // we should probably expose these supported types so that other parts of the program can use
-        // it.
         let ttype: String = Self::get_str_value("type", &data, Some(String::from("file")))?;
         let name: String = Self::get_str_value("name", &data, Some(String::from("")))?;
         let source: String = Self::get_str_value("source", &data, Some(String::from("")))?;
         let dest: String = Self::get_str_value("dest", &data, Some(String::from("")))?;
+        if ttype != "file" && ttype != "directory" && ttype != "archive" && ttype != "manifest" {
+            return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. Invalid type '{}'", ttype)});
+        }
+        if ttype == "file" && source.is_empty() {
+            return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. The 'file' type requires a defined 'source'")});
+        }
+        if ttype == "directory" && name.is_empty() {
+            return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. The 'directory' type requires a 'name'")}); 
+        }
+        if ttype == "archive" && name.is_empty() {
+            return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. The 'archive' type requires a 'name'")}); 
+        }
+        if ttype == "manifest" && name.is_empty() {
+            return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. The 'manifest' type requires a 'name'")}); 
+        }
         let artifacts: Vec<ArtifactConfig> = Self::get_artifacts(&data)?;
         Ok(ArtifactConfig {
             name,
@@ -206,6 +218,62 @@ mod tests {
             assert_eq!(f.source(), &format!("file{}.txt", i));
             assert!(f.dest().is_empty());
             i += 1;
+        }
+    }
+
+    #[test]
+    fn test_artifact_config_error_invalid_type() {
+        let json_test_str = r#"
+        {
+            "type": "invalid",
+            "source": "file1.txt",
+            "dest": "dest"
+        }
+        "#;
+        let result: Result<ArtifactConfig, BError> = ArtifactConfig::from_str(json_test_str);
+        match result {
+            Ok(_rconfig) => {
+                panic!("We should have recived an error because the type is invalid!");
+            }
+            Err(e) => {
+                assert_eq!(e.message, String::from("Invalid 'artifact' format in build config. Invalid type 'invalid'"));
+            } 
+        }
+    }
+
+    #[test]
+    fn test_artifact_config_error_no_dir_name() {
+        let json_test_str = r#"
+        {
+            "type": "directory"
+        }
+        "#;
+        let result: Result<ArtifactConfig, BError> = ArtifactConfig::from_str(json_test_str);
+        match result {
+            Ok(_rconfig) => {
+                panic!("We should have recived an error because the type is invalid!");
+            }
+            Err(e) => {
+                assert_eq!(e.message, String::from("Invalid 'artifact' format in build config. The 'directory' type requires a 'name'"));
+            } 
+        }
+    }
+
+    #[test]
+    fn test_artifact_config_error_no_manifest_name() {
+        let json_test_str = r#"
+        {
+            "type": "manifest"
+        }
+        "#;
+        let result: Result<ArtifactConfig, BError> = ArtifactConfig::from_str(json_test_str);
+        match result {
+            Ok(_rconfig) => {
+                panic!("We should have recived an error because the type is invalid!");
+            }
+            Err(e) => {
+                assert_eq!(e.message, String::from("Invalid 'artifact' format in build config. The 'manifest' type requires a 'name'"));
+            } 
         }
     }
 }
