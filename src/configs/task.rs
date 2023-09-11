@@ -30,10 +30,11 @@ The task config has the following format in the build config
     }
 }
 */
-use std::collections::HashMap;
 use crate::configs::Config;
 use serde_json::Value;
 use crate::error::BError;
+
+use super::ArtifactConfig;
 
 pub struct TaskConfig {
     index: String,
@@ -44,13 +45,36 @@ pub struct TaskConfig {
     build: String,
     clean: String,
     recipes: Vec<String>, // The list of recipes will be empty if the type for the task is 'non-bitbake'
-    artifacts: Value, // For some tasks there might not be any artifacts to collect then this will be empty
+    artifacts: Vec<ArtifactConfig>, // For some tasks there might not be any artifacts to collect then this will be empty
 }
 
 impl Config for TaskConfig {
 }
 
 impl TaskConfig {
+    fn get_artifacts(data: &Value) -> Result<Vec<ArtifactConfig>, BError> {
+        match data.get("artifacts") {
+            Some(value) => {
+                if value.is_array() {
+                    if let Some(artifact_vec) = value.as_array() {
+                        let mut artifacts: Vec<ArtifactConfig> = Vec::new();
+                        for artifact_data in artifact_vec.iter() {
+                            let artifact: ArtifactConfig = ArtifactConfig::from_value(&artifact_data)?;
+                            artifacts.push(artifact);
+                        }
+                        return Ok(artifacts);
+                    }
+                    return Err(BError{ code: 0, message: format!("Invalid 'artifacts' format in build config")});
+                } else {
+                    return Err(BError{ code: 0, message: format!("Invalid 'artifacts' format in build config")});
+                }
+            }
+            None => {
+                return Ok(Vec::new());
+            }
+        }
+    }
+
     pub fn from_str(json_string: &str) -> Result<Self, BError> {
         let data: Value = Self::parse(json_string)?;
         Self::from_value(&data)
@@ -65,7 +89,7 @@ impl TaskConfig {
         let build: String = Self::get_str_value("build", &data, Some(String::from("")))?;
         let clean: String = Self::get_str_value("clean", &data, Some(String::from("")))?;
         let recipes: Vec<String> = Self::get_array_value("recipes", &data, Some(vec![]))?;
-        let artifacts: &Value = Self::get_value("artifacts", &data)?;
+        let artifacts: Vec<ArtifactConfig> = Self::get_artifacts(&data)?;
         // if the task type is bitbake then at least one recipe is required
         if recipes.is_empty() && ttype == "bitbake" {
             return Err(BError{ code: 0, message: format!("Invalid Tasks format in build config")});
@@ -79,7 +103,7 @@ impl TaskConfig {
             build,
             clean,
             recipes,
-            artifacts: artifacts.clone(),
+            artifacts,
         })
     }
     
@@ -115,7 +139,7 @@ impl TaskConfig {
         &self.recipes
     }
 
-    pub fn artifacts(&self) -> &Value {
+    pub fn artifacts(&self) -> &Vec<ArtifactConfig> {
         // TODO: we should most likely change this so that artifacts is a struct just like
         // we have done with the TaskConfig struct we should setup a ArtifactsConfig and
         // have this method return a &HashMap<String, ArtifactsConfig>
@@ -135,7 +159,7 @@ mod tests {
                 rconfig
             }
             Err(e) => {
-                eprintln!("Error parsing build config: {}", e);
+                eprintln!("Error parsing tasks from build config: {}", e);
                 panic!();
             } 
         }
