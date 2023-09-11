@@ -86,7 +86,7 @@ trait Config {
         match data.get(name) {
             Some(value) => {
                 if value.is_string() {
-                    Ok(value.to_string())
+                    Ok(value.as_str().unwrap().to_string())
                 } else {
                     return Err(BError{ code: 0, message: format!("Failed to read '{}' is not a string", name)});
                 }
@@ -103,7 +103,7 @@ trait Config {
         }
     }
 
-    fn get_array_value(name: &str, data: &Value) -> Result<Vec<String>, BError> {
+    fn get_array_value(name: &str, data: &Value, default: Option<Vec<String>>) -> Result<Vec<String>, BError> {
         match data.get(name) {
             Some(array_value) => {
                 if array_value.is_array() {
@@ -119,7 +119,13 @@ trait Config {
                 }
             }
             None => {
-                return Err(BError{ code: 0, message: format!("Failed to read '{}'", name)});
+                match default {
+                    Some(default_value) => Ok(default_value),
+                    None => Err(BError {
+                        code: 0,
+                        message: format!("Failed to read '{}'", name),
+                    }),
+                }
             }
         }
     }
@@ -145,7 +151,8 @@ trait Config {
                 }
             }
             None => {
-                return Err(BError{ code: 0, message: format!("Failed to read '{}'", name)});
+                //return Err(BError{ code: 0, message: format!("Failed to read '{}'", name)});
+                return Ok(HashMap::new());
             }
         }
     }
@@ -178,11 +185,12 @@ pub struct BuildConfig {
     name: String,
     description: String,
     arch: String,
-    machine: String,
-    distro: String,
+    machine: String, // Optional but if there is a task with type bitbake defined it might fail
+    distro: String, // Optional but if there is a task with type bitbake defined it might fail
     deploydir: String, // Optional if not set the default deploy dir will be used builds/tmp/deploydir
-    bb_layers_conf: Vec<String>,
-    bb_local_conf: Vec<String>,
+    context: HashMap<String, String>,
+    bb_layers_conf: Vec<String>, // Optional but if there is a task with type bitbake defined it will fail without a bblayers.conf
+    bb_local_conf: Vec<String>, // Optional but if there is a task with type bitbake defined it will fail without a local.conf
     tasks: Vec<Task>, // The tasks don't have to be defined in the main build config if that is the case this will be empty
 }
 
@@ -190,13 +198,12 @@ pub struct Task {
     index: String,
     name: String,
     ttype: String, // Optional if not set for the task the default type 'bitbake' is used
-    disabled: bool, // Optional if not set for the task the default value 'false' is used
+    disabled: String, // Optional if not set for the task the default value 'false' is used
     builddir: String,
     build: String,
     clean: String,
     recipes: Vec<String>, // The list of recipes will be empty if the type for the task is 'non-bitbake'
     artifacts: Value, // For some tasks there might not be any artifacts to collect then this will be empty
-    context: HashMap<String, String>, // The context is optional
 }
 
 impl Config for BuildConfig {}
@@ -207,46 +214,43 @@ impl BuildConfig {
         let name: String = Self::get_str_value("name", &data, None)?;
         let ttype: String = Self::get_str_value("type", &data, Some(String::from("bitbake")))?;
         let disabled: String = Self::get_str_value("disabled", &data, Some(String::from("false")))?;
-        let builddir: String = Self::get_str_value("builddir", &data, None)?;
-        let build: String = Self::get_str_value("build", &data, None)?;
-        let clean: String = Self::get_str_value("clean", &data, None)?;
-        let recipes: Vec<String> = Self::get_array_value("recipes", &data)?;
+        let builddir: String = Self::get_str_value("builddir", &data, Some(String::from("")))?;
+        let build: String = Self::get_str_value("build", &data, Some(String::from("")))?;
+        let clean: String = Self::get_str_value("clean", &data, Some(String::from("")))?;
+        let recipes: Vec<String> = Self::get_array_value("recipes", &data, Some(vec![]))?;
         let artifacts: &Value = Self::get_value("artifacts", &data)?;
-        let context: HashMap<String, String> = Self::get_hashmap_value("context", &data)?;
         Ok(Task {
             index,
             name,
             ttype,
-            disabled: disabled.parse().unwrap(),
+            disabled,
             builddir,
             build,
             clean,
             recipes,
             artifacts: artifacts.clone(),
-            context,
         })
     }
 
     fn get_tasks(data: &Value) -> Result<Vec<Task>, BError> {
         match data.get("tasks") {
             Some(value) => {
-                if value.is_array() {
-                    let mut tasks: Vec<Task> = Vec::new();
-                    for task in value.as_array().unwrap().iter() {
-                        let t: Task = Self::parse_task(&task)?;
-                        tasks.push(t);
+                if value.is_object() {
+                    if let Some(task_map) = value.as_object() {
+                        let mut tasks: Vec<Task> = Vec::new();
+                        for (_task_name, task_data) in task_map.iter() {
+                            let t: Task = Self::parse_task(&task_data)?;
+                            tasks.push(t);
+                        }
+                        return Ok(tasks);
                     }
-                    Ok(tasks)
+                    return Err(BError{ code: 0, message: format!("Invalid Tasks format in build config")});
                 } else {
                     return Err(BError{ code: 0, message: format!("Invalid Tasks format in build config")});
                 }
             }
             None => {
-                // TODO a build config might not have any tasks defined since the might be defined in one
-                // of the build configs included by the include node in the main build config. We should
-                // make sure to support that and not return an error instead we should return an empty
-                // vector or come up with some other solution for this scenario.
-                return Err(BError{ code: 0, message: format!("Failed to read tasks")});
+                return Ok(vec![]);
             }
         }
     }
@@ -258,11 +262,11 @@ impl BuildConfig {
         let description: String = Self::get_str_value("description", &data, None)?;
         let arch: String = Self::get_str_value("arch", &data, None)?;
         let bb_data: &Value = Self::get_value("bb", &data)?;
-        let machine: String = Self::get_str_value("machine", &bb_data, None)?;
-        let distro: String = Self::get_str_value("distro", &bb_data, None)?;
+        let machine: String = Self::get_str_value("machine", &bb_data, Some(String::from("")))?;
+        let distro: String = Self::get_str_value("distro", &bb_data, Some(String::from("")))?;
         let deploydir: String = Self::get_str_value("deploydir", &bb_data, Some(String::from("tmp/deploy/images")))?;
-        let bb_layers_conf: Vec<String> = Self::get_array_value("bblayersconf", &bb_data)?;
-        let bb_local_conf: Vec<String> = Self::get_array_value("localconf", &bb_data)?;
+        let bb_layers_conf: Vec<String> = Self::get_array_value("bblayersconf", &bb_data, Some(vec![]))?;
+        let bb_local_conf: Vec<String> = Self::get_array_value("localconf", &bb_data, Some(vec![]))?;
         let tasks: Vec<Task> = Self::get_tasks(&data)?;
         let context: HashMap<String, String> = Self::get_hashmap_value("context", &data)?;
         Ok(BuildConfig {
@@ -273,6 +277,7 @@ impl BuildConfig {
             machine,
             distro,
             deploydir,
+            context,
             bb_layers_conf,
             bb_local_conf,
             tasks,
@@ -318,4 +323,80 @@ impl BuildConfig {
     pub fn tasks(&self) -> &Vec<Task> {
         &self.tasks
     } 
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::workspace::BuildConfig;
+    use crate::error::BError;
+
+    fn helper_config_from_str(json_test_str: &str) -> BuildConfig {
+        let result: Result<BuildConfig, BError> = BuildConfig::from_str(json_test_str);
+        match result {
+            Ok(rconfig) => {
+                rconfig
+            }
+            Err(e) => {
+                eprintln!("Error parsing build config: {}", e);
+                panic!();
+            } 
+        }
+    }
+
+    #[test]
+    fn test_build_config_simple() {
+        let json_test_str = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {}
+        }
+        "#;
+        let config = helper_config_from_str(json_test_str);
+        assert_eq!(config.version(), "4");
+        assert_eq!(config.name(), "test-name");
+        assert_eq!(config.description(), "Test Description");
+        assert_eq!(config.arch(), "test-arch");
+    }
+
+    #[test]
+    fn test_build_config_bitbake() {
+        let json_test_str = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {
+                "machine": "test-machine",                                                                                           
+                "distro": "test-distro",
+                "bblayersconf": [
+                    "BB_LAYERS_CONF_TEST_LINE_1",
+                    "BB_LAYERS_CONF_TEST_LINE_2",
+                    "BB_LAYERS_CONF_TEST_LINE_3"
+                ],
+                "localconf": [
+                    "BB_LOCAL_CONF_TEST_LINE_1",
+                    "BB_LOCAL_CONF_TEST_LINE_2",
+                    "BB_LOCAL_CONF_TEST_LINE_3"
+                ]
+            }
+        }
+        "#;
+        let config = helper_config_from_str(json_test_str);
+        assert_eq!(config.machine(), "test-machine");
+        assert_eq!(config.distro(), "test-distro");
+        assert_eq!(config.bblayersconf(), &vec![
+            String::from("BB_LAYERS_CONF_TEST_LINE_1"),
+            String::from("BB_LAYERS_CONF_TEST_LINE_2"),
+            String::from("BB_LAYERS_CONF_TEST_LINE_3")
+        ]);
+        assert_eq!(config.localconf(), &vec![
+            String::from("BB_LOCAL_CONF_TEST_LINE_1"),
+            String::from("BB_LOCAL_CONF_TEST_LINE_2"),
+            String::from("BB_LOCAL_CONF_TEST_LINE_3")
+        ]);
+    }
 }
