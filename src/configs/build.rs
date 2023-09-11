@@ -129,11 +129,11 @@ impl BuildConfig {
         let description: String = Self::get_str_value("description", &data, None)?;
         let arch: String = Self::get_str_value("arch", &data, None)?;
         let bb_data: &Value = Self::get_value("bb", &data)?;
-        let machine: String = Self::get_str_value("machine", &bb_data, Some(String::from("")))?;
-        let distro: String = Self::get_str_value("distro", &bb_data, Some(String::from("")))?;
-        let deploydir: String = Self::get_str_value("deploydir", &bb_data, Some(String::from("tmp/deploy/images")))?;
-        let bb_layers_conf: Vec<String> = Self::get_array_value("bblayersconf", &bb_data, Some(vec![]))?;
-        let bb_local_conf: Vec<String> = Self::get_array_value("localconf", &bb_data, Some(vec![]))?;
+        let machine: String = Self::get_str_value("machine", bb_data, Some(String::from("")))?;
+        let distro: String = Self::get_str_value("distro", bb_data, Some(String::from("")))?;
+        let deploydir: String = Self::get_str_value("deploydir", bb_data, Some(String::from("tmp/deploy/images")))?;
+        let bb_layers_conf: Vec<String> = Self::get_array_value("bblayersconf", bb_data, Some(vec![]))?;
+        let bb_local_conf: Vec<String> = Self::get_array_value("localconf", bb_data, Some(vec![]))?;
         let tasks: HashMap<String, TaskConfig> = Self::get_tasks(&data)?;
         let context: HashMap<String, String> = Self::get_hashmap_value("context", &data)?;
         Ok(BuildConfig {
@@ -353,5 +353,31 @@ mod tests {
         assert_eq!(task.disabled(), "false");
         assert_eq!(task.ttype(), "bitbake");
         assert_eq!(task.recipes(), &vec![String::from("test-image"), String::from("test-image:do_populate_sdk")]);
+    }
+
+    #[test]
+    fn test_build_config_context() {
+        let json_test_str = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "context": [
+                "CONTEXT_1=context1",
+                "CONTEXT_2=context2",
+                "CONTEXT_3=context3"
+            ],
+            "bb": {}
+        }
+        "#;
+        let config = helper_build_config_from_str(json_test_str);
+        assert!(!config.context().is_empty());
+        let mut i = 1;
+        for (key, value) in config.context().iter() {
+            assert_eq!(key, &format!("CONTEXT_{}", i));
+            assert_eq!(value, &format!("context{}", i));
+            i += 1;
+        }
     }
 }

@@ -63,7 +63,10 @@ pub trait Config {
                         if parts.len() == 2 {
                             let key = parts[0].to_string();
                             let value = parts[1].to_string();
-                            hashmap.insert(key, value);
+                            hashmap.insert(
+                                String::from(key.trim_matches('"')),
+                                String::from(value.trim_matches('"'))
+                            );
                         }
                     }
                     Ok(hashmap)
