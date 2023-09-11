@@ -3,6 +3,7 @@ mod commands;
 mod workspace;
 mod error;
 mod executers;
+mod configs;
 
 use crate::cli::bakery::Bakery;
 

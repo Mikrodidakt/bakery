@@ -379,7 +379,7 @@ impl BuildConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::workspace::{BuildConfig, TaskConfig};
+    use crate::configs::{BuildConfig, TaskConfig};
     use crate::error::BError;
     use std::collections::HashMap;
 
