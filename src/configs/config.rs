@@ -1,4 +1,4 @@
-use std::{collections::HashMap, hash::Hash};
+use indexmap::IndexMap;
 use serde_json::Value;
 use crate::error::BError;
 
@@ -51,11 +51,11 @@ pub trait Config {
         }
     }
 
-    fn get_hashmap_value(name: &str, data: &Value) -> Result<HashMap<String, String>, BError> {
+    fn get_hashmap_value(name: &str, data: &Value) -> Result<IndexMap<String, String>, BError> {
         match data.get(name) {
             Some(array_value) => {
                 if array_value.is_array() {
-                    let mut hashmap: HashMap<String, String> = HashMap::new();
+                    let mut hashmap: IndexMap<String, String> = IndexMap::new();
                     for value in array_value.as_array().unwrap().iter() {
                         let pair: String = value.to_string();
                         let parts: Vec<&str> = pair.splitn(2, '=').collect();
@@ -76,7 +76,7 @@ pub trait Config {
             }
             None => {
                 //return Err(BError{ code: 0, message: format!("Failed to read '{}'", name)});
-                return Ok(HashMap::new());
+                return Ok(IndexMap::new());
             }
         }
     }

@@ -77,7 +77,7 @@ The current format of the build config would look something like this
 }
 */
 
-use std::collections::HashMap;
+use indexmap::IndexMap;
 use serde_json::Value;
 use crate::configs::{TaskConfig, Config};
 use crate::error::BError;
@@ -90,21 +90,21 @@ pub struct BuildConfig {
     machine: String, // Optional but if there is a task with type bitbake defined it might fail
     distro: String, // Optional but if there is a task with type bitbake defined it might fail
     deploydir: String, // Optional if not set the default deploy dir will be used builds/tmp/deploydir
-    context: HashMap<String, String>, // Optional if not set default is an empty map
+    context: IndexMap<String, String>, // Optional if not set default is an empty map
     bb_layers_conf: Vec<String>, // Optional but if there is a task with type bitbake defined it will fail without a bblayers.conf
     bb_local_conf: Vec<String>, // Optional but if there is a task with type bitbake defined it will fail without a local.conf
-    tasks: HashMap<String, TaskConfig>, // The tasks don't have to be defined in the main build config if that is the case this will be empty
+    tasks: IndexMap<String, TaskConfig>, // The tasks don't have to be defined in the main build config if that is the case this will be empty
 }
 
 impl Config for BuildConfig {}
 
 impl BuildConfig {
-    fn get_tasks(data: &Value) -> Result<HashMap<String, TaskConfig>, BError> {
+    fn get_tasks(data: &Value) -> Result<IndexMap<String, TaskConfig>, BError> {
         match data.get("tasks") {
             Some(value) => {
                 if value.is_object() {
                     if let Some(task_map) = value.as_object() {
-                        let mut tasks: HashMap<String, TaskConfig> = HashMap::new();
+                        let mut tasks: IndexMap<String, TaskConfig> = IndexMap::new();
                         for (task_name, task_data) in task_map.iter() {
                             let t: TaskConfig = TaskConfig::from_value(&task_data)?;
                             tasks.insert(task_name.clone(), t);
@@ -117,7 +117,7 @@ impl BuildConfig {
                 }
             }
             None => {
-                return Ok(HashMap::new());
+                return Ok(IndexMap::new());
             }
         }
     }
@@ -134,8 +134,8 @@ impl BuildConfig {
         let deploydir: String = Self::get_str_value("deploydir", bb_data, Some(String::from("tmp/deploy/images")))?;
         let bb_layers_conf: Vec<String> = Self::get_array_value("bblayersconf", bb_data, Some(vec![]))?;
         let bb_local_conf: Vec<String> = Self::get_array_value("localconf", bb_data, Some(vec![]))?;
-        let tasks: HashMap<String, TaskConfig> = Self::get_tasks(&data)?;
-        let context: HashMap<String, String> = Self::get_hashmap_value("context", &data)?;
+        let tasks: IndexMap<String, TaskConfig> = Self::get_tasks(&data)?;
+        let context: IndexMap<String, String> = Self::get_hashmap_value("context", &data)?;
         Ok(BuildConfig {
             version,
             name,
@@ -187,11 +187,11 @@ impl BuildConfig {
         &self.bb_local_conf
     }
 
-    pub fn tasks(&self) -> &HashMap<String, TaskConfig> {
+    pub fn tasks(&self) -> &IndexMap<String, TaskConfig> {
         &self.tasks
     }
 
-    pub fn context(&self) -> &HashMap<String, String> {
+    pub fn context(&self) -> &IndexMap<String, String> {
         &self.context
     }
 }
@@ -200,7 +200,7 @@ impl BuildConfig {
 mod tests {
     use crate::configs::{BuildConfig, TaskConfig};
     use crate::error::BError;
-    use std::collections::HashMap;
+    use indexmap::IndexMap;
 
     fn helper_build_config_from_str(json_test_str: &str) -> BuildConfig {
         let result: Result<BuildConfig, BError> = BuildConfig::from_str(json_test_str);
@@ -338,7 +338,7 @@ mod tests {
         }
         "#;
         let config = helper_build_config_from_str(json_test_str);
-        let tasks: &HashMap<String, TaskConfig> = config.tasks();
+        let tasks: &IndexMap<String, TaskConfig> = config.tasks();
         let task: &TaskConfig = tasks.get("task1").unwrap();
         assert_eq!(task.index(), "0");
         assert_eq!(task.name(), "task1-name");
@@ -375,6 +375,7 @@ mod tests {
         assert!(!config.context().is_empty());
         let mut i = 1;
         for (key, value) in config.context().iter() {
+            println!("Key: {}, Value: {}", key, value);
             assert_eq!(key, &format!("CONTEXT_{}", i));
             assert_eq!(value, &format!("context{}", i));
             i += 1;

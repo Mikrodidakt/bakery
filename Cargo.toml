@@ -7,10 +7,10 @@ edition = "2021"
 
 [dependencies]
 clap = "4.4.2"
+indexmap = "2.0.0"
 mockall = "0.11.4"
+regex = "1.9.5"
+regexp = "0.3.2"
 serde = "1.0.188"
 serde_json = "1.0.105"
-#clap_autocomplete = "0.4.1"
-#env_logger = "0.10.0"
-#log = "0.4.20"
 

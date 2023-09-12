@@ -143,9 +143,6 @@ impl TaskConfig {
     }
 
     pub fn artifacts(&self) -> &Vec<ArtifactConfig> {
-        // TODO: we should most likely change this so that artifacts is a struct just like
-        // we have done with the TaskConfig struct we should setup a ArtifactsConfig and
-        // have this method return a &HashMap<String, ArtifactsConfig>
         &self.artifacts
     }
 }
