@@ -6,14 +6,14 @@ use crate::workspace::Workspace;
 use crate::cli::Cli;
 
 pub struct Executer<'a> {
-    _workspace: &'a Workspace,
+    workspace: &'a Workspace<'a>,
     cli: &'a Cli,
 }
 
 impl<'a> Executer<'a> {
     pub fn new(workspace: &'a Workspace, cli: &'a Cli) -> Self {
         Executer {
-            _workspace: workspace,
+            workspace: workspace,
             cli: cli,
         }
     }
@@ -30,8 +30,8 @@ impl<'a> Executer<'a> {
                 exec_dir = directory;
             },
             None => {
-                cmd_line = format!("cd {} && {}", self._workspace._work_dir, cmd_line);
-                exec_dir = self._workspace._work_dir.clone();
+                cmd_line = format!("cd {} && {}", self.workspace.work_dir.to_str().unwrap(), cmd_line);
+                exec_dir = self.workspace.work_dir.to_str().unwrap().to_string();
             }
         }
 

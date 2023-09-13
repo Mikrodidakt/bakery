@@ -1,7 +1,10 @@
 use std::env;
+use std::path::PathBuf;
 
 use crate::commands::{BCommand, BError, BBaseCommand};
 use crate::executers::{DockerImage, Docker, Executer};
+use crate::configs::SettingsConfig;
+use crate::workspace::Settings;
 use crate::workspace::Workspace;
 use crate::cli::Cli;
 
@@ -22,8 +25,27 @@ impl BCommand for BuildCommand {
         &self.cmd._subcmd
     }
 
-    fn execute(&self, cli: &Cli) -> Result<(), BError>{
-        let workspace: Workspace = Workspace{ _work_dir: String::from("test") };
+    fn execute(&self, cli: &Cli) -> Result<(), BError> {
+        // TODO: we need to handle the configs and workspace in some other way
+        // for now let's keep it like this
+        let json_test_str = r#"
+        {
+            "version": "4"
+        }"#;
+        let result: Result<SettingsConfig, BError> = SettingsConfig::from_str(json_test_str);
+        let config: SettingsConfig;
+        match result {
+            Ok(rsettings) => {
+                config = rsettings;
+            }
+            Err(e) => {
+                eprintln!("Error parsing JSON: {}", e);
+                panic!();
+            } 
+        }
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let settings: Settings = Settings::new(work_dir.clone(), &config);
+        let workspace: Workspace = Workspace::new(Some(work_dir), &settings);
         let exec: Executer = Executer::new(&workspace, cli);
         let docker_image: DockerImage = DockerImage {
             registry: String::from("registry"),

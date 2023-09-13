@@ -1,16 +1,16 @@
 use crate::{configs::SettingsConfig, executers::DockerImage};
-use std::path::{PathBuf, Path};
+use std::path::PathBuf;
 
 pub struct Settings<'a> {
-    workspace_dir: &'a Path,
+    work_dir: PathBuf,
     config: &'a SettingsConfig,
     docker: DockerImage,
 }
 
 impl<'a> Settings<'a> {
-    pub fn new(workspace_dir: &'a str, config: &'a SettingsConfig) -> Self {
+    pub fn new(work_dir: PathBuf, config: &'a SettingsConfig) -> Self {
         Settings {
-            workspace_dir: &Path::new(workspace_dir),
+            work_dir,
             config,
             docker: DockerImage {
                 image: config.docker_image.clone(),
@@ -25,43 +25,43 @@ impl<'a> Settings<'a> {
     }
 
     pub fn builds_dir(&self) -> PathBuf {
-        let mut path_buf = self.workspace_dir.to_path_buf();
+        let mut path_buf = self.work_dir.clone();
         path_buf.push(&self.config.builds_dir);
         path_buf
     }
 
     pub fn cache_dir(&self) -> PathBuf {
-        let mut path_buf = self.workspace_dir.to_path_buf();
+        let mut path_buf = self.work_dir.clone();
         path_buf.push(&self.config.cache_dir);
         path_buf
     }
 
     pub fn artifacts_dir(&self) -> PathBuf {
-        let mut path_buf = self.workspace_dir.to_path_buf();
+        let mut path_buf = self.work_dir.clone();
         path_buf.push(&self.config.artifacts_dir);
         path_buf
     }
 
     pub fn configs_dir(&self) -> PathBuf {
-        let mut path_buf = self.workspace_dir.to_path_buf();
+        let mut path_buf = self.work_dir.clone();
         path_buf.push(&self.config.configs_dir);
         path_buf
     }
 
     pub fn include_dir(&self) -> PathBuf {
-        let mut path_buf = self.workspace_dir.to_path_buf();
+        let mut path_buf = self.work_dir.clone();
         path_buf.push(&self.config.include_dir);
         path_buf
     }
 
     pub fn scripts_dir(&self) -> PathBuf {
-        let mut path_buf = self.workspace_dir.to_path_buf();
+        let mut path_buf = self.work_dir.clone();
         path_buf.push(&self.config.scripts_dir);
         path_buf
     }
 
     pub fn docker_dir(&self) -> PathBuf {
-        let mut path_buf = self.workspace_dir.to_path_buf();
+        let mut path_buf = self.work_dir.clone();
         path_buf.push(&self.config.docker_dir);
         path_buf
     }
@@ -81,6 +81,8 @@ impl<'a> Settings<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use crate::executers::DockerImage;
     use crate::workspace::Settings;
     use crate::configs::SettingsConfig;
@@ -108,7 +110,8 @@ mod tests {
             "version": "4"
         }"#;
         let config: SettingsConfig = helper_settings_from_str(json_test_str);
-        let settings: Settings = Settings::new("/workspace", &config);
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let settings: Settings = Settings::new(work_dir, &config);
         assert_eq!(settings.builds_dir().to_str(), Some("/workspace/builds"));
         assert_eq!(settings.cache_dir().to_str(), Some("/workspace/.cache"));
         assert_eq!(settings.artifacts_dir().to_str(), Some("/workspace/artifacts"));
@@ -135,7 +138,8 @@ mod tests {
             }
         }"#;
         let config: SettingsConfig = helper_settings_from_str(json_test_str);
-        let settings: Settings = Settings::new("/workspace", &config);
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let settings: Settings = Settings::new(work_dir, &config);
         assert_eq!(settings.builds_dir().to_str(), Some("/workspace/builds_test"));
         assert_eq!(settings.cache_dir().to_str(), Some("/workspace/cache_test"));
         assert_eq!(settings.artifacts_dir().to_str(), Some("/workspace/artifacts_test"));
@@ -152,7 +156,8 @@ mod tests {
             "version": "4"
         }"#;
         let config: SettingsConfig = helper_settings_from_str(json_test_str);
-        let settings: Settings = Settings::new("/workspace", &config);
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let settings: Settings = Settings::new(work_dir, &config);
         let docker_image: &DockerImage = settings.docker_image();
         assert_eq!(format!("{}", docker_image), "strixos/bakery-workspace:0.68");
     }
@@ -169,7 +174,8 @@ mod tests {
             }
         }"#;
         let config: SettingsConfig = helper_settings_from_str(json_test_str);
-        let settings: Settings = Settings::new("/workspace", &config);
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let settings: Settings = Settings::new(work_dir, &config);
         let docker_image: &DockerImage = settings.docker_image();
         assert_eq!(format!("{}", docker_image), "test-registry/test-image:0.1");
     }
@@ -186,7 +192,8 @@ mod tests {
             }
         }"#;
         let config: SettingsConfig = helper_settings_from_str(json_test_str);
-        let settings: Settings = Settings::new("/workspace", &config);
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let settings: Settings = Settings::new(work_dir, &config);
         assert_eq!(settings.docker_args(), &vec!["--rm=true".to_string(), "-t".to_string()]);
     }
 
@@ -207,7 +214,8 @@ mod tests {
             }
         }"#;
         let config: SettingsConfig = helper_settings_from_str(json_test_str);
-        let settings: Settings = Settings::new("/workspace", &config);
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let settings: Settings = Settings::new(work_dir, &config);
         assert_eq!(settings.docker_args(), &vec!["arg1".to_string(), "arg2".to_string(), "arg3".to_string()]);
     }
 
@@ -218,7 +226,8 @@ mod tests {
             "version": "4"
         }"#;
         let config: SettingsConfig = helper_settings_from_str(json_test_str);
-        let settings: Settings = Settings::new("/workspace", &config);
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let settings: Settings = Settings::new(work_dir, &config);
         assert!(settings.supported_builds().is_empty());
     }
 
@@ -235,7 +244,8 @@ mod tests {
             }
         }"#;
         let config: SettingsConfig = helper_settings_from_str(json_test_str);
-        let settings: Settings = Settings::new("/workspace", &config);
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let settings: Settings = Settings::new(work_dir, &config);
         assert_eq!(settings.supported_builds(), &vec!["build1".to_string(), "build2".to_string()]);
     }
 }
