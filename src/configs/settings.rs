@@ -55,6 +55,7 @@ pub struct SettingsConfig {
     pub configs_dir: String,
     pub builds_dir: String,
     pub artifacts_dir: String,
+    pub include_dir: String,
     pub scripts_dir: String,
     pub docker_dir: String,
     pub cache_dir: String,
@@ -73,6 +74,7 @@ impl SettingsConfig {
         let data: Value = Self::parse(json_string)?;
         let version: String = Self::get_str_value("version", &data, None)?;
         let mut configs_dir: String = String::from("configs");
+        let mut include_dir: String = String::from("configs/include");
         let mut builds_dir: String = String::from("builds");
         let mut artifacts_dir: String = String::from("artifacts");
         let mut scripts_dir: String = String::from("scripts");
@@ -81,6 +83,7 @@ impl SettingsConfig {
         match Self::get_value("workspace", &data) {
             Ok(ws_data) => { 
                 configs_dir = Self::get_str_value("configsdir", ws_data, Some(String::from("configs")))?;
+                include_dir = Self::get_str_value("includedir", ws_data, Some(String::from("configs/include")))?;
                 builds_dir = Self::get_str_value("buildsdir", ws_data, Some(String::from("builds")))?;
                 artifacts_dir = Self::get_str_value("artifactsdir", ws_data, Some(String::from("artifacts")))?;
              
@@ -115,6 +118,7 @@ impl SettingsConfig {
         Ok(SettingsConfig {
             version,
             configs_dir,
+            include_dir,
             builds_dir,
             artifacts_dir,
             scripts_dir,
@@ -156,6 +160,7 @@ mod tests {
             "version": "4",
             "workspace": {
               "configsdir": "configs_test",
+              "includedir": "include_test",
               "artifactsdir": "artifacts_test",
               "buildsdir": "builds_test",
               "artifactsdir": "artifacts_test",
@@ -166,7 +171,28 @@ mod tests {
         }"#;
         let settings = helper_settings_from_str(json_test_str);
         assert_eq!(&settings.configs_dir,  "configs_test");
+        assert_eq!(&settings.include_dir,  "include_test");
         assert_eq!(&settings.artifacts_dir,  "artifacts_test");
+        assert_eq!(&settings.builds_dir,  "builds_test");
+        assert_eq!(&settings.scripts_dir,  "scripts_test");
+        assert_eq!(&settings.docker_dir,  "docker_test");
+        assert_eq!(&settings.cache_dir,  "cache_test");
+    }
+
+    #[test]
+    fn test_settings_config_default_workspace_dirs() {
+        let json_test_str = r#"
+        {
+            "version": "4"
+        }"#;
+        let settings = helper_settings_from_str(json_test_str);
+        assert_eq!(&settings.configs_dir,  "configs");
+        assert_eq!(&settings.include_dir,  "configs/include");
+        assert_eq!(&settings.artifacts_dir,  "artifacts");
+        assert_eq!(&settings.builds_dir,  "builds");
+        assert_eq!(&settings.scripts_dir,  "scripts");
+        assert_eq!(&settings.docker_dir,  "docker");
+        assert_eq!(&settings.cache_dir,  ".cache");
     }
 
     #[test]

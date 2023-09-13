@@ -48,6 +48,12 @@ impl<'a> Settings<'a> {
         path_buf
     }
 
+    pub fn include_dir(&self) -> PathBuf {
+        let mut path_buf = self.workspace_dir.to_path_buf();
+        path_buf.push(&self.config.include_dir);
+        path_buf
+    }
+
     pub fn scripts_dir(&self) -> PathBuf {
         let mut path_buf = self.workspace_dir.to_path_buf();
         path_buf.push(&self.config.scripts_dir);
@@ -62,6 +68,14 @@ impl<'a> Settings<'a> {
 
     pub fn docker_image(&self) -> &DockerImage {
         &self.docker
+    }
+
+    pub fn docker_args(&self) -> &Vec<String> {
+        &self.config.docker_args
+    }
+
+    pub fn supported_builds(&self) -> &Vec<String> {
+        &self.config.supported
     }
 }
 
@@ -101,6 +115,7 @@ mod tests {
         assert_eq!(settings.scripts_dir().to_str(), Some("/workspace/scripts"));
         assert_eq!(settings.docker_dir().to_str(), Some("/workspace/docker"));
         assert_eq!(settings.configs_dir().to_str(), Some("/workspace/configs"));
+        assert_eq!(settings.include_dir().to_str(), Some("/workspace/configs/include"));
     }
 
     #[test]
@@ -110,6 +125,7 @@ mod tests {
             "version": "4",
             "workspace": {
               "configsdir": "configs_test",
+              "includedir": "include_test",
               "artifactsdir": "artifacts_test",
               "buildsdir": "builds_test",
               "artifactsdir": "artifacts_test",
@@ -126,6 +142,7 @@ mod tests {
         assert_eq!(settings.scripts_dir().to_str(), Some("/workspace/scripts_test"));
         assert_eq!(settings.docker_dir().to_str(), Some("/workspace/docker_test"));
         assert_eq!(settings.configs_dir().to_str(), Some("/workspace/configs_test"));
+        assert_eq!(settings.include_dir().to_str(), Some("/workspace/include_test"));
     }
 
     #[test]
@@ -155,5 +172,70 @@ mod tests {
         let settings: Settings = Settings::new("/workspace", &config);
         let docker_image: &DockerImage = settings.docker_image();
         assert_eq!(format!("{}", docker_image), "test-registry/test-image:0.1");
+    }
+
+    #[test]
+    fn test_settings_default_docker_args() {
+        let json_test_str = r#"
+        {
+            "version": "4",
+            "docker": {
+                "tag": "0.1",
+                "image": "test-image",
+                "registry": "test-registry"
+            }
+        }"#;
+        let config: SettingsConfig = helper_settings_from_str(json_test_str);
+        let settings: Settings = Settings::new("/workspace", &config);
+        assert_eq!(settings.docker_args(), &vec!["--rm=true".to_string(), "-t".to_string()]);
+    }
+
+    #[test]
+    fn test_settings_docker_args() {
+        let json_test_str = r#"
+        {
+            "version": "4",
+            "docker": {
+                "tag": "0.1",
+                "image": "test-image",
+                "registry": "test-registry",
+                "args": [
+                    "arg1",
+                    "arg2",
+                    "arg3"
+                ]
+            }
+        }"#;
+        let config: SettingsConfig = helper_settings_from_str(json_test_str);
+        let settings: Settings = Settings::new("/workspace", &config);
+        assert_eq!(settings.docker_args(), &vec!["arg1".to_string(), "arg2".to_string(), "arg3".to_string()]);
+    }
+
+    #[test]
+    fn test_settings_default_supported_builds() {
+        let json_test_str = r#"
+        {
+            "version": "4"
+        }"#;
+        let config: SettingsConfig = helper_settings_from_str(json_test_str);
+        let settings: Settings = Settings::new("/workspace", &config);
+        assert!(settings.supported_builds().is_empty());
+    }
+
+    #[test]
+    fn test_settings_supported_builds() {
+        let json_test_str = r#"
+        {
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "build1",
+                    "build2"
+                ]
+            }
+        }"#;
+        let config: SettingsConfig = helper_settings_from_str(json_test_str);
+        let settings: Settings = Settings::new("/workspace", &config);
+        assert_eq!(settings.supported_builds(), &vec!["build1".to_string(), "build2".to_string()]);
     }
 }
