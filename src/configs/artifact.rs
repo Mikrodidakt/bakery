@@ -68,7 +68,7 @@ impl ArtifactConfig {
             ttype,
             source,
             dest,
-            artifacts: artifacts,
+            artifacts,
         })
     }
 

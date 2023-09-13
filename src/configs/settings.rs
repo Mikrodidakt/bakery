@@ -50,43 +50,43 @@ pub const BAKERY_DOCKER_IMAGE: &str = "bakery-workspace";
 pub const BAKERY_DOCKER_TAG: &str = "0.68";                                                                                      
 pub const BAKERY_DOCKER_REGISTRY: &str = "strixos";
 
-pub struct Settings {
-    version: String,
-    configsdir: String,
-    buildsdir: String,
-    artifactsdir: String,
-    scriptsdir: String,
-    dockerdir: String,
-    cachedir: String,
-    supported: Vec<String>,
-    docker_tag: String,
-    docker_image: String,
-    docker_registry: String,
-    docker_args: Vec<String>,
+pub struct SettingsConfig {
+    pub version: String,
+    pub configs_dir: String,
+    pub builds_dir: String,
+    pub artifacts_dir: String,
+    pub scripts_dir: String,
+    pub docker_dir: String,
+    pub cache_dir: String,
+    pub supported: Vec<String>,
+    pub docker_tag: String,
+    pub docker_image: String,
+    pub docker_registry: String,
+    pub docker_args: Vec<String>,
 }
 
-impl Config for Settings {
+impl Config for SettingsConfig {
 }
 
-impl Settings {
+impl SettingsConfig {
     pub fn from_str(json_string: &str) -> Result<Self, BError> {
         let data: Value = Self::parse(json_string)?;
         let version: String = Self::get_str_value("version", &data, None)?;
-        let mut configsdir: String = String::from("configs");
-        let mut buildsdir: String = String::from("builds");
-        let mut artifactsdir: String = String::from("artifacts");
-        let mut scriptsdir: String = String::from("scripts");
-        let mut dockerdir: String = String::from("docker");
-        let mut cachedir: String = String::from(".cache");
+        let mut configs_dir: String = String::from("configs");
+        let mut builds_dir: String = String::from("builds");
+        let mut artifacts_dir: String = String::from("artifacts");
+        let mut scripts_dir: String = String::from("scripts");
+        let mut docker_dir: String = String::from("docker");
+        let mut cache_dir: String = String::from(".cache");
         match Self::get_value("workspace", &data) {
             Ok(ws_data) => { 
-                configsdir = Self::get_str_value("configsdir", ws_data, Some(String::from("configs")))?;
-                buildsdir = Self::get_str_value("buildsdir", ws_data, Some(String::from("builds")))?;
-                artifactsdir = Self::get_str_value("artifactsdir", ws_data, Some(String::from("artifacts")))?;
+                configs_dir = Self::get_str_value("configsdir", ws_data, Some(String::from("configs")))?;
+                builds_dir = Self::get_str_value("buildsdir", ws_data, Some(String::from("builds")))?;
+                artifacts_dir = Self::get_str_value("artifactsdir", ws_data, Some(String::from("artifacts")))?;
              
-                scriptsdir = Self::get_str_value("scriptsdir", ws_data, Some(String::from("scripts")))?;
-                dockerdir = Self::get_str_value("dockerdir", ws_data, Some(String::from("docker")))?;
-                cachedir = Self::get_str_value("cachedir", ws_data, Some(String::from(".cache")))?;
+                scripts_dir = Self::get_str_value("scriptsdir", ws_data, Some(String::from("scripts")))?;
+                docker_dir = Self::get_str_value("dockerdir", ws_data, Some(String::from("docker")))?;
+                cache_dir = Self::get_str_value("cachedir", ws_data, Some(String::from(".cache")))?;
             },
             Err(_err) => {}
         }
@@ -112,14 +112,14 @@ impl Settings {
             },
             Err(_err) => {}
         }
-        Ok(Settings {
+        Ok(SettingsConfig {
             version,
-            configsdir,
-            buildsdir,
-            artifactsdir,
-            scriptsdir,
-            dockerdir,
-            cachedir,
+            configs_dir,
+            builds_dir,
+            artifacts_dir,
+            scripts_dir,
+            docker_dir,
+            cache_dir,
             supported,
             docker_tag,
             docker_image,
@@ -127,60 +127,16 @@ impl Settings {
             docker_args,
         })
     }
-
-    pub fn workspace_configs_dir(&self) -> &String {
-        &self.configsdir
-    }
-
-    pub fn workspace_builds_dir(&self) -> &String {
-        &self.buildsdir
-    }
-
-    pub fn workspace_artifacts_dir(&self) -> &String {
-        &self.artifactsdir
-    }
-
-    pub fn workspace_scripts_dir(&self) -> &String {
-        &self.scriptsdir
-    }
-
-    pub fn workspace_docker_dir(&self) -> &String {
-        &self.dockerdir
-    }
-
-    pub fn workspace_cache_dir(&self) -> &String {
-        &self.cachedir
-    }
-
-    pub fn docker_image(&self) -> &String {
-        &self.docker_image
-    }
-
-    pub fn docker_tag(&self) -> &String {
-        &self.docker_tag
-    }
-
-    pub fn docker_registry(&self) -> &String {
-        &self.docker_registry
-    }
-
-    pub fn docker_args(&self) -> &Vec<String> {
-        &self.docker_args
-    }
-
-    pub fn supported_build_configs(&self) -> &Vec<String> {
-        &self.supported
-    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::configs::Settings;
+    use crate::configs::SettingsConfig;
     use crate::error::BError;
 
-    fn helper_settings_from_str(json_test_str: &str) -> Settings {
-        let result: Result<Settings, BError> = Settings::from_str(json_test_str);
-        let settings: Settings;
+    fn helper_settings_from_str(json_test_str: &str) -> SettingsConfig {
+        let result: Result<SettingsConfig, BError> = SettingsConfig::from_str(json_test_str);
+        let settings: SettingsConfig;
         match result {
             Ok(rsettings) => {
                 settings = rsettings;
@@ -194,7 +150,7 @@ mod tests {
     }
 
     #[test]
-    fn test_settings_workspace_dirs() {
+    fn test_settings_config_workspace_dirs() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -209,22 +165,22 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_configs_dir(),  "configs_test");
-        assert_eq!(settings.workspace_artifacts_dir(),  "artifacts_test");
+        assert_eq!(&settings.configs_dir,  "configs_test");
+        assert_eq!(&settings.artifacts_dir,  "artifacts_test");
     }
 
     #[test]
-    fn test_settings_no_configs_workspace_node() {
+    fn test_settings_config_no_configs_workspace_node() {
         let json_test_str = r#"
         {
             "version": "4"
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_configs_dir(),  "configs");
+        assert_eq!(&settings.configs_dir,  "configs");
     }
 
     #[test]
-    fn test_settings_no_builds_dir() {
+    fn test_settings_config_no_builds_dir() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -233,21 +189,21 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_builds_dir(),  "builds");
+        assert_eq!(&settings.builds_dir,  "builds");
     }
 
     #[test]
-    fn test_settings_no_builds_workspace_node() {
+    fn test_settings_config_no_builds_workspace_node() {
         let json_test_str = r#"
         {
             "version": "4"
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_builds_dir(),  "builds");
+        assert_eq!(&settings.builds_dir,  "builds");
     }
 
     #[test]
-    fn test_settings_no_artifacts_dir() {
+    fn test_settings_config_no_artifacts_dir() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -256,21 +212,21 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_artifacts_dir(), "artifacts");
+        assert_eq!(&settings.artifacts_dir, "artifacts");
     }
 
     #[test]
-    fn test_settings_no_artifacts_workspace_node() {
+    fn test_settings_config_no_artifacts_workspace_node() {
         let json_test_str = r#"
         {
             "version": "4"
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_artifacts_dir(), "artifacts");
+        assert_eq!(&settings.artifacts_dir, "artifacts");
     }
 
     #[test]
-    fn test_settings_no_scripts_dir() {
+    fn test_settings_config_no_scripts_dir() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -279,21 +235,21 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_scripts_dir(), "scripts");
+        assert_eq!(&settings.scripts_dir, "scripts");
     }
 
     #[test]
-    fn test_settings_no_scripts_workspace_node() {
+    fn test_settings_config_no_scripts_workspace_node() {
         let json_test_str = r#"
         {
             "version": "4"
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_scripts_dir(), "scripts");
+        assert_eq!(&settings.scripts_dir, "scripts");
     }
 
     #[test]
-    fn test_settings_no_docker_dir() {
+    fn test_settings_config_no_docker_dir() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -302,21 +258,21 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_docker_dir(), "docker");
+        assert_eq!(&settings.docker_dir, "docker");
     }
 
     #[test]
-    fn test_settings_no_docker_workspace_node() {
+    fn test_settings_config_no_docker_workspace_node() {
         let json_test_str = r#"
         {
             "version": "4"
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_docker_dir(), "docker");
+        assert_eq!(&settings.docker_dir, "docker");
     }
 
     #[test]
-    fn test_settings_no_cache_dir() {
+    fn test_settings_config_no_cache_dir() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -325,21 +281,21 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_cache_dir(), ".cache");
+        assert_eq!(&settings.cache_dir, ".cache");
     }
 
     #[test]
-    fn test_settings_no_cache_workspace_node() {
+    fn test_settings_config_no_cache_workspace_node() {
         let json_test_str = r#"
         {
             "version": "4"
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.workspace_cache_dir(), ".cache");
+        assert_eq!(&settings.cache_dir, ".cache");
     }
 
     #[test]
-    fn test_settings_docker_image() {
+    fn test_settings_config_docker_image() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -348,11 +304,11 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_image(), "test-workspace");
+        assert_eq!(&settings.docker_image, "test-workspace");
     }
 
     #[test]
-    fn test_settings_no_docker_image() {
+    fn test_settings_config_no_docker_image() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -361,21 +317,21 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_image(), "bakery-workspace");
+        assert_eq!(&settings.docker_image, "bakery-workspace");
     }
 
     #[test]
-    fn test_settings_no_docker_image_node() {
+    fn test_settings_config_no_docker_image_node() {
         let json_test_str = r#"
         {
             "version": "4"
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_image(), "bakery-workspace");
+        assert_eq!(&settings.docker_image, "bakery-workspace");
     }
 
     #[test]
-    fn test_settings_docker_tag() {
+    fn test_settings_config_docker_tag() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -384,11 +340,11 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_tag(), "0.1");
+        assert_eq!(&settings.docker_tag, "0.1");
     }
 
     #[test]
-    fn test_settings_no_docker_tag() {
+    fn test_settings_config_no_docker_tag() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -397,21 +353,21 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_tag(),  "0.68");
+        assert_eq!(&settings.docker_tag,  "0.68");
     }
 
     #[test]
-    fn test_settings_no_docker_tag_node() {
+    fn test_settings_config_no_docker_tag_node() {
         let json_test_str = r#"
         {
             "version": "4"
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_tag(), "0.68");
+        assert_eq!(&settings.docker_tag, "0.68");
     }
 
     #[test]
-    fn test_settings_docker_registry() {
+    fn test_settings_config_docker_registry() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -420,11 +376,11 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_registry(), "test-registry");
+        assert_eq!(&settings.docker_registry, "test-registry");
     }
 
     #[test]
-    fn test_settings_no_docker_registry() {
+    fn test_settings_config_no_docker_registry() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -433,21 +389,21 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_registry(), "strixos");
+        assert_eq!(&settings.docker_registry, "strixos");
     }
 
     #[test]
-    fn test_settings_no_docker_registry_node() {
+    fn test_settings_config_no_docker_registry_node() {
         let json_test_str = r#"
         {
             "version": "4"
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_registry(), "strixos");
+        assert_eq!(&settings.docker_registry, "strixos");
     }
 
     #[test]
-    fn test_settings_docker_args() {
+    fn test_settings_config_docker_args() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -460,11 +416,11 @@ mod tests {
               }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_args(), &vec![String::from("--rm=true"), String::from("-t"), String::from("--dns=8.8.8.8")]);
+        assert_eq!(&settings.docker_args, &vec![String::from("--rm=true"), String::from("-t"), String::from("--dns=8.8.8.8")]);
     }
 
     #[test]
-    fn test_settings_no_docker_args() {
+    fn test_settings_config_no_docker_args() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -473,21 +429,21 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.docker_args(), &vec![String::from("--rm=true"), String::from("-t")]);
+        assert_eq!(&settings.docker_args, &vec![String::from("--rm=true"), String::from("-t")]);
     }
 
     #[test]
-    fn test_settings_no_docker_args_node() {
+    fn test_settings_config_no_docker_args_node() {
         let json_test_str = r#"
         {
             "version": "4"
         }"#;
         let settings = helper_settings_from_str(json_test_str);  
-        assert_eq!(settings.docker_args(), &vec![String::from("--rm=true"), String::from("-t")]);
+        assert_eq!(&settings.docker_args, &vec![String::from("--rm=true"), String::from("-t")]);
     }
 
     #[test]
-    fn test_settings_build_configs() {
+    fn test_settings_config_build_configs() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -499,16 +455,16 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.supported_build_configs(), &vec![String::from("machine1-test"), String::from("machine2-test")]);
+        assert_eq!(&settings.supported, &vec![String::from("machine1-test"), String::from("machine2-test")]);
         let mut i: i32 = 1;
-        for supported in settings.supported_build_configs() {
+        for supported in &settings.supported {
             assert_eq!(supported, &format!("machine{}-test", i));
             i += 1;
         }
     }
 
     #[test]
-    fn test_settings_no_supported_build_configs() {
+    fn test_settings_config_no_supported_build_configs() {
         let json_test_str = r#"
         {
             "version": "4",
@@ -516,17 +472,17 @@ mod tests {
             }
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.supported_build_configs().is_empty(), true);
+        assert_eq!(settings.supported.is_empty(), true);
     }
 
     #[test]
-    fn test_settings_no_build_node() {
+    fn test_settings_config_no_build_node() {
         let json_test_str = r#"
         {
             "version": "4"
         }"#;
         let settings = helper_settings_from_str(json_test_str);
-        assert_eq!(settings.supported_build_configs().is_empty(), true);
+        assert_eq!(settings.supported.is_empty(), true);
     }
 }
 

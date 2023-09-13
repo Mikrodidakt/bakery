@@ -7,6 +7,7 @@ use crate::cli::Cli;
 
 static BCOMMAND: &str = "build";
 static BCOMMAND_ABOUT: &str = "Build one of the components";
+
 pub struct BuildCommand {
     cmd: BBaseCommand,
     // Your struct fields and methods here

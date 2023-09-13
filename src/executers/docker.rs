@@ -5,9 +5,9 @@ use crate::error::BError;
 use crate::cli::Cli;
 
 pub struct Docker<'a> {
-    workspace: &'a Workspace,
+    _workspace: &'a Workspace,
     image: &'a DockerImage,
-    interactive: bool, 
+    _interactive: bool, 
 }
 
 pub struct DockerImage {
@@ -25,9 +25,9 @@ impl fmt::Display for DockerImage {
 impl<'a> Docker<'a> {
     pub fn new(workspace: &'a Workspace, image: &'a DockerImage, interactive: bool) -> Self {
         Docker {
-            workspace: workspace,
+            _workspace: workspace,
             image: image,
-            interactive: interactive,
+            _interactive: interactive,
         }
     }
 
