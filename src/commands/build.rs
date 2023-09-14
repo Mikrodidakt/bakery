@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use crate::commands::{BCommand, BError, BBaseCommand};
 use crate::executers::{DockerImage, Docker, Executer};
-use crate::configs::WorkspaceSettings;
+use crate::configs::{WorkspaceSettings, BuildConfig};
 use crate::workspace::Settings;
 use crate::workspace::Workspace;
 use crate::cli::Cli;
@@ -43,8 +43,19 @@ impl BCommand for BuildCommand {
                 panic!();
             } 
         }
+        let result: Result<BuildConfig, BError> = BuildConfig::from_str(json_test_str);
+        let build_config: BuildConfig;
+        match result {
+            Ok(bconfig) => {
+                build_config = bconfig;
+            }
+            Err(e) => {
+                eprintln!("Error parsing build config: {}", e);
+                panic!();
+            } 
+        }
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let workspace: Workspace = Workspace::new(Some(work_dir), config);
+        let workspace: Workspace = Workspace::new(Some(work_dir), config, build_config);
         let exec: Executer = Executer::new(&workspace, cli);
         let docker_image: DockerImage = DockerImage {
             registry: String::from("registry"),

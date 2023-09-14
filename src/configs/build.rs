@@ -79,7 +79,7 @@ The current format of the build config would look something like this
 
 use indexmap::IndexMap;
 use serde_json::Value;
-use crate::configs::{TaskConfig, Config};
+use crate::configs::{TaskConfig, BitbakeConfig, Config};
 use crate::error::BError;
 
 pub struct BuildConfig {
@@ -87,12 +87,8 @@ pub struct BuildConfig {
     name: String,
     description: String,
     arch: String,
-    machine: String, // Optional but if there is a task with type bitbake defined it might fail
-    distro: String, // Optional but if there is a task with type bitbake defined it might fail
-    deploydir: String, // Optional if not set the default deploy dir will be used builds/tmp/deploydir
+    bitbake: BitbakeConfig,
     context: IndexMap<String, String>, // Optional if not set default is an empty map
-    bb_layers_conf: Vec<String>, // Optional but if there is a task with type bitbake defined it will fail without a bblayers.conf
-    bb_local_conf: Vec<String>, // Optional but if there is a task with type bitbake defined it will fail without a local.conf
     tasks: IndexMap<String, TaskConfig>, // The tasks don't have to be defined in the main build config if that is the case this will be empty
 }
 
@@ -122,18 +118,24 @@ impl BuildConfig {
         }
     }
 
+    fn get_bitbake(data: &Value) -> Result<BitbakeConfig, BError> {
+        match data.get("bb") {
+            Some(value) => {
+                BitbakeConfig::from_value(value)
+            }
+            None => {
+                BitbakeConfig::from_str("bb: {}")
+            }
+        }
+    }
+
     pub fn from_str(json_string: &str) -> Result<Self, BError> {
         let data: Value = Self::parse(json_string)?;
         let version: String = Self::get_str_value("version", &data, None)?;
         let name: String = Self::get_str_value("name", &data, None)?;
         let description: String = Self::get_str_value("description", &data, None)?;
         let arch: String = Self::get_str_value("arch", &data, None)?;
-        let bb_data: &Value = Self::get_value("bb", &data)?;
-        let machine: String = Self::get_str_value("machine", bb_data, Some(String::from("")))?;
-        let distro: String = Self::get_str_value("distro", bb_data, Some(String::from("")))?;
-        let deploydir: String = Self::get_str_value("deploydir", bb_data, Some(String::from("tmp/deploy/images")))?;
-        let bb_layers_conf: Vec<String> = Self::get_array_value("bblayersconf", bb_data, Some(vec![]))?;
-        let bb_local_conf: Vec<String> = Self::get_array_value("localconf", bb_data, Some(vec![]))?;
+        let bitbake: BitbakeConfig = Self::get_bitbake(&data)?;
         let tasks: IndexMap<String, TaskConfig> = Self::get_tasks(&data)?;
         let context: IndexMap<String, String> = Self::get_hashmap_value("context", &data)?;
         Ok(BuildConfig {
@@ -141,12 +143,8 @@ impl BuildConfig {
             name,
             description,
             arch,
-            machine,
-            distro,
-            deploydir,
+            bitbake,
             context,
-            bb_layers_conf,
-            bb_local_conf,
             tasks,
         })
     }
@@ -167,24 +165,8 @@ impl BuildConfig {
         &self.arch
     }
 
-    pub fn machine(&self) -> &String {
-        &self.machine
-    }
-
-    pub fn distro(&self) -> &String {
-        &self.distro
-    }
-
-    pub fn deploydir(&self) -> &String {
-        &self.deploydir
-    }
-
-    pub fn bblayersconf(&self) -> &Vec<String> {
-        &self.bb_layers_conf
-    }
-
-    pub fn localconf(&self) -> &Vec<String> {
-        &self.bb_local_conf
+    pub fn bitbake(&self) -> &BitbakeConfig {
+        &self.bitbake
     }
 
     pub fn tasks(&self) -> &IndexMap<String, TaskConfig> {
@@ -245,6 +227,7 @@ mod tests {
                 "machine": "test-machine",                                                                                           
                 "distro": "test-distro",
                 "deploydir": "tmp/test/deploy",
+                "docker": "strixos/bakery-workspace:0.68",
                 "bblayersconf": [
                     "BB_LAYERS_CONF_TEST_LINE_1",
                     "BB_LAYERS_CONF_TEST_LINE_2",
@@ -259,15 +242,16 @@ mod tests {
         }
         "#;
         let config = helper_build_config_from_str(json_test_str);
-        assert_eq!(config.machine(), "test-machine");
-        assert_eq!(config.distro(), "test-distro");
-        assert_eq!(config.deploydir(), "tmp/test/deploy");
-        assert_eq!(config.bblayersconf(), &vec![
+        assert_eq!(config.bitbake.machine(), "test-machine");
+        assert_eq!(config.bitbake.distro(), "test-distro");
+        assert_eq!(config.bitbake.deploy_dir(), "tmp/test/deploy");
+        assert_eq!(config.bitbake.docker(), "strixos/bakery-workspace:0.68");
+        assert_eq!(config.bitbake.bblayers_conf(), &vec![
             String::from("BB_LAYERS_CONF_TEST_LINE_1"),
             String::from("BB_LAYERS_CONF_TEST_LINE_2"),
             String::from("BB_LAYERS_CONF_TEST_LINE_3")
         ]);
-        assert_eq!(config.localconf(), &vec![
+        assert_eq!(config.bitbake.local_conf(), &vec![
             String::from("BB_LOCAL_CONF_TEST_LINE_1"),
             String::from("BB_LOCAL_CONF_TEST_LINE_2"),
             String::from("BB_LOCAL_CONF_TEST_LINE_3")
@@ -283,14 +267,13 @@ mod tests {
             "description": "Test Description",
             "arch": "test-arch",
             "bb": {}
-        }
-        "#;
+        }"#;
         let config = helper_build_config_from_str(json_test_str);
-        assert_eq!(config.machine(), "");
-        assert_eq!(config.distro(), "");
-        assert_eq!(config.deploydir(), "tmp/deploy/images");
-        assert!(config.bblayersconf().is_empty());
-        assert!(config.localconf().is_empty());
+        assert_eq!(config.bitbake.machine(), "");
+        assert_eq!(config.bitbake.distro(), "");
+        assert_eq!(config.bitbake.deploy_dir(), "tmp/deploy/images");
+        assert!(config.bitbake.bblayers_conf().is_empty());
+        assert!(config.bitbake.local_conf().is_empty());
         assert!(config.tasks().is_empty());
         assert!(config.context().is_empty());
     }

@@ -2,11 +2,25 @@
 mod tests {
     use std::path::PathBuf;
 
+    use crate::commands::build;
     use crate::executers::{Docker, DockerImage, Executer};
     use crate::workspace::Workspace;
-    use crate::configs::WorkspaceSettings;
+    use crate::configs::{WorkspaceSettings, BuildConfig};
     use crate::cli::*;
     use crate::error::BError;
+
+    fn helper_build_config_from_str(json_test_str: &str) -> BuildConfig {
+        let result: Result<BuildConfig, BError> = BuildConfig::from_str(json_test_str);
+        match result {
+            Ok(rconfig) => {
+                rconfig
+            }
+            Err(e) => {
+                eprintln!("Error parsing build config: {}", e);
+                panic!();
+            } 
+        }
+    }
 
     fn helper_settings_from_str(json_test_str: &str) -> WorkspaceSettings {
         let result: Result<WorkspaceSettings, BError> = WorkspaceSettings::from_str(json_test_str);
@@ -45,13 +59,23 @@ mod tests {
         let test_build_dir = String::from("test_build_dir");
         let test_cmd = String::from("test_cmd");
         let verification_str = format!("Execute 'cd {} && {}'", test_build_dir, test_cmd);
-        let json_test_str = r#"
+        let work_dir: PathBuf = PathBuf::from(test_work_dir);
+        let json_ws_settings: &str = r#"
         {
             "version": "4"
         }"#;
-        let config: WorkspaceSettings = helper_settings_from_str(json_test_str);
-        let work_dir: PathBuf = PathBuf::from(test_work_dir);
-        let workspace: Workspace = Workspace::new(Some(work_dir), config);
+        let json_build_config: &str = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {}
+        }
+        "#;
+        let ws_config: WorkspaceSettings = helper_settings_from_str(json_ws_settings);
+        let build_config: BuildConfig = helper_build_config_from_str(json_build_config);
+        let workspace: Workspace = Workspace::new(Some(work_dir), ws_config, build_config);
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
             &test_cmd,
@@ -72,13 +96,23 @@ mod tests {
         let test_work_dir = String::from("test_work_dir");
         let test_cmd = String::from("test_cmd");
         let verification_str = format!("Execute 'cd {} && {}'", test_work_dir, test_cmd);
-        let json_test_str = r#"
+        let work_dir: PathBuf = PathBuf::from(test_work_dir);
+        let json_ws_settings: &str = r#"
         {
             "version": "4"
         }"#;
-        let config: WorkspaceSettings = helper_settings_from_str(json_test_str);
-        let work_dir: PathBuf = PathBuf::from(test_work_dir);
-        let workspace: Workspace = Workspace::new(Some(work_dir), config);
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {}
+        }
+        "#;
+        let ws_config: WorkspaceSettings = helper_settings_from_str(json_ws_settings);
+        let build_config: BuildConfig = helper_build_config_from_str(json_build_config);
+        let workspace: Workspace = Workspace::new(Some(work_dir), ws_config, build_config);
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
             &test_cmd,
@@ -104,13 +138,23 @@ mod tests {
             tag: String::from("0.1"),
         };
         let verification_str = format!("Execute inside docker image {} 'cd {} && {}'", docker_image, test_work_dir, test_cmd);
-        let json_test_str = r#"
+        let work_dir: PathBuf = PathBuf::from(test_work_dir);
+        let json_ws_settings: &str = r#"
         {
             "version": "4"
         }"#;
-        let config: WorkspaceSettings = helper_settings_from_str(json_test_str);
-        let work_dir: PathBuf = PathBuf::from(test_work_dir);
-        let workspace: Workspace = Workspace::new(Some(work_dir), config);
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {}
+        }
+        "#;
+        let ws_config: WorkspaceSettings = helper_settings_from_str(json_ws_settings);
+        let build_config: BuildConfig = helper_build_config_from_str(json_build_config);
+        let workspace: Workspace = Workspace::new(Some(work_dir), ws_config, build_config);
         let docker: Docker = Docker::new(&workspace, &docker_image, true);
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
@@ -138,13 +182,23 @@ mod tests {
             tag: String::from("0.1"),
         };
         let verification_str = format!("Execute inside docker image {} '{}'", docker_image, test_cmd);
-        let json_test_str = r#"
+        let work_dir: PathBuf = PathBuf::from(test_work_dir.clone());
+        let json_ws_settings: &str = r#"
         {
             "version": "4"
         }"#;
-        let config: WorkspaceSettings = helper_settings_from_str(json_test_str);
-        let work_dir: PathBuf = PathBuf::from(test_work_dir.clone());
-        let workspace: Workspace = Workspace::new(Some(work_dir), config);
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {}
+        }
+        "#;
+        let ws_config: WorkspaceSettings = helper_settings_from_str(json_ws_settings);
+        let build_config: BuildConfig = helper_build_config_from_str(json_build_config);
+        let workspace: Workspace = Workspace::new(Some(work_dir), ws_config, build_config);
         let result = helper_test_docker(
             &verification_str,
             &test_cmd,

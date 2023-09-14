@@ -21,48 +21,52 @@ impl Settings {
         }
     }
 
+    pub fn work_dir(&self) -> PathBuf {
+        self.work_dir.clone()
+    }
+
     pub fn config(&self) -> &WorkspaceSettings {
         &self.workspace
     }
 
     pub fn builds_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir.clone();
+        let mut path_buf = self.work_dir();
         path_buf.push(&self.workspace.builds_dir);
         path_buf
     }
 
     pub fn cache_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir.clone();
+        let mut path_buf = self.work_dir();
         path_buf.push(&self.workspace.cache_dir);
         path_buf
     }
 
     pub fn artifacts_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir.clone();
+        let mut path_buf = self.work_dir();
         path_buf.push(&self.workspace.artifacts_dir);
         path_buf
     }
 
     pub fn configs_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir.clone();
+        let mut path_buf = self.work_dir();
         path_buf.push(&self.workspace.configs_dir);
         path_buf
     }
 
     pub fn include_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir.clone();
+        let mut path_buf = self.work_dir();
         path_buf.push(&self.workspace.include_dir);
         path_buf
     }
 
     pub fn scripts_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir.clone();
+        let mut path_buf = self.work_dir();
         path_buf.push(&self.workspace.scripts_dir);
         path_buf
     }
 
     pub fn docker_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir.clone();
+        let mut path_buf = self.work_dir();
         path_buf.push(&self.workspace.docker_dir);
         path_buf
     }

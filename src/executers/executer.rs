@@ -30,8 +30,8 @@ impl<'a> Executer<'a> {
                 exec_dir = directory;
             },
             None => {
-                cmd_line = format!("cd {} && {}", self.workspace.work_dir.to_str().unwrap(), cmd_line);
-                exec_dir = self.workspace.work_dir.to_str().unwrap().to_string();
+                cmd_line = format!("cd {} && {}", self.workspace.settings().work_dir().to_str().unwrap(), cmd_line);
+                exec_dir = self.workspace.settings().work_dir().to_str().unwrap().to_string();
             }
         }
 
