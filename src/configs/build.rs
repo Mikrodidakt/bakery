@@ -79,7 +79,7 @@ The current format of the build config would look something like this
 
 use indexmap::IndexMap;
 use serde_json::Value;
-use crate::configs::{TaskConfig, BitbakeConfig, Config};
+use crate::configs::{TaskConfig, BBConfig, Config};
 use crate::error::BError;
 
 pub struct BuildConfig {
@@ -87,7 +87,7 @@ pub struct BuildConfig {
     name: String,
     description: String,
     arch: String,
-    bitbake: BitbakeConfig,
+    bitbake: BBConfig,
     context: IndexMap<String, String>, // Optional if not set default is an empty map
     tasks: IndexMap<String, TaskConfig>, // The tasks don't have to be defined in the main build config if that is the case this will be empty
 }
@@ -118,13 +118,13 @@ impl BuildConfig {
         }
     }
 
-    fn get_bitbake(data: &Value) -> Result<BitbakeConfig, BError> {
+    fn get_bitbake(data: &Value) -> Result<BBConfig, BError> {
         match data.get("bb") {
             Some(value) => {
-                BitbakeConfig::from_value(value)
+                BBConfig::from_value(value)
             }
             None => {
-                BitbakeConfig::from_str("bb: {}")
+                BBConfig::from_str("bb: {}")
             }
         }
     }
@@ -135,7 +135,7 @@ impl BuildConfig {
         let name: String = Self::get_str_value("name", &data, None)?;
         let description: String = Self::get_str_value("description", &data, None)?;
         let arch: String = Self::get_str_value("arch", &data, None)?;
-        let bitbake: BitbakeConfig = Self::get_bitbake(&data)?;
+        let bitbake: BBConfig = Self::get_bitbake(&data)?;
         let tasks: IndexMap<String, TaskConfig> = Self::get_tasks(&data)?;
         let context: IndexMap<String, String> = Self::get_hashmap_value("context", &data)?;
         Ok(BuildConfig {
@@ -165,7 +165,7 @@ impl BuildConfig {
         &self.arch
     }
 
-    pub fn bitbake(&self) -> &BitbakeConfig {
+    pub fn bitbake(&self) -> &BBConfig {
         &self.bitbake
     }
 

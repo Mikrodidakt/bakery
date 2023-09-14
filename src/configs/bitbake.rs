@@ -2,7 +2,7 @@ use serde_json::Value;
 use crate::configs::Config;
 use crate::error::BError;
 
-pub struct BitbakeConfig {
+pub struct BBConfig {
     machine: String, // Optional but if there is a task with type bitbake defined it might fail
     distro: String, // Optional but if there is a task with type bitbake defined it might fail
     deploy_dir: String, // Optional if not set the default deploy dir will be used builds/tmp/deploydir
@@ -11,10 +11,10 @@ pub struct BitbakeConfig {
     local_conf: Vec<String>, // Optional but if there is a task with type bitbake defined it will fail without a local.conf
 }
 
-impl Config for BitbakeConfig {
+impl Config for BBConfig {
 }
 
-impl BitbakeConfig {
+impl BBConfig {
     pub fn from_str(json_string: &str) -> Result<Self, BError> {
         let data: Value = Self::parse(json_string)?;
         Self::from_value(&data)
@@ -27,7 +27,7 @@ impl BitbakeConfig {
         let deploy_dir: String = Self::get_str_value("deploydir", data, Some(String::from("tmp/deploy/images")))?;
         let bblayers_conf: Vec<String> = Self::get_array_value("bblayersconf", data, Some(vec![]))?;
         let local_conf: Vec<String> = Self::get_array_value("localconf", data, Some(vec![]))?;
-        Ok(BitbakeConfig {
+        Ok(BBConfig {
             machine,
             distro,
             docker,
@@ -64,11 +64,11 @@ impl BitbakeConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::configs::BitbakeConfig;
+    use crate::configs::BBConfig;
     use crate::error::BError;
 
-    fn helper_bitbake_config_from_str(json_test_str: &str) -> BitbakeConfig {
-        let result: Result<BitbakeConfig, BError> = BitbakeConfig::from_str(json_test_str);
+    fn helper_bitbake_config_from_str(json_test_str: &str) -> BBConfig {
+        let result: Result<BBConfig, BError> = BBConfig::from_str(json_test_str);
         match result {
             Ok(rconfig) => {
                 rconfig

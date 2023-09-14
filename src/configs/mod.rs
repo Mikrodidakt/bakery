@@ -14,4 +14,4 @@ pub use json::JsonFileReader;
 pub use artifact::ArtifactConfig;
 pub use settings::WsSettings;
 pub use context::Context;
-pub use bitbake::BitbakeConfig;
+pub use bitbake::BBConfig;
