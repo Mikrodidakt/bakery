@@ -4,13 +4,13 @@ mod tests {
 
     use crate::executers::{Docker, DockerImage, Executer};
     use crate::workspace::Workspace;
-    use crate::configs::SettingsConfig;
+    use crate::configs::WorkspaceSettings;
     use crate::cli::*;
     use crate::error::BError;
 
-    fn helper_settings_from_str(json_test_str: &str) -> SettingsConfig {
-        let result: Result<SettingsConfig, BError> = SettingsConfig::from_str(json_test_str);
-        let settings: SettingsConfig;
+    fn helper_settings_from_str(json_test_str: &str) -> WorkspaceSettings {
+        let result: Result<WorkspaceSettings, BError> = WorkspaceSettings::from_str(json_test_str);
+        let settings: WorkspaceSettings;
         match result {
             Ok(rsettings) => {
                 settings = rsettings;
@@ -49,7 +49,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let config: SettingsConfig = helper_settings_from_str(json_test_str);
+        let config: WorkspaceSettings = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
         let workspace: Workspace = Workspace::new(Some(work_dir), config);
         let result: Result<(), BError> = helper_test_executer(
@@ -76,7 +76,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let config: SettingsConfig = helper_settings_from_str(json_test_str);
+        let config: WorkspaceSettings = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
         let workspace: Workspace = Workspace::new(Some(work_dir), config);
         let result: Result<(), BError> = helper_test_executer(
@@ -108,7 +108,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let config: SettingsConfig = helper_settings_from_str(json_test_str);
+        let config: WorkspaceSettings = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
         let workspace: Workspace = Workspace::new(Some(work_dir), config);
         let docker: Docker = Docker::new(&workspace, &docker_image, true);
@@ -142,7 +142,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let config: SettingsConfig = helper_settings_from_str(json_test_str);
+        let config: WorkspaceSettings = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from(test_work_dir.clone());
         let workspace: Workspace = Workspace::new(Some(work_dir), config);
         let result = helper_test_docker(

@@ -3,7 +3,7 @@ use std::env;
 use std::io::Error;
 
 use crate::workspace::Settings;
-use crate::configs::SettingsConfig;
+use crate::configs::WorkspaceSettings;
 pub struct Workspace {
     pub work_dir: PathBuf,
     settings: Settings,
@@ -30,9 +30,9 @@ impl<'a> Workspace {
         }
     }
 
-    pub fn new(workdir: Option<PathBuf>, config: SettingsConfig) -> Self {
+    pub fn new(workdir: Option<PathBuf>, ws_config: WorkspaceSettings) -> Self {
         let work_dir: PathBuf = Self::setup_work_directory(&workdir);
-        let settings: Settings = Settings::new(work_dir.clone(), config);
+        let settings: Settings = Settings::new(work_dir.clone(), ws_config);
         Workspace {
             work_dir,
             settings,
@@ -48,14 +48,14 @@ impl<'a> Workspace {
 mod tests {
     use std::path::PathBuf;
     use crate::workspace::Settings;
-    use crate::configs::{SettingsConfig, BuildConfig};
+    use crate::configs::{WorkspaceSettings, BuildConfig};
     use crate::error::BError;
 
     use super::Workspace;
 
-    fn helper_setup_ws_config(json_test_str: &str) -> SettingsConfig {
-        let result: Result<SettingsConfig, BError> = SettingsConfig::from_str(json_test_str);
-        let settings: SettingsConfig;
+    fn helper_setup_ws_config(json_test_str: &str) -> WorkspaceSettings {
+        let result: Result<WorkspaceSettings, BError> = WorkspaceSettings::from_str(json_test_str);
+        let settings: WorkspaceSettings;
         match result {
             Ok(rsettings) => {
                 settings = rsettings;
@@ -99,7 +99,7 @@ mod tests {
             "bb": {}
         }"#;
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
-        let ws_config: SettingsConfig = helper_setup_ws_config(json_settings);
+        let ws_config: WorkspaceSettings = helper_setup_ws_config(json_settings);
         //let build_config: BuildConfig = helper_setup_build_config(json_build_config);
         let ws: Workspace = Workspace::new(Some(work_dir), ws_config);
         let settings: &Settings = ws.get_settings();

@@ -1,69 +1,69 @@
-use crate::{configs::SettingsConfig, executers::DockerImage};
+use crate::{configs::WorkspaceSettings, executers::DockerImage};
 use std::path::PathBuf;
 
 pub struct Settings {
     work_dir: PathBuf,
-    config: SettingsConfig,
+    workspace: WorkspaceSettings,
     docker: DockerImage,
 }
 
 impl Settings {
-    pub fn new(work_dir: PathBuf, config: SettingsConfig) -> Self {
+    pub fn new(work_dir: PathBuf, settings: WorkspaceSettings) -> Self {
         let docker = DockerImage {
-            image: config.docker_image.clone(),
-            tag: config.docker_tag.clone(),
-            registry: config.docker_registry.clone(),
+            image: settings.docker_image.clone(),
+            tag: settings.docker_tag.clone(),
+            registry: settings.docker_registry.clone(),
         };
         Settings {
             work_dir,
-            config,
+            workspace: settings,
             docker,
         }
     }
 
-    pub fn config(&self) -> &SettingsConfig {
-        &self.config
+    pub fn config(&self) -> &WorkspaceSettings {
+        &self.workspace
     }
 
     pub fn builds_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir.clone();
-        path_buf.push(&self.config.builds_dir);
+        path_buf.push(&self.workspace.builds_dir);
         path_buf
     }
 
     pub fn cache_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir.clone();
-        path_buf.push(&self.config.cache_dir);
+        path_buf.push(&self.workspace.cache_dir);
         path_buf
     }
 
     pub fn artifacts_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir.clone();
-        path_buf.push(&self.config.artifacts_dir);
+        path_buf.push(&self.workspace.artifacts_dir);
         path_buf
     }
 
     pub fn configs_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir.clone();
-        path_buf.push(&self.config.configs_dir);
+        path_buf.push(&self.workspace.configs_dir);
         path_buf
     }
 
     pub fn include_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir.clone();
-        path_buf.push(&self.config.include_dir);
+        path_buf.push(&self.workspace.include_dir);
         path_buf
     }
 
     pub fn scripts_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir.clone();
-        path_buf.push(&self.config.scripts_dir);
+        path_buf.push(&self.workspace.scripts_dir);
         path_buf
     }
 
     pub fn docker_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir.clone();
-        path_buf.push(&self.config.docker_dir);
+        path_buf.push(&self.workspace.docker_dir);
         path_buf
     }
 
@@ -72,11 +72,11 @@ impl Settings {
     }
 
     pub fn docker_args(&self) -> &Vec<String> {
-        &self.config.docker_args
+        &self.workspace.docker_args
     }
 
     pub fn supported_builds(&self) -> &Vec<String> {
-        &self.config.supported
+        &self.workspace.supported
     }
 }
 
@@ -86,12 +86,12 @@ mod tests {
 
     use crate::executers::DockerImage;
     use crate::workspace::Settings;
-    use crate::configs::SettingsConfig;
+    use crate::configs::WorkspaceSettings;
     use crate::error::BError;
 
-    fn helper_settings_from_str(json_test_str: &str) -> SettingsConfig {
-        let result: Result<SettingsConfig, BError> = SettingsConfig::from_str(json_test_str);
-        let settings: SettingsConfig;
+    fn helper_settings_from_str(json_test_str: &str) -> WorkspaceSettings {
+        let result: Result<WorkspaceSettings, BError> = WorkspaceSettings::from_str(json_test_str);
+        let settings: WorkspaceSettings;
         match result {
             Ok(rsettings) => {
                 settings = rsettings;

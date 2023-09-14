@@ -50,7 +50,7 @@ pub const BAKERY_DOCKER_IMAGE: &str = "bakery-workspace";
 pub const BAKERY_DOCKER_TAG: &str = "0.68";                                                                                      
 pub const BAKERY_DOCKER_REGISTRY: &str = "strixos";
 
-pub struct SettingsConfig {
+pub struct WorkspaceSettings {
     pub version: String,
     pub configs_dir: String,
     pub builds_dir: String,
@@ -66,10 +66,10 @@ pub struct SettingsConfig {
     pub docker_args: Vec<String>,
 }
 
-impl Config for SettingsConfig {
+impl Config for WorkspaceSettings {
 }
 
-impl SettingsConfig {
+impl WorkspaceSettings {
     pub fn from_str(json_string: &str) -> Result<Self, BError> {
         let data: Value = Self::parse(json_string)?;
         let version: String = Self::get_str_value("version", &data, None)?;
@@ -115,7 +115,7 @@ impl SettingsConfig {
             },
             Err(_err) => {}
         }
-        Ok(SettingsConfig {
+        Ok(WorkspaceSettings {
             version,
             configs_dir,
             include_dir,
@@ -135,12 +135,12 @@ impl SettingsConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::configs::SettingsConfig;
+    use crate::configs::WorkspaceSettings;
     use crate::error::BError;
 
-    fn helper_settings_from_str(json_test_str: &str) -> SettingsConfig {
-        let result: Result<SettingsConfig, BError> = SettingsConfig::from_str(json_test_str);
-        let settings: SettingsConfig;
+    fn helper_settings_from_str(json_test_str: &str) -> WorkspaceSettings {
+        let result: Result<WorkspaceSettings, BError> = WorkspaceSettings::from_str(json_test_str);
+        let settings: WorkspaceSettings;
         match result {
             Ok(rsettings) => {
                 settings = rsettings;

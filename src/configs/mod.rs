@@ -11,5 +11,5 @@ pub use task::TaskConfig;
 pub use build::BuildConfig;
 pub use json::JsonFileReader;
 pub use artifact::ArtifactConfig;
-pub use settings::SettingsConfig;
+pub use settings::WorkspaceSettings;
 pub use context::Context;

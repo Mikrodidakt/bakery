@@ -1,7 +1,6 @@
 use indexmap::IndexMap;
 use serde_json::Value;
 use crate::error::BError;
-
 pub trait Config {
     fn get_str_value(name: &str, data: &Value, default: Option<String>) -> Result<String, BError> {
         match data.get(name) {
