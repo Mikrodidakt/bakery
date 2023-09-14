@@ -1,20 +1,20 @@
-use crate::{configs::WorkspaceSettings, executers::DockerImage};
+use crate::{configs::WsSettings, executers::DockerImage};
 use std::path::PathBuf;
 
-pub struct Settings {
+pub struct WsSettingsHandler {
     work_dir: PathBuf,
-    workspace: WorkspaceSettings,
+    workspace: WsSettings,
     docker: DockerImage,
 }
 
-impl Settings {
-    pub fn new(work_dir: PathBuf, settings: WorkspaceSettings) -> Self {
+impl WsSettingsHandler {
+    pub fn new(work_dir: PathBuf, settings: WsSettings) -> Self {
         let docker = DockerImage {
             image: settings.docker_image.clone(),
             tag: settings.docker_tag.clone(),
             registry: settings.docker_registry.clone(),
         };
-        Settings {
+        WsSettingsHandler {
             work_dir,
             workspace: settings,
             docker,
@@ -25,7 +25,7 @@ impl Settings {
         self.work_dir.clone()
     }
 
-    pub fn config(&self) -> &WorkspaceSettings {
+    pub fn config(&self) -> &WsSettings {
         &self.workspace
     }
 
@@ -89,13 +89,13 @@ mod tests {
     use std::path::PathBuf;
 
     use crate::executers::DockerImage;
-    use crate::workspace::Settings;
-    use crate::configs::WorkspaceSettings;
+    use crate::workspace::WsSettingsHandler;
+    use crate::configs::WsSettings;
     use crate::error::BError;
 
-    fn helper_settings_from_str(json_test_str: &str) -> WorkspaceSettings {
-        let result: Result<WorkspaceSettings, BError> = WorkspaceSettings::from_str(json_test_str);
-        let settings: WorkspaceSettings;
+    fn helper_settings_from_str(json_test_str: &str) -> WsSettings {
+        let result: Result<WsSettings, BError> = WsSettings::from_str(json_test_str);
+        let settings: WsSettings;
         match result {
             Ok(rsettings) => {
                 settings = rsettings;
@@ -115,7 +115,7 @@ mod tests {
             "version": "4"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(
+        let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
             helper_settings_from_str(json_test_str),
         );
@@ -145,7 +145,7 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(
+        let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
             helper_settings_from_str(json_test_str),
         );
@@ -165,7 +165,7 @@ mod tests {
             "version": "4"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(
+        let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
             helper_settings_from_str(json_test_str),
         );
@@ -185,7 +185,7 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(
+        let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
             helper_settings_from_str(json_test_str),
         );
@@ -205,7 +205,7 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(
+        let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
             helper_settings_from_str(json_test_str),
         );
@@ -229,7 +229,7 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(
+        let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
             helper_settings_from_str(json_test_str),
         );
@@ -243,7 +243,7 @@ mod tests {
             "version": "4"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(
+        let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
             helper_settings_from_str(json_test_str),
         );
@@ -263,7 +263,7 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(
+        let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
             helper_settings_from_str(json_test_str),
         );

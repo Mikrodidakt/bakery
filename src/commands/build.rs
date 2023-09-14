@@ -3,8 +3,8 @@ use std::path::PathBuf;
 
 use crate::commands::{BCommand, BError, BBaseCommand};
 use crate::executers::{DockerImage, Docker, Executer};
-use crate::configs::{WorkspaceSettings, BuildConfig};
-use crate::workspace::Settings;
+use crate::configs::{WsSettings, BuildConfig};
+use crate::workspace::WsSettingsHandler;
 use crate::workspace::Workspace;
 use crate::cli::Cli;
 
@@ -32,8 +32,8 @@ impl BCommand for BuildCommand {
         {
             "version": "4"
         }"#;
-        let result: Result<WorkspaceSettings, BError> = WorkspaceSettings::from_str(json_test_str);
-        let config: WorkspaceSettings;
+        let result: Result<WsSettings, BError> = WsSettings::from_str(json_test_str);
+        let config: WsSettings;
         match result {
             Ok(rsettings) => {
                 config = rsettings;

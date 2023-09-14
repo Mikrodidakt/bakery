@@ -3,10 +3,10 @@ use std::env;
 use std::io::Error;
 use indexmap::{IndexMap, indexmap};
 
-use crate::workspace::Settings;
-use crate::configs::{WorkspaceSettings, BuildConfig, Context};
+use crate::workspace::WsSettingsHandler;
+use crate::configs::{WsSettings, BuildConfig, Context};
 pub struct Workspace {
-    settings: Settings,
+    settings: WsSettingsHandler,
     build_config: BuildConfig,
     ctx: Context,
 }
@@ -32,9 +32,9 @@ impl Workspace {
         }
     }
 
-    pub fn new(workdir: Option<PathBuf>, ws_config: WorkspaceSettings, build_config: BuildConfig) -> Self {
+    pub fn new(workdir: Option<PathBuf>, ws_config: WsSettings, build_config: BuildConfig) -> Self {
         let work_dir: PathBuf = Self::setup_work_directory(&workdir);
-        let settings: Settings = Settings::new(work_dir.clone(), ws_config);
+        let settings: WsSettingsHandler = WsSettingsHandler::new(work_dir.clone(), ws_config);
 
         let ctx_variables: IndexMap<String, String> = indexmap! {
             "MACHINE".to_string() => build_config.bitbake().machine().to_string(),
@@ -65,7 +65,7 @@ impl Workspace {
         }
     }
 
-    pub fn settings(&self) -> &Settings {
+    pub fn settings(&self) -> &WsSettingsHandler {
         &self.settings
     }
 
@@ -77,15 +77,15 @@ impl Workspace {
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
-    use crate::configs::{WorkspaceSettings, BuildConfig};
+    use crate::configs::{WsSettings, BuildConfig};
     use crate::executers::DockerImage;
     use crate::error::BError;
 
     use super::Workspace;
 
-    fn helper_setup_ws_config(json_test_str: &str) -> WorkspaceSettings {
-        let result: Result<WorkspaceSettings, BError> = WorkspaceSettings::from_str(json_test_str);
-        let settings: WorkspaceSettings;
+    fn helper_setup_ws_config(json_test_str: &str) -> WsSettings {
+        let result: Result<WsSettings, BError> = WsSettings::from_str(json_test_str);
+        let settings: WsSettings;
         match result {
             Ok(rsettings) => {
                 settings = rsettings;
@@ -113,7 +113,7 @@ mod tests {
 
     fn helper_setup_workspace(test_work_dir: &str, json_settings: &str, json_build_config: &str) -> Workspace {
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
-        let ws_config: WorkspaceSettings = helper_setup_ws_config(json_settings);
+        let ws_config: WsSettings = helper_setup_ws_config(json_settings);
         let build_config: BuildConfig = helper_setup_build_config(json_build_config);
         Workspace::new(Some(work_dir), ws_config, build_config)
     }
