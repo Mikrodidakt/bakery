@@ -1,22 +1,23 @@
 use crate::{configs::SettingsConfig, executers::DockerImage};
 use std::path::PathBuf;
 
-pub struct Settings<'a> {
+pub struct Settings {
     work_dir: PathBuf,
-    config: &'a SettingsConfig,
+    config: SettingsConfig,
     docker: DockerImage,
 }
 
-impl<'a> Settings<'a> {
-    pub fn new(work_dir: PathBuf, config: &'a SettingsConfig) -> Self {
+impl Settings {
+    pub fn new(work_dir: PathBuf, config: SettingsConfig) -> Self {
+        let docker = DockerImage {
+            image: config.docker_image.clone(),
+            tag: config.docker_tag.clone(),
+            registry: config.docker_registry.clone(),
+        };
         Settings {
             work_dir,
             config,
-            docker: DockerImage {
-                image: config.docker_image.clone(),
-                tag: config.docker_tag.clone(),
-                registry: config.docker_registry.clone(),
-            }
+            docker,
         }
     }
 
@@ -109,9 +110,11 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let config: SettingsConfig = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(work_dir, &config);
+        let settings: Settings = Settings::new(
+            work_dir,
+            helper_settings_from_str(json_test_str),
+        );
         assert_eq!(settings.builds_dir().to_str(), Some("/workspace/builds"));
         assert_eq!(settings.cache_dir().to_str(), Some("/workspace/.cache"));
         assert_eq!(settings.artifacts_dir().to_str(), Some("/workspace/artifacts"));
@@ -137,9 +140,11 @@ mod tests {
               "cachedir": "cache_test"
             }
         }"#;
-        let config: SettingsConfig = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(work_dir, &config);
+        let settings: Settings = Settings::new(
+            work_dir,
+            helper_settings_from_str(json_test_str),
+        );
         assert_eq!(settings.builds_dir().to_str(), Some("/workspace/builds_test"));
         assert_eq!(settings.cache_dir().to_str(), Some("/workspace/cache_test"));
         assert_eq!(settings.artifacts_dir().to_str(), Some("/workspace/artifacts_test"));
@@ -155,9 +160,11 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let config: SettingsConfig = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(work_dir, &config);
+        let settings: Settings = Settings::new(
+            work_dir,
+            helper_settings_from_str(json_test_str),
+        );
         let docker_image: &DockerImage = settings.docker_image();
         assert_eq!(format!("{}", docker_image), "strixos/bakery-workspace:0.68");
     }
@@ -173,9 +180,11 @@ mod tests {
                 "registry": "test-registry"
             }
         }"#;
-        let config: SettingsConfig = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(work_dir, &config);
+        let settings: Settings = Settings::new(
+            work_dir,
+            helper_settings_from_str(json_test_str),
+        );
         let docker_image: &DockerImage = settings.docker_image();
         assert_eq!(format!("{}", docker_image), "test-registry/test-image:0.1");
     }
@@ -191,9 +200,11 @@ mod tests {
                 "registry": "test-registry"
             }
         }"#;
-        let config: SettingsConfig = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(work_dir, &config);
+        let settings: Settings = Settings::new(
+            work_dir,
+            helper_settings_from_str(json_test_str),
+        );
         assert_eq!(settings.docker_args(), &vec!["--rm=true".to_string(), "-t".to_string()]);
     }
 
@@ -213,9 +224,11 @@ mod tests {
                 ]
             }
         }"#;
-        let config: SettingsConfig = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(work_dir, &config);
+        let settings: Settings = Settings::new(
+            work_dir,
+            helper_settings_from_str(json_test_str),
+        );
         assert_eq!(settings.docker_args(), &vec!["arg1".to_string(), "arg2".to_string(), "arg3".to_string()]);
     }
 
@@ -225,9 +238,11 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let config: SettingsConfig = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(work_dir, &config);
+        let settings: Settings = Settings::new(
+            work_dir,
+            helper_settings_from_str(json_test_str),
+        );
         assert!(settings.supported_builds().is_empty());
     }
 
@@ -243,9 +258,11 @@ mod tests {
                 ]
             }
         }"#;
-        let config: SettingsConfig = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(work_dir, &config);
+        let settings: Settings = Settings::new(
+            work_dir,
+            helper_settings_from_str(json_test_str),
+        );
         assert_eq!(settings.supported_builds(), &vec!["build1".to_string(), "build2".to_string()]);
     }
 }

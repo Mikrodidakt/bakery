@@ -3,7 +3,7 @@ mod tests {
     use std::path::PathBuf;
 
     use crate::executers::{Docker, DockerImage, Executer};
-    use crate::workspace::{Workspace, Settings};
+    use crate::workspace::Workspace;
     use crate::configs::SettingsConfig;
     use crate::cli::*;
     use crate::error::BError;
@@ -51,8 +51,7 @@ mod tests {
         }"#;
         let config: SettingsConfig = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
-        let settings: Settings = Settings::new(work_dir.clone(), &config);
-        let workspace: Workspace = Workspace::new(Some(work_dir), &settings);
+        let workspace: Workspace = Workspace::new(Some(work_dir), config);
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
             &test_cmd,
@@ -79,8 +78,7 @@ mod tests {
         }"#;
         let config: SettingsConfig = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
-        let settings: Settings = Settings::new(work_dir.clone(), &config);
-        let workspace: Workspace = Workspace::new(Some(work_dir), &settings);
+        let workspace: Workspace = Workspace::new(Some(work_dir), config);
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
             &test_cmd,
@@ -112,8 +110,7 @@ mod tests {
         }"#;
         let config: SettingsConfig = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
-        let settings: Settings = Settings::new(work_dir.clone(), &config);
-        let workspace: Workspace = Workspace::new(Some(work_dir), &settings);
+        let workspace: Workspace = Workspace::new(Some(work_dir), config);
         let docker: Docker = Docker::new(&workspace, &docker_image, true);
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
@@ -147,8 +144,7 @@ mod tests {
         }"#;
         let config: SettingsConfig = helper_settings_from_str(json_test_str);
         let work_dir: PathBuf = PathBuf::from(test_work_dir.clone());
-        let settings: Settings = Settings::new(work_dir.clone(), &config);
-        let workspace: Workspace = Workspace::new(Some(work_dir), &settings);
+        let workspace: Workspace = Workspace::new(Some(work_dir), config);
         let result = helper_test_docker(
             &verification_str,
             &test_cmd,

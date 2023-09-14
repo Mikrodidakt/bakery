@@ -5,7 +5,7 @@ use crate::error::BError;
 use crate::cli::Cli;
 
 pub struct Docker<'a> {
-    _workspace: &'a Workspace<'a>,
+    _workspace: &'a Workspace,
     image: &'a DockerImage,
     _interactive: bool,
 }

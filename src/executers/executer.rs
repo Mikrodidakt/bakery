@@ -6,7 +6,7 @@ use crate::workspace::Workspace;
 use crate::cli::Cli;
 
 pub struct Executer<'a> {
-    workspace: &'a Workspace<'a>,
+    workspace: &'a Workspace,
     cli: &'a Cli,
 }
 

@@ -44,8 +44,7 @@ impl BCommand for BuildCommand {
             } 
         }
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: Settings = Settings::new(work_dir.clone(), &config);
-        let workspace: Workspace = Workspace::new(Some(work_dir), &settings);
+        let workspace: Workspace = Workspace::new(Some(work_dir), config);
         let exec: Executer = Executer::new(&workspace, cli);
         let docker_image: DockerImage = DockerImage {
             registry: String::from("registry"),
