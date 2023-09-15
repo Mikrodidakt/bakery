@@ -3,7 +3,7 @@ use std::env;
 use std::io::Error;
 
 use crate::workspace::{WsSettingsHandler, WsConfigHandler};
-use crate::configs::{WsSettings, BuildConfig, Context};
+use crate::configs::{WsSettings, BuildConfig};
 pub struct Workspace {
     settings: WsSettingsHandler,
     config: WsConfigHandler,
@@ -11,7 +11,7 @@ pub struct Workspace {
 
 impl Workspace {
     fn setup_work_directory(workdir: &Option<PathBuf>) -> PathBuf {
-        let mut work_dir: PathBuf = PathBuf::new();
+        let work_dir: PathBuf = PathBuf::new();
         match workdir {
             Some(w_dir) => {
                 work_dir.join(w_dir)
@@ -48,6 +48,27 @@ impl Workspace {
     pub fn config(&self) -> &WsConfigHandler {
         &self.config
     }
+
+    /*
+    pub fn collect(&self, build: &str) -> bool {}
+
+    pub fn extend_build_env(&self, variables: Vec<String>) {}
+
+    pub fn set_recipes(&self, recipes: Vec<String>) {}
+
+    pub fn bb_build_env(&self, build: Option<String>) {}
+    
+    // Returns a dictionary including all build configurations names
+    // and there description.
+    pub fn build_configs(&self) -> IndexMap<String, String> {}
+
+    // Returns a ordered list of the builds
+    pub fn builds(&self) -> IndexSet<String> {}
+
+    // Returns true if the config is part of the list
+    // of build configs supported by the workspace
+    pub fn valid_config(&self, config: &str) -> bool {}
+    */
 }
 
 #[cfg(test)]

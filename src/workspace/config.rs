@@ -1,5 +1,5 @@
 use indexmap::{IndexMap, indexmap};
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 
 
 use crate::configs::{Context, BuildConfig};
@@ -9,6 +9,8 @@ pub struct WsConfigHandler {
     ctx: Context,
     config: BuildConfig,
     work_dir: PathBuf,
+    build_dir: PathBuf,
+    cache_dir: PathBuf,
 }
 
 impl WsConfigHandler {
@@ -39,6 +41,148 @@ impl WsConfigHandler {
             config,
             ctx,
             work_dir: settings.work_dir().clone(),
+            build_dir: settings.builds_dir().clone(),
+            cache_dir: settings.cache_dir().clone(),
         }
+    }
+
+    /*
+    pub fn build_dir(&self, build: &str) -> PathBuf {}
+
+    pub fn extend_ctx(&self, ctx: &Context) {}
+
+    pub recipes(&self, build: &str) -> Vec<String> {}
+
+    // Returns true if the condition is 1, true, True, TRUE, yes, YES, Yes, Y
+    // the condition is expanded using the context so a context variable could be used
+    // as a condition.
+    pub fn build_condition(&self, build: &str) -> bool {}
+
+    pub fn build_enabled(&self, build: &str) -> bool {}
+
+    // Returns the command defined for a specific build
+    // it can either be a clean or build command
+    pub fn task_cmd(&self, build: &str, task: &str) -> &str {}
+
+    pub fn build_name(&self, build: &str) -> &str {}
+
+    pub fn build_type(self, build: &str) -> &str {}
+
+    pub fn artifacts(&self, build: &str) -> IndexMap<String, String> {}
+
+    pub fn docker_image(&self, build: &str) -> DockerImage {}
+    */
+
+    pub fn product_name(&self) -> &str {
+        // Currently the product name is the
+        // same as config name but this might not
+        // be the case in the future so therefore
+        // I have added a specific getter
+        self.config_name()
+    }
+
+    pub fn config_name(&self) -> &str {
+        &self.config.name()
+    }
+
+    //pub fn config_enabled(&self) -> bool {
+    //    self.config.enabled()
+    //}
+
+    pub fn version(&self) -> &str {
+        &self.config.version()
+    }
+
+    pub fn arch(&self) -> &str {
+        &self.config.arch()
+    }
+
+    pub fn bb_layers_conf(&self) -> &Vec<String> {
+        &self.config.bitbake().bblayers_conf()
+    }
+
+    pub fn bb_local_conf(&self) -> Vec<String> {
+        let mut local_conf: Vec<String> = self.config.bitbake().local_conf().clone();
+        local_conf.push(format!("MACHINE ?= {}", self.bb_machine()));
+        // TODO: we need to handle VARIANT correctly but this is good enough for now
+        local_conf.push(format!("VARIANT ?= {}", "dev".to_string()));
+        // TODO: we should define a method product_name() call that instead
+        local_conf.push(format!("PRODUCT_NAME ?= {}", self.config.name()));
+        local_conf.push(format!("DISTRO ?= {}", self.bb_distro()));
+        local_conf.push(format!("SSTATE_DIR ?= {}", self.bb_sstate_dir().to_str().unwrap()));
+        local_conf.push(format!("DL_DIR ?= {}", self.bb_dl_dir().to_str().unwrap()));
+        //local_conf.push(format!("PLATFORM_VERSION ?= {}", self.platform_version()));
+        //local_conf.push(format!("BUILD_NUMBER ?= {}", self.build_number()));
+        //local_conf.push(format!("BUILD_SHA ?= {}", self.build_sha()));
+        //local_conf.push(format!("RELASE_BUILD ?= {}", self.release_build()));
+        //local_conf.push(format!("BUILD_VARIANT ?= {}", self.build_variant()));
+        local_conf
+    }
+
+    pub fn bb_machine(&self) -> &str {
+        &self.config.bitbake().machine()
+    }
+
+    //pub fn variant(&self) -> &str {
+    //    self.config.variant()
+    //}
+
+    pub fn bb_distro(&self) -> &str {
+        &self.config.bitbake().distro()
+    }
+
+    pub fn bb_build_dir(&self) -> PathBuf {
+        let mut path_buf = self.build_dir.clone();
+        path_buf.join(self.config.name())
+    }
+
+    pub fn bb_docker_image(&self) -> String {
+        let docker: String = self.config.bitbake().docker().clone();
+        if !docker.is_empty() {
+            return self.ctx.expand_str(docker.as_str())
+        }
+        docker
+    }
+
+    pub fn bb_build_config_dir(&self) -> PathBuf {
+        self.bb_build_dir().join("conf".to_string())
+    }
+
+    pub fn bb_local_config(&self) -> PathBuf {
+        self.bb_build_config_dir().join("local.conf".to_string())
+    }
+
+    pub fn bb_layers_config(&self) -> PathBuf {
+        self.bb_build_config_dir().join("bblayers.conf")
+    }
+
+    pub fn bb_deploy_dir(&self) -> PathBuf {
+        self.bb_build_dir().join(self.config.bitbake().deploy_dir())
     }    
+
+    pub fn bb_sstate_dir(&self) -> PathBuf {
+        let mut path_buf = self.cache_dir.clone();
+        path_buf.join(self.config.arch()).join("sstate-cache".to_string())
+    }
+
+    pub fn bb_dl_dir(&self) -> PathBuf {
+        let mut path_buf = self.cache_dir.clone();
+        path_buf.join("download".to_string())
+    }        
+
+    pub fn poky_dir(&self) -> PathBuf {
+        // TODO: not sure about this we should not lock the bakery into using poky
+        // we only need this to be able to determine the where to find the OE init file.
+        // I think the solution is to add a entry in the build config file in the bb-node
+        // where you can specify a path for the init file to source. The default could be
+        // layers/poky/oe-init-build-env. Potentially we should also add an entry in the
+        // Workspace settings file where you can specify the layers directory
+        self.work_dir.join("layers".to_string()).join("poky".to_string())
+    }
+
+    pub fn oe_init_file(&self) -> PathBuf {
+        // TODO: we should probably setup an option to configure what OE init script
+        // to source to setup the env.
+        self.poky_dir().join("oe-init-build-env")
+    }   
 }

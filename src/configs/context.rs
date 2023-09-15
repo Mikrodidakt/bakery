@@ -15,9 +15,10 @@ impl Context {
         // Using this results in an error message. The reason is regex pattern
         // that we are trying to use contains look-around assertions, specifically
         // a negative look-behind assertion (?<!\\). In Rust's regex crate, certain
-        // look-around assertions are not supported. We added to try and skip \${VARIABLE}
-        // let us see if we can manage without or we will have figure something out
-        //let regexp = Regex::new(r"(?<!\\)\$\{(\w+|\{([^}]+)\})\}").unwrap();
+        // look-around assertions are not supported. We added this negative look-behind
+        // assertion to try and skip \${VARIABLE} let us see if we can manage without
+        // or we will have figure something out.
+        // let regexp = Regex::new(r"(?<!\\)\$\{(\w+|\{([^}]+)\})\}").unwrap();
         let regexp = Regex::new(r"\$\{(\w+|\{([^}]+)\})\}").unwrap();
         Context {
             regexp,
