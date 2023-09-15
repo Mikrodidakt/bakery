@@ -286,20 +286,6 @@ mod tests {
                 "TASK1_BUILD_DIR=task1/build/dir"
             ],
             "bb": {
-                "machine": "test-machine",                                                                                           
-                "distro": "test-distro",
-                "deploydir": "tmp/test/deploy",
-                "docker": "strixos/bakery-workspace:0.68",
-                "bblayersconf": [
-                    "BB_LAYERS_CONF_TEST_LINE_1",
-                    "BB_LAYERS_CONF_TEST_LINE_2",
-                    "BB_LAYERS_CONF_TEST_LINE_3"
-                ],
-                "localconf": [
-                    "BB_LOCAL_CONF_TEST_LINE_1",
-                    "BB_LOCAL_CONF_TEST_LINE_2",
-                    "BB_LOCAL_CONF_TEST_LINE_3"
-                ]
             },
             "tasks": { 
                 "task1": {
@@ -323,31 +309,37 @@ mod tests {
             }
         }"#;
         let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
-        let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task1");
-        match result {
-            Ok(task) => {
-                assert_eq!(task.build_dir(), PathBuf::from("/workspace/test/task1/build/dir"))
-            },
-            Err(e) => {
-                panic!("{}", e.message);
+        {
+            let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task1");
+            match result {
+                Ok(task) => {
+                    assert_eq!(task.build_dir(), PathBuf::from("/workspace/test/task1/build/dir"))
+                },
+                Err(e) => {
+                    panic!("{}", e.message);
+                }
             }
         }
-        let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task2");
-        match result {
-            Ok(task) => {
-                assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds/test-name"))
-            },
-            Err(e) => {
-                panic!("{}", e.message);
+        {
+            let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task2");
+            match result {
+                Ok(task) => {
+                    assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds/test-name"))
+                },
+                Err(e) => {
+                    panic!("{}", e.message);
+                }
             }
         }
-        let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task3");
-        match result {
-            Ok(_task) => {
-                panic!("We should have recived an error because we have no recipes defined!");
-            },
-            Err(e) => {
-                assert_eq!(e.message, "Task 'task3' does not exists in build config".to_string());
+        {
+            let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task3");
+            match result {
+                Ok(_task) => {
+                    panic!("We should have recived an error because we have no recipes defined!");
+                },
+                Err(e) => {
+                    assert_eq!(e.message, "Task 'task3' does not exists in build config".to_string());
+                }
             }
         }
     }
