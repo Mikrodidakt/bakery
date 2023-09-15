@@ -180,7 +180,7 @@ impl BuildConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::configs::{BuildConfig, TaskConfig};
+    use crate::configs::{BuildConfig, TaskConfig, TType};
     use crate::error::BError;
     use indexmap::IndexMap;
 
@@ -206,8 +206,7 @@ mod tests {
             "description": "Test Description",
             "arch": "test-arch",
             "bb": {}
-        }
-        "#;
+        }"#;
         let config = helper_build_config_from_str(json_test_str);
         assert_eq!(config.version(), "4");
         assert_eq!(config.name(), "test-name");
@@ -326,7 +325,7 @@ mod tests {
         assert_eq!(task.index(), "0");
         assert_eq!(task.name(), "task1-name");
         assert_eq!(task.disabled(), "false");
-        assert_eq!(task.ttype(), "non-bitbake");
+        assert_eq!(task.ttype(), TType::NonBitbake);
         assert_eq!(task.builddir(), "test/builddir");
         assert_eq!(task.build(), "build-cmd");
         assert_eq!(task.clean(), "clean-cmd");
@@ -334,7 +333,7 @@ mod tests {
         assert_eq!(task.index(), "1");
         assert_eq!(task.name(), "task2-name");
         assert_eq!(task.disabled(), "false");
-        assert_eq!(task.ttype(), "bitbake");
+        assert_eq!(task.ttype(), TType::Bitbake);
         assert_eq!(task.recipes(), &vec![String::from("test-image"), String::from("test-image:do_populate_sdk")]);
     }
 

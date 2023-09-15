@@ -36,10 +36,16 @@ use crate::error::BError;
 
 use super::ArtifactConfig;
 
+#[derive(Clone, PartialEq, Debug)]
+pub enum TType {
+    Bitbake,
+    NonBitbake,
+}
+
 pub struct TaskConfig {
     index: String,
     name: String,
-    ttype: String, // Optional if not set for the task the default type 'bitbake' is used
+    ttype: TType, // Optional if not set for the task the default type 'bitbake' is used
     disabled: String, // Optional if not set for the task the default value 'false' is used
     builddir: String,
     build: String,
@@ -93,14 +99,29 @@ impl TaskConfig {
         if ttype != "bitbake" && ttype != "non-bitbake" {
             return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. Invalid type '{}'", ttype)}); 
         }
+
+        let enum_ttype: TType;
+        match ttype.as_str() {
+            "bitbake" => {
+                enum_ttype = TType::Bitbake;
+            },
+            "non-bitbake" => {
+                enum_ttype = TType::NonBitbake;
+            },
+            _ => {
+                return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. Invalid type '{}'", ttype)});
+            },
+        }
+
         // if the task type is bitbake then at least one recipe is required
         if recipes.is_empty() && ttype == "bitbake" {
             return Err(BError{ code: 0, message: format!("Invalid 'task' format in build config. The 'bitbake' type requires at least one entry in 'recipes'")});
         }
+
         Ok(TaskConfig {
             index,
             name,
-            ttype,
+            ttype: enum_ttype,
             disabled,
             builddir,
             build,
@@ -118,8 +139,8 @@ impl TaskConfig {
         &self.name
     }
 
-    pub fn ttype(&self) -> &str {
-        &self.ttype
+    pub fn ttype(&self) -> TType {
+        self.ttype.clone()
     }
 
     pub fn disabled(&self) -> &str {
@@ -149,7 +170,7 @@ impl TaskConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::configs::TaskConfig;
+    use crate::configs::{TaskConfig, TType};
     use crate::error::BError;
     use crate::helper::Helper;
 
@@ -170,7 +191,7 @@ mod tests {
         assert_eq!(config.index(), "0");
         assert_eq!(config.name(), "task1-name");
         assert_eq!(config.disabled(), "false");
-        assert_eq!(config.ttype(), "non-bitbake");
+        assert_eq!(config.ttype(), TType::NonBitbake);
         assert_eq!(config.builddir(), "test/builddir");
         assert_eq!(config.build(), "build-cmd");
         assert_eq!(config.clean(), "clean-cmd");
@@ -194,7 +215,7 @@ mod tests {
         assert_eq!(config.index(), "0");
         assert_eq!(config.name(), "task1-name");
         assert_eq!(config.disabled(), "false");
-        assert_eq!(config.ttype(), "bitbake");
+        assert_eq!(config.ttype(), TType::Bitbake);
         assert_eq!(config.recipes(), &vec![String::from("test-image"), String::from("test-image:do_populate_sdk")]);
     }
 
@@ -213,7 +234,7 @@ mod tests {
         assert_eq!(config.index(), "0");
         assert_eq!(config.name(), "task1-name");
         assert_eq!(config.disabled(), "false");
-        assert_eq!(config.ttype(), "bitbake");
+        assert_eq!(config.ttype(), TType::Bitbake);
         assert_eq!(config.recipes(), &vec![String::from("test-image")]);
     }
 
@@ -252,7 +273,7 @@ mod tests {
         assert_eq!(config.index(), "0");
         assert_eq!(config.name(), "task1-name");
         assert_eq!(config.disabled(), "false");
-        assert_eq!(config.ttype(), "bitbake");
+        assert_eq!(config.ttype(), TType::Bitbake);
         assert_eq!(config.recipes(), &vec![String::from("test-image")]);
         assert!(!config.artifacts().is_empty());
         let artifacts = config.artifacts();

@@ -8,7 +8,7 @@ pub mod context;
 pub mod bitbake;
 
 pub use config::Config;
-pub use task::TaskConfig;
+pub use task::{TaskConfig, TType};
 pub use build::BuildConfig;
 pub use json::JsonFileReader;
 pub use artifact::ArtifactConfig;
