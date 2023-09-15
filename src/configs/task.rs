@@ -110,31 +110,31 @@ impl TaskConfig {
         })
     }
     
-    pub fn index(&self) -> &String {
+    pub fn index(&self) -> &str {
         &self.index
     }
 
-    pub fn name(&self) -> &String {
+    pub fn name(&self) -> &str {
         &self.name
     }
 
-    pub fn ttype(&self) -> &String {
+    pub fn ttype(&self) -> &str {
         &self.ttype
     }
 
-    pub fn disabled(&self) -> &String {
+    pub fn disabled(&self) -> &str {
         &self.disabled
     }
 
-    pub fn builddir(&self) -> &String {
+    pub fn builddir(&self) -> &str {
         &self.builddir
     }
 
-    pub fn build(&self) -> &String {
+    pub fn build(&self) -> &str {
         &self.build
     }
 
-    pub fn clean(&self) -> &String {
+    pub fn clean(&self) -> &str {
         &self.clean
     }
 
