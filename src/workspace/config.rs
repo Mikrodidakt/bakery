@@ -1,12 +1,13 @@
 use indexmap::{IndexMap, indexmap};
 use std::path::{PathBuf, Path};
 
-
-use crate::configs::{Context, BuildConfig, TaskConfig};
+use crate::configs::{Context, BuildConfig, TaskConfig, TType};
 use crate::workspace::WsSettingsHandler;
 use crate::error::BError;
 
-pub struct WsConfigHandler {
+use super::WsTaskConfigHandler;
+
+pub struct WsBuildConfigHandler {
     ctx: Context,
     config: BuildConfig,
     work_dir: PathBuf,
@@ -14,7 +15,7 @@ pub struct WsConfigHandler {
     cache_dir: PathBuf,
 }
 
-impl WsConfigHandler {
+impl WsBuildConfigHandler {
     pub fn new(settings: &WsSettingsHandler, config: BuildConfig) -> Self {
         let ctx_variables: IndexMap<String, String> = indexmap! {
             "MACHINE".to_string() => config.bitbake().machine().to_string(),
@@ -38,7 +39,7 @@ impl WsConfigHandler {
         let mut ctx: Context = Context::new(&ctx_variables);
         ctx.update(config.context());
 
-        WsConfigHandler {
+        WsBuildConfigHandler {
             config,
             ctx,
             work_dir: settings.work_dir().clone(),
@@ -47,44 +48,26 @@ impl WsConfigHandler {
         }
     }
 
-
-    /*
-    pub fn task_type(self, task: &str) -> &str {
-        return self.__config.builds[build].get("type", "bitbake")
+    pub fn work_dir(&self) -> PathBuf {
+        self.work_dir.clone()
     }
 
-    pub fn build_dir(&self, task: &str) -> Result<PathBuf, BError> {
+    pub fn context(&self) -> &Context {
+        &self.ctx
+    }
+
+    pub fn task(&self, task: &str) -> Result<WsTaskConfigHandler, BError> {
         match self.config.tasks().get(task) {
-            Some(task) => {
-                if task.ttype()
+            Some(config) => {
+                return Ok(WsTaskConfigHandler::new(&config, &self));
             },
             None => {
-
+                return Err(BError{ code: 0, message: format!("Task '{}' does not exists in build config", task)});
             }
         }
     }
- 
+
     pub fn extend_ctx(&self, ctx: &Context) {}
-
-    pub recipes(&self, build: &str) -> Vec<String> {}
-
-    // Returns true if the condition is 1, true, True, TRUE, yes, YES, Yes, Y
-    // the condition is expanded using the context so a context variable could be used
-    // as a condition.
-    pub fn build_condition(&self, build: &str) -> bool {}
-
-    pub fn build_enabled(&self, build: &str) -> bool {}
-
-    // Returns the command defined for a specific build
-    // it can either be a clean or build command
-    pub fn task_cmd(&self, build: &str, task: &str) -> &str {}
-
-    pub fn build_name(&self, build: &str) -> &str {}
-
-    pub fn artifacts(&self, build: &str) -> IndexMap<String, String> {}
-
-    pub fn docker_image(&self, build: &str) -> DockerImage {}
-    */
 
     pub fn description(&self) -> &str {
         &self.config.description()
@@ -154,7 +137,7 @@ impl WsConfigHandler {
     }
 
     pub fn bb_docker_image(&self) -> String {
-        let docker: String = self.config.bitbake().docker().clone();
+        let docker: String = self.config.bitbake().docker().to_string();
         if !docker.is_empty() {
             return self.ctx.expand_str(docker.as_str())
         }
@@ -209,8 +192,9 @@ impl WsConfigHandler {
 mod tests {
     use std::path::{PathBuf, Path};
 
-    use crate::workspace::{WsSettingsHandler, WsConfigHandler};
+    use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, WsTaskConfigHandler};
     use crate::helper::Helper;
+    use crate::error::BError;
 
     #[test]
     fn test_ws_config_default() {
@@ -226,7 +210,7 @@ mod tests {
             "arch": "test-arch",
             "bb": {}
         }"#;
-        let ws_config: WsConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
+        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
         assert_eq!(ws_config.version(), "4".to_string());
         assert_eq!(ws_config.arch(), "test-arch".to_string());
         assert_eq!(ws_config.description(), "Test Description".to_string());
@@ -282,7 +266,89 @@ mod tests {
                 "docker": "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}"
             }
         }"#;
-        let ws_config: WsConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
+        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
         assert_eq!(ws_config.bb_docker_image(), "test-registry/test-image:0.1");
+    }
+
+    #[test]
+    fn test_ws_config_context_task_build_dir() {
+        let json_settings = r#"
+        {
+            "version": "4"
+        }"#;
+        let json_build_config = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "context": [
+                "TASK1_BUILD_DIR=task1/build/dir"
+            ],
+            "bb": {
+                "machine": "test-machine",                                                                                           
+                "distro": "test-distro",
+                "deploydir": "tmp/test/deploy",
+                "docker": "strixos/bakery-workspace:0.68",
+                "bblayersconf": [
+                    "BB_LAYERS_CONF_TEST_LINE_1",
+                    "BB_LAYERS_CONF_TEST_LINE_2",
+                    "BB_LAYERS_CONF_TEST_LINE_3"
+                ],
+                "localconf": [
+                    "BB_LOCAL_CONF_TEST_LINE_1",
+                    "BB_LOCAL_CONF_TEST_LINE_2",
+                    "BB_LOCAL_CONF_TEST_LINE_3"
+                ]
+            },
+            "tasks": { 
+                "task1": {
+                    "index": "0",
+                    "name": "task1-name",
+                    "type": "non-bitbake",
+                    "builddir": "test/${TASK1_BUILD_DIR}",
+                    "build": "build-cmd",
+                    "clean": "clean-cmd",
+                    "artifacts": []
+                },
+                "task2": {
+                    "index": "1",
+                    "name": "task2-name",
+                    "type": "bitbake",
+                    "recipes": [
+                        "image-recipe"
+                    ],
+                    "artifacts": []
+                }
+            }
+        }"#;
+        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
+        let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task1");
+        match result {
+            Ok(task) => {
+                assert_eq!(task.build_dir(), PathBuf::from("/workspace/test/task1/build/dir"))
+            },
+            Err(e) => {
+                panic!("{}", e.message);
+            }
+        }
+        let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task2");
+        match result {
+            Ok(task) => {
+                assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds/test-name"))
+            },
+            Err(e) => {
+                panic!("{}", e.message);
+            }
+        }
+        let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task3");
+        match result {
+            Ok(_task) => {
+                panic!("We should have recived an error because we have no recipes defined!");
+            },
+            Err(e) => {
+                assert_eq!(e.message, "Task 'task3' does not exists in build config".to_string());
+            }
+        }
     }
 }

@@ -1,4 +1,4 @@
-use crate::workspace::{WsConfigHandler, WsSettingsHandler, Workspace};
+use crate::workspace::{WsBuildConfigHandler, WsSettingsHandler, Workspace};
 use crate::error::BError;
 use crate::configs::{WsSettings, BuildConfig, TaskConfig};
 
@@ -48,14 +48,14 @@ impl Helper {
         }
     }
 
-    pub fn setup_ws_config_handler(test_work_dir: &str, json_settings: &str, json_build_config: &str) -> WsConfigHandler {
+    pub fn setup_ws_config_handler(test_work_dir: &str, json_settings: &str, json_build_config: &str) -> WsBuildConfigHandler {
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
         let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
             Helper::setup_ws_settings(json_settings),
         );
         let config = Helper::setup_build_config(json_build_config);
-        let ws_config: WsConfigHandler = WsConfigHandler::new(&settings, config);
+        let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::new(&settings, config);
         ws_config
     }
 

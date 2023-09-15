@@ -1,5 +1,6 @@
 use indexmap::IndexMap;
 use regex::Regex;
+use std::path::{PathBuf, Path};
 
 pub struct Context {
     regexp: Regex,
@@ -52,6 +53,11 @@ impl Context {
         expanded_string
     }
 
+    pub fn expand_path(&self, p: &PathBuf) -> PathBuf {
+        let p_str: String = self.expand_str(p.to_str().unwrap());
+        PathBuf::from(p_str)
+    }
+
     pub fn value(&self, key: &str) -> String {
         match self.variables.get(&key.to_lowercase()) {
             Some(value) => {
@@ -76,6 +82,7 @@ impl Context {
 #[cfg(test)]
 mod tests {
     use indexmap::{IndexMap, indexmap};
+    use std::path::{PathBuf, Path};
 
     use crate::configs::Context;
 
@@ -159,6 +166,18 @@ mod tests {
         ctx.update(&variables2);
         assert_eq!(ctx.expand_str("/dir/${NEWDIR1}/file1.txt"), "/dir/dir1/newdir1/file1.txt");
         assert_eq!(ctx.expand_str("/dir/${NEWDIR2}/file2.txt"), "/dir/dir2/newdir2/file2.txt");
+    }
+
+    #[test]
+    fn test_task_context_expand_path() {
+        let variables: IndexMap<String, String> = indexmap! {
+            "VAR1".to_string() => "var1".to_string(),
+            "VAR2".to_string() => "var2".to_string(),
+            "VAR3".to_string() => "var3".to_string()
+        };
+        let ctx: Context = Context::new(&variables);
+        let path: PathBuf = PathBuf::from("/dir1/${VAR1}/${VAR2}/${VAR3}/file1.txt");
+        assert_eq!(ctx.expand_path(&path), PathBuf::from("/dir1/var1/var2/var3/file1.txt")); 
     }
 }
 

@@ -49,6 +49,8 @@ pub struct TaskConfig {
     disabled: String, // Optional if not set for the task the default value 'false' is used
     builddir: String,
     build: String,
+    docker: String,
+    condition: String,
     clean: String,
     recipes: Vec<String>, // The list of recipes will be empty if the type for the task is 'non-bitbake'
     artifacts: Vec<ArtifactConfig>, // For some tasks there might not be any artifacts to collect then this will be empty
@@ -92,6 +94,8 @@ impl TaskConfig {
         let ttype: String = Self::get_str_value("type", &data, Some(String::from("bitbake")))?;
         let disabled: String = Self::get_str_value("disabled", &data, Some(String::from("false")))?;
         let builddir: String = Self::get_str_value("builddir", &data, Some(String::from("")))?;
+        let docker: String = Self::get_str_value("docker", data, Some(String::from("")))?;
+        let condition: String = Self::get_str_value("condition", data, Some(String::from("true")))?;
         let build: String = Self::get_str_value("build", &data, Some(String::from("")))?;
         let clean: String = Self::get_str_value("clean", &data, Some(String::from("")))?;
         let recipes: Vec<String> = Self::get_array_value("recipes", &data, Some(vec![]))?;
@@ -123,6 +127,8 @@ impl TaskConfig {
             name,
             ttype: enum_ttype,
             disabled,
+            docker,
+            condition,
             builddir,
             build,
             clean,
@@ -141,6 +147,14 @@ impl TaskConfig {
 
     pub fn ttype(&self) -> TType {
         self.ttype.clone()
+    }
+
+    pub fn docker(&self) -> &str {
+        &self.docker
+    }
+
+    pub fn condition(&self) -> &str {
+        &self.condition
     }
 
     pub fn disabled(&self) -> &str {
@@ -183,6 +197,7 @@ mod tests {
             "disabled": "false",
             "type": "non-bitbake",
             "builddir": "test/builddir",
+            "docker": "test-registry/test-image:0.1",
             "build": "build-cmd",
             "clean": "clean-cmd"
         }
@@ -195,6 +210,8 @@ mod tests {
         assert_eq!(config.builddir(), "test/builddir");
         assert_eq!(config.build(), "build-cmd");
         assert_eq!(config.clean(), "clean-cmd");
+        assert_eq!(config.docker(), "test-registry/test-image:0.1");
+        assert_eq!(config.condition(), "true");
     }
 
     #[test]
@@ -204,6 +221,7 @@ mod tests {
             "index": "0",
             "name": "task1-name",
             "disabled": "false",
+            "condition": "false",
             "type": "bitbake",
             "recipes": [
                 "test-image",
@@ -215,6 +233,7 @@ mod tests {
         assert_eq!(config.index(), "0");
         assert_eq!(config.name(), "task1-name");
         assert_eq!(config.disabled(), "false");
+        assert_eq!(config.condition(), "false");
         assert_eq!(config.ttype(), TType::Bitbake);
         assert_eq!(config.recipes(), &vec![String::from("test-image"), String::from("test-image:do_populate_sdk")]);
     }

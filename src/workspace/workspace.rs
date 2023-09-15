@@ -2,11 +2,12 @@ use std::path::PathBuf;
 use std::env;
 use std::io::Error;
 
-use crate::workspace::{WsSettingsHandler, WsConfigHandler};
+use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, WsTaskConfigHandler};
 use crate::configs::{WsSettings, BuildConfig};
+
 pub struct Workspace {
     settings: WsSettingsHandler,
-    config: WsConfigHandler,
+    config: WsBuildConfigHandler,
 }
 
 impl Workspace {
@@ -33,7 +34,7 @@ impl Workspace {
     pub fn new(workdir: Option<PathBuf>, ws_config: WsSettings, build_config: BuildConfig) -> Self {
         let work_dir: PathBuf = Self::setup_work_directory(&workdir);
         let settings: WsSettingsHandler = WsSettingsHandler::new(work_dir.clone(), ws_config);
-        let config: WsConfigHandler = WsConfigHandler::new(&settings, build_config);
+        let config: WsBuildConfigHandler = WsBuildConfigHandler::new(&settings, build_config);
 
         Workspace {
             settings,
@@ -45,7 +46,7 @@ impl Workspace {
         &self.settings
     }
 
-    pub fn config(&self) -> &WsConfigHandler {
+    pub fn config(&self) -> &WsBuildConfigHandler {
         &self.config
     }
 

@@ -37,19 +37,19 @@ impl BBConfig {
         })
     }
 
-    pub fn machine(&self) -> &String {
+    pub fn machine(&self) -> &str {
         &self.machine
     }
 
-    pub fn distro(&self) -> &String {
+    pub fn distro(&self) -> &str {
         &self.distro
     }
 
-    pub fn deploy_dir(&self) -> &String {
+    pub fn deploy_dir(&self) -> &str {
         &self.deploy_dir
     }
     
-    pub fn docker(&self) -> &String {
+    pub fn docker(&self) -> &str {
         &self.docker
     }
     
