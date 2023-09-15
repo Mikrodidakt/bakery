@@ -74,46 +74,10 @@ impl Workspace {
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
-    use crate::configs::{WsSettings, BuildConfig};
     use crate::executers::DockerImage;
-    use crate::error::BError;
+    use crate::helper::Helper;
 
     use super::Workspace;
-
-    fn helper_setup_ws_config(json_test_str: &str) -> WsSettings {
-        let result: Result<WsSettings, BError> = WsSettings::from_str(json_test_str);
-        let settings: WsSettings;
-        match result {
-            Ok(rsettings) => {
-                settings = rsettings;
-            }
-            Err(e) => {
-                eprintln!("Error parsing workspace settings: {}", e);
-                panic!();
-            } 
-        }
-        settings
-    }
-
-    fn helper_setup_build_config(json_test_str: &str) -> BuildConfig {
-        let result: Result<BuildConfig, BError> = BuildConfig::from_str(json_test_str);
-        match result {
-            Ok(rconfig) => {
-                rconfig
-            }
-            Err(e) => {
-                eprintln!("Error parsing build config: {}", e);
-                panic!();
-            } 
-        }
-    }
-
-    fn helper_setup_workspace(test_work_dir: &str, json_settings: &str, json_build_config: &str) -> Workspace {
-        let work_dir: PathBuf = PathBuf::from(test_work_dir);
-        let ws_config: WsSettings = helper_setup_ws_config(json_settings);
-        let build_config: BuildConfig = helper_setup_build_config(json_build_config);
-        Workspace::new(Some(work_dir), ws_config, build_config)
-    }
 
     #[test]
     fn test_workspace_default_settings() {
@@ -130,7 +94,7 @@ mod tests {
             "arch": "test-arch",
             "bb": {}
         }"#;
-        let ws: Workspace = helper_setup_workspace(test_work_dir, json_settings, json_build_config);
+        let ws: Workspace = Helper::setup_ws(test_work_dir, json_settings, json_build_config);
         assert_eq!(ws.settings().builds_dir(), PathBuf::from("/test_work_dir/builds"));
         assert_eq!(ws.settings().cache_dir(), PathBuf::from("/test_work_dir/.cache"));
         assert_eq!(ws.settings().artifacts_dir(), PathBuf::from("/test_work_dir/artifacts"));

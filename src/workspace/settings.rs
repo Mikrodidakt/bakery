@@ -90,23 +90,7 @@ mod tests {
 
     use crate::executers::DockerImage;
     use crate::workspace::WsSettingsHandler;
-    use crate::configs::WsSettings;
-    use crate::error::BError;
-
-    fn helper_settings_from_str(json_test_str: &str) -> WsSettings {
-        let result: Result<WsSettings, BError> = WsSettings::from_str(json_test_str);
-        let settings: WsSettings;
-        match result {
-            Ok(rsettings) => {
-                settings = rsettings;
-            }
-            Err(e) => {
-                eprintln!("Error parsing JSON: {}", e);
-                panic!();
-            } 
-        }
-        settings
-    }
+    use crate::helper::Helper;
 
     #[test]
     fn test_settings_default_ws_dirs() {
@@ -117,7 +101,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
-            helper_settings_from_str(json_test_str),
+            Helper::setup_ws_settings(json_test_str),
         );
         assert_eq!(settings.builds_dir().to_str(), Some("/workspace/builds"));
         assert_eq!(settings.cache_dir().to_str(), Some("/workspace/.cache"));
@@ -147,7 +131,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
-            helper_settings_from_str(json_test_str),
+            Helper::setup_ws_settings(json_test_str),
         );
         assert_eq!(settings.builds_dir().to_str(), Some("/workspace/builds_test"));
         assert_eq!(settings.cache_dir().to_str(), Some("/workspace/cache_test"));
@@ -167,7 +151,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
-            helper_settings_from_str(json_test_str),
+            Helper::setup_ws_settings(json_test_str),
         );
         let docker_image: &DockerImage = settings.docker_image();
         assert_eq!(format!("{}", docker_image), "strixos/bakery-workspace:0.68");
@@ -187,7 +171,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
-            helper_settings_from_str(json_test_str),
+            Helper::setup_ws_settings(json_test_str),
         );
         let docker_image: &DockerImage = settings.docker_image();
         assert_eq!(format!("{}", docker_image), "test-registry/test-image:0.1");
@@ -207,7 +191,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
-            helper_settings_from_str(json_test_str),
+            Helper::setup_ws_settings(json_test_str),
         );
         assert_eq!(settings.docker_args(), &vec!["--rm=true".to_string(), "-t".to_string()]);
     }
@@ -231,7 +215,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
-            helper_settings_from_str(json_test_str),
+            Helper::setup_ws_settings(json_test_str),
         );
         assert_eq!(settings.docker_args(), &vec!["arg1".to_string(), "arg2".to_string(), "arg3".to_string()]);
     }
@@ -245,7 +229,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
-            helper_settings_from_str(json_test_str),
+            Helper::setup_ws_settings(json_test_str),
         );
         assert!(settings.supported_builds().is_empty());
     }
@@ -265,7 +249,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
-            helper_settings_from_str(json_test_str),
+            Helper::setup_ws_settings(json_test_str),
         );
         assert_eq!(settings.supported_builds(), &vec!["build1".to_string(), "build2".to_string()]);
     }

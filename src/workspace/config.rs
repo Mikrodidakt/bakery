@@ -186,3 +186,34 @@ impl WsConfigHandler {
         self.poky_dir().join("oe-init-build-env")
     }   
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use crate::workspace::{WsSettingsHandler, WsConfigHandler};
+    use crate::helper::Helper;
+
+    #[test]
+    fn test_settings_default_ws_dirs() {
+        let json_test_str = r#"
+        {
+            "version": "4"
+        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let settings: WsSettingsHandler = WsSettingsHandler::new(
+            work_dir,
+            Helper::setup_ws_settings(json_test_str),
+        );
+        let json_test_str = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {}
+        }"#;
+        let config = Helper::setup_build_config(json_test_str);
+        let ws_config: WsConfigHandler = WsConfigHandler::new(&settings, config);
+    }
+}

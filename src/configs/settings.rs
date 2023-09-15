@@ -137,21 +137,7 @@ impl WsSettings {
 mod tests {
     use crate::configs::WsSettings;
     use crate::error::BError;
-
-    fn helper_settings_from_str(json_test_str: &str) -> WsSettings {
-        let result: Result<WsSettings, BError> = WsSettings::from_str(json_test_str);
-        let settings: WsSettings;
-        match result {
-            Ok(rsettings) => {
-                settings = rsettings;
-            }
-            Err(e) => {
-                eprintln!("Error parsing JSON: {}", e);
-                panic!();
-            } 
-        }
-        settings
-    }
+    use crate::helper::Helper;
 
     #[test]
     fn test_settings_config_workspace_dirs() {
@@ -169,7 +155,7 @@ mod tests {
               "cachedir": "cache_test"
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.configs_dir,  "configs_test");
         assert_eq!(&settings.include_dir,  "include_test");
         assert_eq!(&settings.artifacts_dir,  "artifacts_test");
@@ -185,7 +171,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.configs_dir,  "configs");
         assert_eq!(&settings.include_dir,  "configs/include");
         assert_eq!(&settings.artifacts_dir,  "artifacts");
@@ -201,7 +187,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.configs_dir,  "configs");
     }
 
@@ -214,7 +200,7 @@ mod tests {
               "artifactsdir": "artifacts_test"
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.builds_dir,  "builds");
     }
 
@@ -224,7 +210,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.builds_dir,  "builds");
     }
 
@@ -237,7 +223,7 @@ mod tests {
               "buildsdir": "builds_test"
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.artifacts_dir, "artifacts");
     }
 
@@ -247,7 +233,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.artifacts_dir, "artifacts");
     }
 
@@ -260,7 +246,7 @@ mod tests {
               "buildsdir": "builds_test"
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.scripts_dir, "scripts");
     }
 
@@ -270,7 +256,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.scripts_dir, "scripts");
     }
 
@@ -283,7 +269,7 @@ mod tests {
               "buildsdir": "builds_test"
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_dir, "docker");
     }
 
@@ -293,7 +279,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_dir, "docker");
     }
 
@@ -306,7 +292,7 @@ mod tests {
               "buildsdir": "builds_test"
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.cache_dir, ".cache");
     }
 
@@ -316,7 +302,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.cache_dir, ".cache");
     }
 
@@ -329,7 +315,7 @@ mod tests {
                 "image": "test-workspace"
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_image, "test-workspace");
     }
 
@@ -342,7 +328,7 @@ mod tests {
                 "tag": "0.1"
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_image, "bakery-workspace");
     }
 
@@ -352,7 +338,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_image, "bakery-workspace");
     }
 
@@ -365,7 +351,7 @@ mod tests {
                 "tag": "0.1"
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_tag, "0.1");
     }
 
@@ -378,7 +364,7 @@ mod tests {
                 "image": "test-workspace"
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_tag,  "0.68");
     }
 
@@ -388,7 +374,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_tag, "0.68");
     }
 
@@ -401,7 +387,7 @@ mod tests {
                 "registry": "test-registry"
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_registry, "test-registry");
     }
 
@@ -414,7 +400,7 @@ mod tests {
                 "image": "test-workspace"
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_registry, "strixos");
     }
 
@@ -424,7 +410,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_registry, "strixos");
     }
 
@@ -441,7 +427,7 @@ mod tests {
                 ]
               }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_args, &vec![String::from("--rm=true"), String::from("-t"), String::from("--dns=8.8.8.8")]);
     }
 
@@ -454,7 +440,7 @@ mod tests {
                 "image": "test-workspace"
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_args, &vec![String::from("--rm=true"), String::from("-t")]);
     }
 
@@ -464,7 +450,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let settings = helper_settings_from_str(json_test_str);  
+        let settings = Helper::setup_ws_settings(json_test_str);  
         assert_eq!(&settings.docker_args, &vec![String::from("--rm=true"), String::from("-t")]);
     }
 
@@ -480,7 +466,7 @@ mod tests {
                 ]
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.supported, &vec![String::from("machine1-test"), String::from("machine2-test")]);
         let mut i: i32 = 1;
         for supported in &settings.supported {
@@ -497,7 +483,7 @@ mod tests {
             "builds": {
             }
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(settings.supported.is_empty(), true);
     }
 
@@ -507,7 +493,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let settings = helper_settings_from_str(json_test_str);
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(settings.supported.is_empty(), true);
     }
 }
