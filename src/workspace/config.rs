@@ -2,8 +2,9 @@ use indexmap::{IndexMap, indexmap};
 use std::path::{PathBuf, Path};
 
 
-use crate::configs::{Context, BuildConfig};
+use crate::configs::{Context, BuildConfig, TaskConfig};
 use crate::workspace::WsSettingsHandler;
+use crate::error::BError;
 
 pub struct WsConfigHandler {
     ctx: Context,
@@ -46,9 +47,23 @@ impl WsConfigHandler {
         }
     }
 
-    /*
-    pub fn build_dir(&self, build: &str) -> PathBuf {}
 
+    /*
+    pub fn task_type(self, task: &str) -> &str {
+        return self.__config.builds[build].get("type", "bitbake")
+    }
+
+    pub fn build_dir(&self, task: &str) -> Result<PathBuf, BError> {
+        match self.config.tasks().get(task) {
+            Some(task) => {
+                if task.ttype()
+            },
+            None => {
+
+            }
+        }
+    }
+ 
     pub fn extend_ctx(&self, ctx: &Context) {}
 
     pub recipes(&self, build: &str) -> Vec<String> {}
@@ -66,12 +81,14 @@ impl WsConfigHandler {
 
     pub fn build_name(&self, build: &str) -> &str {}
 
-    pub fn build_type(self, build: &str) -> &str {}
-
     pub fn artifacts(&self, build: &str) -> IndexMap<String, String> {}
 
     pub fn docker_image(&self, build: &str) -> DockerImage {}
     */
+
+    pub fn description(&self) -> &str {
+        &self.config.description()
+    }
 
     pub fn product_name(&self) -> &str {
         // Currently the product name is the
@@ -177,7 +194,8 @@ impl WsConfigHandler {
         // where you can specify a path for the init file to source. The default could be
         // layers/poky/oe-init-build-env. Potentially we should also add an entry in the
         // Workspace settings file where you can specify the layers directory
-        self.work_dir.join("layers".to_string()).join("poky".to_string())
+        let mut path_buf = self.work_dir.clone();
+        path_buf.join("layers".to_string()).join("poky".to_string())
     }
 
     pub fn oe_init_file(&self) -> PathBuf {
@@ -189,23 +207,18 @@ impl WsConfigHandler {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::path::{PathBuf, Path};
 
     use crate::workspace::{WsSettingsHandler, WsConfigHandler};
     use crate::helper::Helper;
 
     #[test]
-    fn test_settings_default_ws_dirs() {
-        let json_test_str = r#"
+    fn test_ws_config_default() {
+        let json_settings = r#"
         {
             "version": "4"
         }"#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::new(
-            work_dir,
-            Helper::setup_ws_settings(json_test_str),
-        );
-        let json_test_str = r#"
+        let json_build_config = r#"
         {                                                                                                                   
             "version": "4",
             "name": "test-name",
@@ -213,7 +226,63 @@ mod tests {
             "arch": "test-arch",
             "bb": {}
         }"#;
-        let config = Helper::setup_build_config(json_test_str);
-        let ws_config: WsConfigHandler = WsConfigHandler::new(&settings, config);
+        let ws_config: WsConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
+        assert_eq!(ws_config.version(), "4".to_string());
+        assert_eq!(ws_config.arch(), "test-arch".to_string());
+        assert_eq!(ws_config.description(), "Test Description".to_string());
+        assert_eq!(ws_config.config_name(), "test-name".to_string());
+        assert_eq!(ws_config.product_name(), "test-name".to_string());
+        assert_eq!(ws_config.bb_distro(), "".to_string());
+        assert_eq!(ws_config.bb_machine(), "".to_string());
+        assert_eq!(ws_config.bb_build_dir(), PathBuf::from("/workspace/builds/test-name"));
+        assert_eq!(ws_config.bb_build_config_dir(), PathBuf::from("/workspace/builds/test-name/conf"));
+        assert_eq!(ws_config.bb_deploy_dir(), PathBuf::from("/workspace/builds/test-name/tmp/deploy/images"));
+        assert_eq!(ws_config.bb_dl_dir(), PathBuf::from("/workspace/.cache/download"));
+        assert_eq!(ws_config.bb_sstate_dir(), PathBuf::from("/workspace/.cache/test-arch/sstate-cache"));
+        assert_eq!(ws_config.bb_layers_config(), PathBuf::from("/workspace/builds/test-name/conf/bblayers.conf"));
+        assert!(ws_config.bb_layers_conf().is_empty());
+        assert_eq!(ws_config.bb_local_config(), PathBuf::from("/workspace/builds/test-name/conf/local.conf"));
+        assert!(!ws_config.bb_local_conf().is_empty());
+        let local_conf: Vec<String> = vec![
+            format!("MACHINE ?= {}", ws_config.bb_machine()),
+            "VARIANT ?= dev".to_string(),
+            format!("PRODUCT_NAME ?= {}", ws_config.product_name()),
+            format!("DISTRO ?= {}", ws_config.bb_distro()),
+            format!("SSTATE_DIR ?= {}", ws_config.bb_sstate_dir().to_str().unwrap()),
+            format!("DL_DIR ?= {}", ws_config.bb_dl_dir().to_str().unwrap()),
+            //format!("PLATFORM_VERSION ?= {}", ws_config.platform_version()),
+            //format!("BUILD_NUMBER ?= {}", ws_config.build_number()),
+            //format!("BUILD_SHA ?= {}", ws_config.build_sha()),
+            //format!("RELASE_BUILD ?= {}", ws_config.release_build()),
+            //format!("BUILD_VARIANT ?= {}", ws_config.build_variant()),
+        ];
+        assert_eq!(ws_config.bb_local_conf(), local_conf);
+        assert_eq!(ws_config.bb_docker_image(), "".to_string());
+
+    }
+
+    #[test]
+    fn test_ws_config_context_docker() {
+        let json_settings = r#"
+        {
+            "version": "4"
+        }"#;
+        let json_build_config = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "context": [
+                "DOCKER_REGISTRY=test-registry",
+                "DOCKER_TAG=0.1",
+                "DOCKER_IMAGE=test-image"
+            ],
+            "bb": {
+                "docker": "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}"
+            }
+        }"#;
+        let ws_config: WsConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
+        assert_eq!(ws_config.bb_docker_image(), "test-registry/test-image:0.1");
     }
 }

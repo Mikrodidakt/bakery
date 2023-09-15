@@ -48,6 +48,17 @@ impl Helper {
         }
     }
 
+    pub fn setup_ws_config_handler(test_work_dir: &str, json_settings: &str, json_build_config: &str) -> WsConfigHandler {
+        let work_dir: PathBuf = PathBuf::from(test_work_dir);
+        let settings: WsSettingsHandler = WsSettingsHandler::new(
+            work_dir,
+            Helper::setup_ws_settings(json_settings),
+        );
+        let config = Helper::setup_build_config(json_build_config);
+        let ws_config: WsConfigHandler = WsConfigHandler::new(&settings, config);
+        ws_config
+    }
+
     pub fn setup_ws(test_work_dir: &str, json_settings: &str, json_build_config: &str) -> Workspace {
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
         let ws_config: WsSettings = Self::setup_ws_settings(json_settings);

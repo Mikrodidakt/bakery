@@ -103,13 +103,13 @@ mod tests {
             work_dir,
             Helper::setup_ws_settings(json_test_str),
         );
-        assert_eq!(settings.builds_dir().to_str(), Some("/workspace/builds"));
-        assert_eq!(settings.cache_dir().to_str(), Some("/workspace/.cache"));
-        assert_eq!(settings.artifacts_dir().to_str(), Some("/workspace/artifacts"));
-        assert_eq!(settings.scripts_dir().to_str(), Some("/workspace/scripts"));
-        assert_eq!(settings.docker_dir().to_str(), Some("/workspace/docker"));
-        assert_eq!(settings.configs_dir().to_str(), Some("/workspace/configs"));
-        assert_eq!(settings.include_dir().to_str(), Some("/workspace/configs/include"));
+        assert_eq!(settings.builds_dir(), PathBuf::from("/workspace/builds"));
+        assert_eq!(settings.cache_dir(), PathBuf::from("/workspace/.cache"));
+        assert_eq!(settings.artifacts_dir(), PathBuf::from("/workspace/artifacts"));
+        assert_eq!(settings.scripts_dir(), PathBuf::from("/workspace/scripts"));
+        assert_eq!(settings.docker_dir(), PathBuf::from("/workspace/docker"));
+        assert_eq!(settings.configs_dir(), PathBuf::from("/workspace/configs"));
+        assert_eq!(settings.include_dir(), PathBuf::from("/workspace/configs/include"));
     }
 
     #[test]
@@ -133,13 +133,13 @@ mod tests {
             work_dir,
             Helper::setup_ws_settings(json_test_str),
         );
-        assert_eq!(settings.builds_dir().to_str(), Some("/workspace/builds_test"));
-        assert_eq!(settings.cache_dir().to_str(), Some("/workspace/cache_test"));
-        assert_eq!(settings.artifacts_dir().to_str(), Some("/workspace/artifacts_test"));
-        assert_eq!(settings.scripts_dir().to_str(), Some("/workspace/scripts_test"));
-        assert_eq!(settings.docker_dir().to_str(), Some("/workspace/docker_test"));
-        assert_eq!(settings.configs_dir().to_str(), Some("/workspace/configs_test"));
-        assert_eq!(settings.include_dir().to_str(), Some("/workspace/include_test"));
+        assert_eq!(settings.builds_dir(), PathBuf::from("/workspace/builds_test"));
+        assert_eq!(settings.cache_dir(), PathBuf::from("/workspace/cache_test"));
+        assert_eq!(settings.artifacts_dir(), PathBuf::from("/workspace/artifacts_test"));
+        assert_eq!(settings.scripts_dir(), PathBuf::from("/workspace/scripts_test"));
+        assert_eq!(settings.docker_dir(), PathBuf::from("/workspace/docker_test"));
+        assert_eq!(settings.configs_dir(), PathBuf::from("/workspace/configs_test"));
+        assert_eq!(settings.include_dir(), PathBuf::from("/workspace/include_test"));
     }
 
     #[test]
