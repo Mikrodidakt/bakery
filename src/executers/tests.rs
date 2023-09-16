@@ -8,34 +8,7 @@ mod tests {
     use crate::configs::{WsSettings, BuildConfig};
     use crate::cli::*;
     use crate::error::BError;
-
-    fn helper_build_config_from_str(json_test_str: &str) -> BuildConfig {
-        let result: Result<BuildConfig, BError> = BuildConfig::from_str(json_test_str);
-        match result {
-            Ok(rconfig) => {
-                rconfig
-            }
-            Err(e) => {
-                eprintln!("Error parsing build config: {}", e);
-                panic!();
-            } 
-        }
-    }
-
-    fn helper_settings_from_str(json_test_str: &str) -> WsSettings {
-        let result: Result<WsSettings, BError> = WsSettings::from_str(json_test_str);
-        let settings: WsSettings;
-        match result {
-            Ok(rsettings) => {
-                settings = rsettings;
-            }
-            Err(e) => {
-                eprintln!("Error parsing JSON: {}", e);
-                panic!();
-            } 
-        }
-        settings
-    }
+    use crate::helper::Helper;
 
     fn helper_test_docker(verification_str: &String, test_cmd: &String, test_work_dir: Option<String>, image: &DockerImage, workspace: &Workspace) -> Result<(), BError> {
         let mut mocked_logger: MockLogger = MockLogger::new();
@@ -73,8 +46,8 @@ mod tests {
             "bb": {}
         }
         "#;
-        let ws_config: WsSettings = helper_settings_from_str(json_ws_settings);
-        let build_config: BuildConfig = helper_build_config_from_str(json_build_config);
+        let ws_config: WsSettings = Helper::setup_ws_settings(json_ws_settings);
+        let build_config: BuildConfig = Helper::setup_build_config(json_build_config);
         let workspace: Workspace = Workspace::new(Some(work_dir), ws_config, build_config);
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
@@ -110,8 +83,8 @@ mod tests {
             "bb": {}
         }
         "#;
-        let ws_config: WsSettings = helper_settings_from_str(json_ws_settings);
-        let build_config: BuildConfig = helper_build_config_from_str(json_build_config);
+        let ws_config: WsSettings = Helper::setup_ws_settings(json_ws_settings);
+        let build_config: BuildConfig = Helper::setup_build_config(json_build_config);
         let workspace: Workspace = Workspace::new(Some(work_dir), ws_config, build_config);
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
@@ -152,8 +125,8 @@ mod tests {
             "bb": {}
         }
         "#;
-        let ws_config: WsSettings = helper_settings_from_str(json_ws_settings);
-        let build_config: BuildConfig = helper_build_config_from_str(json_build_config);
+        let ws_config: WsSettings = Helper::setup_ws_settings(json_ws_settings);
+        let build_config: BuildConfig = Helper::setup_build_config(json_build_config);
         let workspace: Workspace = Workspace::new(Some(work_dir), ws_config, build_config);
         let docker: Docker = Docker::new(&workspace, &docker_image, true);
         let result: Result<(), BError> = helper_test_executer(
@@ -196,8 +169,8 @@ mod tests {
             "bb": {}
         }
         "#;
-        let ws_config: WsSettings = helper_settings_from_str(json_ws_settings);
-        let build_config: BuildConfig = helper_build_config_from_str(json_build_config);
+        let ws_config: WsSettings = Helper::setup_ws_settings(json_ws_settings);
+        let build_config: BuildConfig = Helper::setup_build_config(json_build_config);
         let workspace: Workspace = Workspace::new(Some(work_dir), ws_config, build_config);
         let result = helper_test_docker(
             &verification_str,
