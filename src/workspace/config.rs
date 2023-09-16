@@ -1,7 +1,7 @@
 use indexmap::{IndexMap, indexmap};
 use std::path::{PathBuf, Path};
 
-use crate::configs::{Context, BuildConfig, TaskConfig, TType};
+use crate::configs::{Context, BuildConfig, TaskConfig, TType, WsSettings};
 use crate::workspace::WsSettingsHandler;
 use crate::error::BError;
 
@@ -16,6 +16,18 @@ pub struct WsBuildConfigHandler {
 }
 
 impl WsBuildConfigHandler {
+    pub fn from_str(ws_settings: &WsSettingsHandler, json_config: &str) -> Result<Self, BError> {
+        let result: Result<BuildConfig, BError> = BuildConfig::from_str(json_config);
+        match result {
+            Ok(config) => {
+                Ok(Self::new(&ws_settings, config))
+            }
+            Err(e) => {
+                Err(e)
+            } 
+        }
+    }
+
     pub fn new(settings: &WsSettingsHandler, config: BuildConfig) -> Self {
         let ctx_variables: IndexMap<String, String> = indexmap! {
             "MACHINE".to_string() => config.bitbake().machine().to_string(),
@@ -38,6 +50,7 @@ impl WsBuildConfigHandler {
         };
         let mut ctx: Context = Context::new(&ctx_variables);
         ctx.update(config.context());
+        //config.expand_ctx(&ctx);
 
         WsBuildConfigHandler {
             config,

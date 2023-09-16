@@ -1,5 +1,8 @@
 use crate::{configs::WsSettings, executers::DockerImage};
+use crate::error::BError;
+
 use std::path::PathBuf;
+
 
 pub struct WsSettingsHandler {
     work_dir: PathBuf,
@@ -8,6 +11,19 @@ pub struct WsSettingsHandler {
 }
 
 impl WsSettingsHandler {
+    pub fn from_str(work_dir: &str, json_settings: &str) -> Result<Self, BError> {
+        let work_dir: PathBuf = PathBuf::from(work_dir);
+        let result: Result<WsSettings, BError> = WsSettings::from_str(json_settings);
+        match result {
+            Ok(rsettings) => {
+               Ok(Self::new(work_dir, rsettings))
+            }
+            Err(e) => {
+                Err(e)
+            } 
+        }
+    }
+
     pub fn new(work_dir: PathBuf, settings: WsSettings) -> Self {
         let docker = DockerImage {
             image: settings.docker_image.clone(),

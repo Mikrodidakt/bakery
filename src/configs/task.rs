@@ -137,6 +137,16 @@ impl TaskConfig {
         })
     }
     
+    /*
+    pub fn expand_ctx(&self, ctx: &Context) {
+        ctx.expand_str(self.builddir);
+        ctx.expand_str(self.build);
+        ctx.expand_str(self.clean);
+        ctx.expand_vec(self.recipes);
+        self.artifacts.expand_ctx();
+    }
+    */
+
     pub fn index(&self) -> &str {
         &self.index
     }

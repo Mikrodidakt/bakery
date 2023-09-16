@@ -54,9 +54,16 @@ impl Helper {
             work_dir,
             Helper::setup_ws_settings(json_settings),
         );
-        let config = Helper::setup_build_config(json_build_config);
-        let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::new(&settings, config);
-        ws_config
+        let result: Result<WsBuildConfigHandler, BError> = WsBuildConfigHandler::from_str(&settings, json_build_config);
+        match result {
+            Ok(ws_config) => {
+                ws_config
+            }
+            Err(e) => {
+                eprintln!("Error parsing build config: {}", e);
+                panic!();
+            } 
+        }
     }
 
     pub fn setup_ws(test_work_dir: &str, json_settings: &str, json_build_config: &str) -> Workspace {

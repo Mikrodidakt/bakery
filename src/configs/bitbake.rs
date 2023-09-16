@@ -37,6 +37,9 @@ impl BBConfig {
         })
     }
 
+    pub fn expand_ctx() {
+    }
+
     pub fn machine(&self) -> &str {
         &self.machine
     }

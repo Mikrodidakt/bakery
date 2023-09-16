@@ -79,7 +79,7 @@ The current format of the build config would look something like this
 
 use indexmap::IndexMap;
 use serde_json::Value;
-use crate::configs::{TaskConfig, BBConfig, Config};
+use crate::configs::{TaskConfig, BBConfig, Config, Context};
 use crate::error::BError;
 
 pub struct BuildConfig {
@@ -148,6 +148,13 @@ impl BuildConfig {
             tasks,
         })
     }
+
+    /*
+    pub fn expand_ctx(&self, ctx: &Context) {
+        self.bitbake.expand_ctx(ctx);
+        self.tasks.expand_ctx(ctx);
+    }
+    */
 
     pub fn version(&self) -> &String {
         &self.version
