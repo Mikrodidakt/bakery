@@ -47,3 +47,107 @@ impl<'a> Executer<'a> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use crate::commands::build;
+    use crate::executers::{Docker, DockerImage, Executer};
+    use crate::workspace::Workspace;
+    use crate::configs::{WsSettings, BuildConfig};
+    use crate::cli::*;
+    use crate::error::BError;
+    use crate::helper::Helper;
+
+    fn helper_test_docker(verification_str: &String, test_cmd: &String, test_work_dir: Option<String>, image: &DockerImage, workspace: &Workspace) -> Result<(), BError> {
+        let mut mocked_logger: MockLogger = MockLogger::new();
+        mocked_logger.expect_info().with(mockall::predicate::eq(verification_str.clone())).once().returning(|_x|());
+        let cli: Cli = Cli::new(Box::new(mocked_logger));
+        let docker: Docker = Docker::new(&workspace, image, true);
+        docker.run_cmd(test_cmd.clone(), test_work_dir.unwrap(), &cli)
+    }
+
+    fn helper_test_executer(verification_str: &String, test_cmd: &String, test_build_dir: Option<String>, docker: Option<Docker>, workspace: &Workspace) -> Result<(), BError> {
+        let mut mocked_logger: MockLogger = MockLogger::new();
+        mocked_logger.expect_info().with(mockall::predicate::eq(verification_str.clone())).once().returning(|_x|());
+        let cli: Cli = Cli::new(Box::new(mocked_logger));
+        let exec: Executer = Executer::new(workspace, &cli);
+        exec.execute(&test_cmd, std::env::vars(), test_build_dir, docker, true) 
+    }
+
+    #[test]
+    fn test_executer_build_dir() {
+        let test_work_dir = String::from("/test_work_dir");
+        let test_build_dir = String::from("test_build_dir");
+        let test_cmd = String::from("test_cmd");
+        let verification_str = format!("Execute 'cd {} && {}'", test_build_dir, test_cmd);
+        let work_dir: PathBuf = PathBuf::from(test_work_dir);
+        let json_ws_settings: &str = r#"
+        {
+            "version": "4"
+        }"#;
+        let json_build_config: &str = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {}
+        }
+        "#;
+        let ws_config: WsSettings = Helper::setup_ws_settings(json_ws_settings);
+        let build_config: BuildConfig = Helper::setup_build_config(json_build_config);
+        let workspace: Workspace = Workspace::new(Some(work_dir), ws_config, build_config);
+        let result: Result<(), BError> = helper_test_executer(
+            &verification_str,
+            &test_cmd,
+            Some(test_build_dir),
+            None,
+            &workspace
+        );
+        match result {
+            Err(err) => {
+                assert_eq!("Executer failed", err.message);
+            }
+            Ok(()) => {}
+        }
+    }
+
+    #[test]
+    fn test_executer_no_build_dir() {
+        let test_work_dir = String::from("test_work_dir");
+        let test_cmd = String::from("test_cmd");
+        let verification_str = format!("Execute 'cd {} && {}'", test_work_dir, test_cmd);
+        let work_dir: PathBuf = PathBuf::from(test_work_dir);
+        let json_ws_settings: &str = r#"
+        {
+            "version": "4"
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {}
+        }
+        "#;
+        let ws_config: WsSettings = Helper::setup_ws_settings(json_ws_settings);
+        let build_config: BuildConfig = Helper::setup_build_config(json_build_config);
+        let workspace: Workspace = Workspace::new(Some(work_dir), ws_config, build_config);
+        let result: Result<(), BError> = helper_test_executer(
+            &verification_str,
+            &test_cmd,
+            None,
+            None,
+            &workspace
+        );
+        match result {
+            Err(err) => {
+                assert_eq!("Executer failed", err.message);
+            }
+            Ok(()) => {}
+        }
+    }
+}
