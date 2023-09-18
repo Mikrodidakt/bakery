@@ -2,15 +2,35 @@ use indexmap::IndexMap;
 use serde_json::Value;
 use crate::error::BError;
 pub trait Config {
-    fn get_str_value(name: &str, data: &Value, default: Option<String>) -> Result<String, BError> {
+    fn get_str_manifest(name: &str, data: &Value, default: Option<String>) -> Result<String, BError> {
         match data.get(name) {
             Some(value) => {
-                if value.is_string() {
-                    Ok(value.as_str().unwrap().to_string())
-                } else {
-                    return Err(BError{ code: 0, message: format!("Failed to read '{}' is not a string", name)});
+                if value.is_object() {
+                    return Ok(value.to_string());
+                }
+                return Err(BError {
+                    code: 0,
+                    message: format!("Failed to read '{}'", name),
+                });
+            }
+            None => {
+                match default {
+                    Some(default_value) => Ok(default_value),
+                    None => Err(BError {
+                        code: 0,
+                        message: format!("Failed to read '{}'", name),
+                    }),
                 }
             }
+        }
+    }
+
+    fn get_str_value(name: &str, data: &Value, default: Option<String>) -> Result<String, BError> {
+        let value: Option<&str> = data.get(name).and_then(|v| v.as_str());
+        match value {
+            Some(value) => {
+                return Ok(value.to_string());
+            },
             None => {
                 match default {
                     Some(default_value) => Ok(default_value),

@@ -30,7 +30,7 @@ The task config has the following format in the build config
     }
 }
 */
-use crate::configs::Config;
+use crate::configs::{Config, Context};
 use serde_json::Value;
 use crate::error::BError;
 
@@ -137,15 +137,14 @@ impl TaskConfig {
         })
     }
     
-    /*
-    pub fn expand_ctx(&self, ctx: &Context) {
-        ctx.expand_str(self.builddir);
-        ctx.expand_str(self.build);
-        ctx.expand_str(self.clean);
-        ctx.expand_vec(self.recipes);
-        self.artifacts.expand_ctx();
+    pub fn expand_ctx(&mut self, ctx: &Context) {
+        self.builddir = ctx.expand_str(&self.builddir);
+        self.build = ctx.expand_str(&self.build);
+        self.clean = ctx.expand_str(&self.clean);
+        self.condition = ctx.expand_str(&self.condition);
+        self.recipes.iter_mut().for_each(|r: &mut String| *r = ctx.expand_str(r));
+        self.artifacts.iter_mut().for_each(|a: &mut ArtifactConfig| a.expand_ctx(ctx));
     }
-    */
 
     pub fn index(&self) -> &str {
         &self.index
@@ -194,9 +193,11 @@ impl TaskConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::configs::{TaskConfig, TType};
+    use crate::configs::{TaskConfig, TType, AType, Context};
     use crate::error::BError;
     use crate::helper::Helper;
+
+    use indexmap::{IndexMap, indexmap};
 
     #[test]
     fn test_task_config_none_bb() {
@@ -306,22 +307,21 @@ mod tests {
         assert_eq!(config.recipes(), &vec![String::from("test-image")]);
         assert!(!config.artifacts().is_empty());
         let artifacts = config.artifacts();
-        assert_eq!(artifacts[0].ttype(), "archive");
+        assert_eq!(artifacts[0].ttype(), AType::Archive);
         assert_eq!(artifacts[0].name(), "test.zip");
         let dir_artifacts = artifacts[0].artifacts();
-        assert_eq!(dir_artifacts[0].ttype(), "directory");
+        assert_eq!(dir_artifacts[0].ttype(), AType::Directory);
         assert_eq!(dir_artifacts[0].name(), "dir-name");
         assert!(!dir_artifacts[0].artifacts().is_empty());
         let files = dir_artifacts[0].artifacts();
         let mut i = 1;
         for f in files.iter() {
-            assert_eq!(f.ttype(), "file");
+            assert_eq!(f.ttype(), AType::File);
             assert!(f.name().is_empty());
             assert_eq!(f.source(), &format!("file{}.txt", i));
             assert!(f.dest().is_empty());
             i += 1;
         }
-
     }
 
     #[test]
@@ -362,5 +362,70 @@ mod tests {
                 assert_eq!(e.message, String::from("Invalid 'artifact' format in build config. Invalid type 'invalid'"));
             }
         }
+    }
+
+    #[test]
+    fn test_task_config_expand_context() {
+        let variables: IndexMap<String, String> = indexmap! {
+            "TEST_RECIPE".to_string() => "test-image".to_string(),
+            "TEST_ARCHIVE".to_string() => "test.zip".to_string(),
+            "TEST_DIR".to_string() => "dir-name".to_string(),
+            "TEST_FILE".to_string() => "file1.txt".to_string()
+        };
+        let ctx: Context = Context::new(&variables);
+        let json_test_str = r#"
+        {
+            "index": "0",
+            "name": "task1-name",
+            "recipes": [
+                "${TEST_RECIPE}"
+            ],
+            "artifacts": [
+                {
+                    "type": "archive",
+                    "name": "${TEST_ARCHIVE}",
+                    "artifacts": [
+                        {
+                            "type": "directory",
+                            "name": "${TEST_DIR}",
+                            "artifacts": [
+                                {
+                                    "source": "${TEST_FILE}"
+                                },
+                                {
+                                    "source": "file2.txt"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+        "#;
+        let mut config = Helper::setup_task_config(json_test_str);
+        config.expand_ctx(&ctx);
+        assert_eq!(config.index(), "0");
+        assert_eq!(config.name(), "task1-name");
+        assert_eq!(config.disabled(), "false");
+        assert_eq!(config.ttype(), TType::Bitbake);
+        assert_eq!(config.recipes(), &vec![String::from("test-image")]);
+        assert!(!config.artifacts().is_empty());
+        let artifacts = config.artifacts();
+        assert_eq!(artifacts[0].ttype(), AType::Archive);
+        assert_eq!(artifacts[0].name(), "test.zip");
+        let dir_artifacts = artifacts[0].artifacts();
+        assert_eq!(dir_artifacts[0].ttype(), AType::Directory);
+        assert_eq!(dir_artifacts[0].name(), "dir-name");
+        assert!(!dir_artifacts[0].artifacts().is_empty());
+        let files = dir_artifacts[0].artifacts();
+        let mut i = 1;
+        for f in files.iter() {
+            assert_eq!(f.ttype(), AType::File);
+            assert!(f.name().is_empty());
+            assert_eq!(f.source(), &format!("file{}.txt", i));
+            assert!(f.dest().is_empty());
+            i += 1;
+        }
+
     }
 }

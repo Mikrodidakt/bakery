@@ -1,7 +1,7 @@
 use indexmap::{IndexMap, indexmap};
-use std::path::{PathBuf, Path};
+use std::path::PathBuf;
 
-use crate::configs::{Context, BuildConfig, TaskConfig, TType, WsSettings};
+use crate::configs::{Context, BuildConfig};
 use crate::workspace::WsSettingsHandler;
 use crate::error::BError;
 
@@ -50,10 +50,11 @@ impl WsBuildConfigHandler {
         };
         let mut ctx: Context = Context::new(&ctx_variables);
         ctx.update(config.context());
-        //config.expand_ctx(&ctx);
+        let mut mut_config: BuildConfig = config;
+        mut_config.expand_ctx(&ctx);
 
         WsBuildConfigHandler {
-            config,
+            config: mut_config,
             ctx,
             work_dir: settings.work_dir().clone(),
             build_dir: settings.builds_dir().clone(),
@@ -150,11 +151,14 @@ impl WsBuildConfigHandler {
     }
 
     pub fn bb_docker_image(&self) -> String {
-        let docker: String = self.config.bitbake().docker().to_string();
+        self.config.bitbake().docker().to_string()
+        // Remove this later on when we have determined we don't need to expand
+        // the docker image
+        /*let docker: String = self.config.bitbake().docker().to_string();
         if !docker.is_empty() {
             return self.ctx.expand_str(docker.as_str())
         }
-        docker
+        docker*/
     }
 
     pub fn bb_build_config_dir(&self) -> PathBuf {

@@ -1,4 +1,4 @@
-use crate::configs::{TType, TaskConfig};
+use crate::configs::{TType, TaskConfig, ArtifactConfig};
 use crate::workspace::WsBuildConfigHandler;
 
 use std::path::{Path, PathBuf};
@@ -25,12 +25,19 @@ impl<'a> WsTaskConfigHandler<'a> {
                 return self.ws_config.bb_build_dir();
             }
         }
+
+        self.ws_config
+                .work_dir()
+                .join(PathBuf::from(self.task_config.builddir()))
+
+        /*
         return self.ws_config.context().expand_path(
             &self
                 .ws_config
                 .work_dir()
                 .join(PathBuf::from(self.task_config.builddir())),
         );
+         */
     }
 
     pub fn ttype(&self) -> TType {
@@ -41,22 +48,31 @@ impl<'a> WsTaskConfigHandler<'a> {
         &self.name
     }
 
-    pub fn build_cmd(&self) -> String {
+    pub fn build_cmd(&self) -> &str {
+        self.task_config.build()
+        /*
         self.ws_config
             .context()
             .expand_str(self.task_config.build())
+        */
     }
 
-    pub fn clean_cmd(&self) -> String {
+    pub fn clean_cmd(&self) -> &str {
+        self.task_config.clean()
+        /*
         self.ws_config
             .context()
             .expand_str(self.task_config.clean())
+        */
     }
 
-    pub fn docker(&self) -> String {
+    pub fn docker(&self) -> &str {
+        self.task_config.docker()
+        /*
         self.ws_config
             .context()
             .expand_str(self.task_config.docker())
+        */
     }
 
     pub fn disabled(&self) -> bool {
@@ -66,11 +82,10 @@ impl<'a> WsTaskConfigHandler<'a> {
         return false;
     }
 
-    /*
-    pub fn recipes(&self) -> Vec<String> {
-        self.ws_config.context().expand_vec(self.task_config.recipes())
+    pub fn recipes(&self) -> &Vec<String> {
+        self.task_config.recipes()
+        //self.ws_config.context().expand_vec(self.task_config.recipes())
     }
-    */
 
     pub fn condition(&self) -> bool {
         let condition: &str = self.task_config.condition();
@@ -79,14 +94,16 @@ impl<'a> WsTaskConfigHandler<'a> {
             return true;
         }
 
-        match self.ws_config.context().expand_str(condition).as_str() {
+        //match self.ws_config.context().expand_str(condition).as_str() {
+        match condition {
             "1" | "yes" | "y" | "Y" | "true" | "YES" | "TRUE" | "True" | "Yes" => return true,
             _ => return false,
         }
     }
-    /*
-    pub fn artifacts(&self, build: &str) -> IndexMap<String, String> {}
-    */
+    
+    pub fn artifacts(&self) -> &Vec<ArtifactConfig> {
+        self.task_config.artifacts()
+    }
 }
 
 #[cfg(test)]

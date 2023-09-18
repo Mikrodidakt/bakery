@@ -46,7 +46,8 @@ impl Context {
         while self.regexp.is_match(expanded_string.as_str()) {
             expanded_string = self.__expand_str(expanded_string.as_str());
             if counter > 10 {
-                panic!("The context of the build config appear to be incorrect");
+                // TODO not sure we should panic. If we don't find a context should we panic then?
+                panic!("Failed to expand context in string '{}'", expanded_string);
             }
             counter += 1;
         }
