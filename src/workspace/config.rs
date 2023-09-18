@@ -1,4 +1,5 @@
 use indexmap::{IndexMap, indexmap};
+use serde_json::value::Index;
 use std::path::PathBuf;
 
 use crate::configs::{Context, BuildConfig};
@@ -79,6 +80,14 @@ impl WsBuildConfigHandler {
                 return Err(BError{ code: 0, message: format!("Task '{}' does not exists in build config", task)});
             }
         }
+    }
+
+    pub fn tasks(&self) -> IndexMap<String, WsTaskConfigHandler> {
+        let mut tasks: IndexMap<String, WsTaskConfigHandler> = IndexMap::new();
+        self.config.tasks().iter().for_each(|(key, task_config)|{
+            tasks.insert(key.clone(), WsTaskConfigHandler::new(task_config, &self));
+        });
+        tasks
     }
 
     pub fn extend_ctx(&self, ctx: &Context) {}
@@ -359,5 +368,74 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_ws_config_tasks() {
+        let json_settings = r#"
+        {
+            "version": "4"
+        }"#;
+        let json_build_config = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {},
+            "tasks": { 
+                "task0": {
+                    "index": "0",
+                    "name": "task0",
+                    "type": "non-bitbake",
+                    "builddir": "test/task0",
+                    "build": "cmd0",
+                    "clean": "clean0",
+                    "artifacts": [
+                        {
+                            "source": "test/file0-1.txt"
+                        }
+                    ]
+                },
+                "task1": {
+                    "index": "1",
+                    "name": "task1",
+                    "type": "non-bitbake",
+                    "builddir": "test/task1",
+                    "build": "cmd1",
+                    "clean": "clean1",
+                    "artifacts": [
+                        {
+                            "source": "test/file1-1.txt"
+                        }
+                    ]
+                },
+                "task2": {
+                    "index": "2",
+                    "name": "task2",
+                    "type": "non-bitbake",
+                    "builddir": "test/task2",
+                    "build": "cmd2",
+                    "clean": "clean2",
+                    "artifacts": [
+                        {
+                            "source": "test/file2-1.txt"
+                        }
+                    ]
+                }
+            }
+        }"#;
+        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
+        let mut i: i32 = 0;
+        ws_config.tasks().iter().for_each(|(name, task)| {
+            assert_eq!(name, &format!("task{}", i));
+            assert_eq!(task.build_dir(), PathBuf::from(format!("/workspace/test/task{}", i)));
+            assert_eq!(task.build_cmd(), &format!("cmd{}", i));
+            assert_eq!(task.clean_cmd(), &format!("clean{}", i));
+            task.artifacts().iter().for_each(|a| {
+                assert_eq!(a.source(), &format!("test/file{}-1.txt", i));
+            });
+            i += 1;
+        });
     }
 }
