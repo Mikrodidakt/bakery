@@ -5,6 +5,7 @@ mod error;
 mod executers;
 mod configs;
 mod helper;
+mod fs;
 
 use crate::cli::bakery::Bakery;
 
