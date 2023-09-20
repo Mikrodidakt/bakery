@@ -1,6 +1,6 @@
-use std::path::{PathBuf, Path};
 use std::fs::File;
 use std::io::Write;
+use std::path::{Path, PathBuf};
 
 use crate::error::BError;
 
@@ -12,31 +12,29 @@ pub struct Manifest {
 
 impl Manifest {
     pub fn new(path: &PathBuf) -> Result<Self, BError> {
-        let mut name: String = String::new();
-        if let Some(file_name) = path.file_name() {
-            if let Some(file_name_str) = file_name.to_str() {
-                let file_name_string = file_name_str.to_string();
-                name = file_name_string;
-            } else {
-                return Err(BError{ code: 0, message: format!("Manifest file name is not valid UTF-8!")});
-            }
-        } else {
-            return Err(BError{ code: 0, message: format!("Manifest file path does not have a valid file name!")});
-        }
+        let name: String = path
+            .file_name()
+            .and_then(|file_name| file_name.to_str())
+            .ok_or(BError {
+                code: 0,
+                message: "Manifest file name is not valid UTF-8!".to_string(),
+            })?
+            .to_string();
 
-        let mut suffix: String = String::new();
-        if let Some(extension) = path.extension() {
-            if let Some(extension_str) = extension.to_str() {
-                suffix = extension_str.to_string();
-            } else {
-                return Err(BError{ code: 0, message: format!("Manifest file name is not valid UTF-8!")});
-            }
-        } else {
-            return Err(BError{ code: 0, message: format!("Manifest must have an extension!")});
-        }
+        let suffix: String = path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .ok_or(BError {
+                code: 0,
+                message: "Manifest file extension is not valid UTF-8!".to_string(),
+            })?
+            .to_string();
 
-        if !suffix.eq("json") {
-            return Err(BError{ code: 0, message: format!("Unsupported manifest extension '{}'!", suffix)});
+        if suffix != "json" {
+            return Err(BError {
+                code: 0,
+                message: format!("Unsupported manifest extension '{}'!", suffix),
+            });
         }
 
         Ok(Manifest {
@@ -83,13 +81,13 @@ impl Manifest {
 
 #[cfg(test)]
 mod tests {
-    use crate::fs::{Manifest, json};
     use crate::error::BError;
+    use crate::fs::{json, Manifest};
 
-    use std::path::{PathBuf, Path};
-    use tempdir::TempDir;
     use std::fs::File;
     use std::io::{self, Read};
+    use std::path::{Path, PathBuf};
+    use tempdir::TempDir;
 
     #[test]
     fn test_manifest() {
@@ -103,21 +101,25 @@ mod tests {
             }
         }
         "#;
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let path: &Path = temp_dir.path();
         let manifest_path: PathBuf = path.join("test-manifest.json");
         let manifest: Manifest = Manifest::new(&manifest_path).expect("Failed to setup manifest!");
-        
+
         assert_eq!(manifest.extension(), "json");
         assert_eq!(manifest.name(), "test-manifest.json");
         assert_eq!(manifest.path(), &manifest_path);
         assert!(!manifest.path().exists());
-        manifest.write(json_test_str).expect("Failed to write manifest file!");
+        manifest
+            .write(json_test_str)
+            .expect("Failed to write manifest file!");
         assert!(manifest.path().exists());
 
         let mut file: File = File::open(&manifest_path).expect("Failed to open manifest file!");
         let mut contents: String = String::new();
-        file.read_to_string(&mut contents).expect("Failed to read manifes file!");
+        file.read_to_string(&mut contents)
+            .expect("Failed to read manifes file!");
         assert_eq!(json_test_str, contents);
     }
 
@@ -133,14 +135,15 @@ mod tests {
             }
         }
         "#;
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let path: &Path = temp_dir.path();
         let manifest_path: PathBuf = path.join("test-manifest.txt");
         let result: Result<Manifest, BError> = Manifest::new(&manifest_path);
         match result {
             Ok(m) => {
                 panic!("We should have recived an error because the extension is not json");
-            },
+            }
             Err(e) => {
                 assert_eq!(e.message, "Unsupported manifest extension 'txt'!");
             }
