@@ -303,9 +303,10 @@ mod tests {
         //let work_dir: &Path = temp_dir.as_path();
         let archiver_path: PathBuf = work_dir.join("test-archiver.tar.gz");
         let files: Vec<PathBuf> = vec![
-            PathBuf::from(work_dir.clone().join("file1.txt")),
+            PathBuf::from(work_dir.clone().join("dir1/file1.txt")),
             PathBuf::from(work_dir.clone().join("file2.txt")),
-            PathBuf::from(work_dir.clone().join("file3.txt")),
+            PathBuf::from(work_dir.clone().join("dir2/file3.txt")),
+            PathBuf::from(work_dir.clone().join("dir3/file4.txt")),
         ];
         files.iter().for_each(|f| {
             if let Some(parent_dir) = f.parent() {

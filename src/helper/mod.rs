@@ -4,18 +4,41 @@ use crate::configs::{WsSettings, BuildConfig, TaskConfig};
 use crate::fs::Archiver;
 
 use std::path::{PathBuf, Path};
-use std::fs::File;
+use std::fs::{File, DirEntry};
 use std::collections::HashSet;
 
 pub struct Helper;
 
 impl Helper {
+    pub fn list_files_in_dir(dir: &Path, files: &mut Vec<PathBuf>, strip: &Path) -> std::io::Result<()> {
+        if dir.is_dir() {
+            for entry in std::fs::read_dir(dir)? {
+                let entry = entry?;
+                let path = entry.path();
+    
+                if path.is_dir() {
+                    // Recursively visit sub-directory and collect its file paths
+                    Self::list_files_in_dir(&path, files, strip)?;
+                } else {
+                    // Add the file path to the list
+                    println!("path: {}", path.display());
+                    let p: PathBuf = path.strip_prefix(strip.as_os_str())
+                        .expect("Failed to strip prefix")
+                        .to_path_buf();
+                    files.push(p.clone());
+                }
+            }
+        }
+    
+        Ok(())
+    }
+
     pub fn list_files_in_archive(archive: &Archiver, work_dir: &Path) -> Result<Vec<PathBuf>, BError> {
         // TODO: the prefered solution would be to use the entries() of the tar::Archive struct
         // but for some reason it will always only return one entry so we are not able to list
         // the files without unpack the content.
 
-        let mut archived_files: Vec<PathBuf> = vec![PathBuf::from("")];
+        let mut archived_files: Vec<PathBuf> = Vec::new();
         let unpack_dir: PathBuf = work_dir.join(PathBuf::from("unpack/"));
 
         if !archive.path().exists() {
@@ -44,19 +67,7 @@ impl Helper {
 
             tar.unpack(unpack_dir.to_str().unwrap()).unwrap();
 
-            archived_files = std::fs::read_dir(&unpack_dir)
-                .map_err(|err| BError {
-                    code: 1, // You may set the appropriate error code
-                    message: format!("Failed unpack archive '{}'", err),
-                })?
-                .map(|f| {
-                    let p = f.unwrap().path();
-                    println!("work_dir: {}, unpack_dir: {}, file: {}", work_dir.display(), unpack_dir.display(), p.display());
-                    p.strip_prefix(unpack_dir.as_os_str())
-                        .expect("Failed to strip prefix")
-                        .to_path_buf()
-                })
-                .collect();
+            Helper::list_files_in_dir(&unpack_dir, &mut archived_files, &unpack_dir).expect("Failed to list files in dir");
         } else if archive.extension() == "zip" {
         }
 
