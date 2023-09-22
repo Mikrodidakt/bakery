@@ -87,7 +87,7 @@ impl Archiver {
                 });
             }
             compression = extensions.last().unwrap().clone();
-            if !["gz", "bz"].contains(&compression.as_str()) {
+            if !["gz", "bz2"].contains(&compression.as_str()) {
                 return Err(BError {
                     code: 0,
                     message: format!("Unsupported compression '{}'!", compression),
@@ -235,11 +235,11 @@ mod tests {
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let path: &Path = temp_dir.path();
-        let archiver_path: PathBuf = path.join("test-archiver.tar.bz");
+        let archiver_path: PathBuf = path.join("test-archiver.tar.bz2");
         let archiver: Archiver = Archiver::new(&archiver_path).expect("Failed to setup archiver!");
-        assert_eq!(archiver.name(), "test-archiver.tar.bz");
+        assert_eq!(archiver.name(), "test-archiver.tar.bz2");
         assert_eq!(archiver.extension(), "tar");
-        assert_eq!(archiver.compression(), "bz");
+        assert_eq!(archiver.compression(), "bz2");
     }
 
     /*
@@ -299,8 +299,6 @@ mod tests {
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: &Path = temp_dir.path();
-        //let temp_dir: PathBuf = PathBuf::from("/home/mans/Workspace/rust/bakery/test");
-        //let work_dir: &Path = temp_dir.as_path();
         let archiver_path: PathBuf = work_dir.join("test-archiver.tar.gz");
         let files: Vec<PathBuf> = vec![
             PathBuf::from(work_dir.clone().join("dir1/file1.txt")),
@@ -308,16 +306,60 @@ mod tests {
             PathBuf::from(work_dir.clone().join("dir2/file3.txt")),
             PathBuf::from(work_dir.clone().join("dir3/file4.txt")),
         ];
+        let archiver: Archiver = Archiver::new(&archiver_path).expect("Failed to setup archiver!");
+
         files.iter().for_each(|f| {
             if let Some(parent_dir) = f.parent() {
                 std::fs::create_dir_all(parent_dir).expect("Failed to create parent dir");
             }
             let _file: File = File::create(f).expect("Failed to create test file");
         });
-        let archiver: Archiver = Archiver::new(&archiver_path).expect("Failed to setup archiver!");
+
         archiver
             .add_files(&files, work_dir)
             .expect("Failed too create archive test-archive.tar.gz");
+
+        // Verify that the archive has been created correctly by unpacking and iterate over
+        // all files from the archive and compare with the expected files defined in the files
+        // vector. We tried using the entries() for the tar::archive but for some reasone we
+        // could not get it to work. We will revisit it at some point later on.
+        assert!(archiver_path.exists());
+
+        let archived_files: Vec<PathBuf> =
+            Helper::list_files_in_archive(&archiver, &work_dir.join(PathBuf::from("unpack/")))
+                .expect("Failed to list files in archive");
+        Helper::verify_archived_files(&files, &archived_files, work_dir);
+    }
+
+    #[test]
+    fn test_archiver_file_tar_bz2() {
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: &Path = temp_dir.path();
+        let archiver_path: PathBuf = work_dir.join("test-archiver.tar.bz2");
+        let files: Vec<PathBuf> = vec![
+            PathBuf::from(work_dir.clone().join("dir2/file1.txt")),
+            PathBuf::from(work_dir.clone().join("file2.txt")),
+            PathBuf::from(work_dir.clone().join("dir3/file3.txt")),
+            PathBuf::from(work_dir.clone().join("dir1/file4.txt")),
+        ];
+        let archiver: Archiver = Archiver::new(&archiver_path).expect("Failed to setup archiver!");
+
+        files.iter().for_each(|f| {
+            if let Some(parent_dir) = f.parent() {
+                std::fs::create_dir_all(parent_dir).expect("Failed to create parent dir");
+            }
+            let _file: File = File::create(f).expect("Failed to create test file");
+        });
+
+        archiver
+            .add_files(&files, work_dir)
+            .expect("Failed too create archive test-archive.tar.bz2");
+
+        // Verify that the archive has been created correctly by unpacking and iterate over
+        // all files from the archive and compare with the expected files defined in the files
+        // vector. We tried using the entries() for the tar::archive but for some reasone we
+        // could not get it to work. We will revisit it at some point later on.
         assert!(archiver_path.exists());
 
         let archived_files: Vec<PathBuf> =
