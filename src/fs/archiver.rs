@@ -1,5 +1,9 @@
+use bzip2::read::BzDecoder;
+use bzip2::write::BzEncoder;
+use flate2::read::GzDecoder;
+use flate2::write::GzEncoder;
+use std::fs::File;
 use std::path::{Path, PathBuf};
-use tempdir::TempDir;
 
 use crate::error::BError;
 
@@ -9,6 +13,12 @@ pub struct Archiver {
     name: String,
     extension: String,
     compression: String,
+}
+
+#[derive(Clone, PartialEq, Debug)]
+enum Mode {
+    Append,
+    Write,
 }
 
 impl Archiver {
@@ -32,46 +42,56 @@ impl Archiver {
         let mut extension: String = suffixes.get(0).unwrap_or(&String::from("")).clone();
         let mut compression: String = "".to_string();
 
-        println!("name: {}", name);
-        suffixes.iter().for_each(|s| { println!("suffix: {}", s)} );
-        println!("extension: {}", extension);
-        println!("compression: {}", compression);
         if let Some(first_suffix) = suffixes.get(0) {
-            println!("first suffix: {}", first_suffix);
             if ["tar", "zip"].contains(&first_suffix.as_str()) {
                 if suffixes.len() > 2 {
                     // This is to make sure that we can handle archive names with . in the name
                     // but also to make sure that we can handle tar.gz or any other tar archive
                     // with compression.
-                    println!("More than two suffixes we need to take special care");
                     if suffixes.last() == Some(&String::from(".zip")) {
                         // If the last is zip we will automatically assume all other suffixes are
                         // just part of the archive name for example archive.name.zip
                         extensions = vec!["zip".to_string()];
-                    } else if suffixes.get(suffixes.len() - 2).cloned() == Some(String::from("tar")) {
+                    } else if suffixes.get(suffixes.len() - 2).cloned() == Some(String::from("tar"))
+                    {
                         // We take the length of the suffixes array minuz 2 because we assume there will be at
                         // most two suffixes when the archive is tar. We read out the archive suffixe and the
                         // compression suffixe and store them in the suffixe vector.
                         extensions = suffixes.iter().rev().take(2).cloned().collect();
                     } else if suffixes.get(0) == Some(&String::from("tar")) {
-                        return Err(BError{ code: 0, message: "Archive must have an compression!".to_string() });
+                        return Err(BError {
+                            code: 0,
+                            message: "Archive must have an compression!".to_string(),
+                        });
                     }
                 }
             } else {
-                return Err(BError{ code: 0, message: format!("Unsupported archive '{}'!", suffixes.get(0).unwrap()) });
+                return Err(BError {
+                    code: 0,
+                    message: format!("Unsupported archive '{}'!", suffixes.get(0).unwrap()),
+                });
             }
         } else {
-            return Err(BError{ code: 0, message: "Archive must have an extension!".to_string() });
+            return Err(BError {
+                code: 0,
+                message: "Archive must have an extension!".to_string(),
+            });
         }
 
         extension = extensions.get(0).unwrap().clone();
         if extensions.first() == Some(&String::from("tar")) {
             if extensions.len() < 2 {
-                return Err(BError{ code: 0, message: "Archive must have an compression!".to_string() });
+                return Err(BError {
+                    code: 0,
+                    message: "Archive must have an compression!".to_string(),
+                });
             }
             compression = extensions.last().unwrap().clone();
-            if !["gz", "bz", "xz"].contains(&compression.as_str()) {
-                return Err(BError{ code: 0, message: format!("Unsupported compression '{}'!", compression) });
+            if !["gz", "bz"].contains(&compression.as_str()) {
+                return Err(BError {
+                    code: 0,
+                    message: format!("Unsupported compression '{}'!", compression),
+                });
             }
         }
 
@@ -83,7 +103,7 @@ impl Archiver {
         })
     }
 
-    pub fn path(&self) -> &Path {
+    pub fn path(&self) -> &PathBuf {
         &self.path
     }
 
@@ -99,25 +119,97 @@ impl Archiver {
         &self.compression
     }
 
-    pub fn add_files(&self, files: Vec<PathBuf>, tmp_dir: TempDir) -> Result<(), BError> {
+    pub fn add_files(&self, files: &Vec<PathBuf>, work_dir: &Path) -> Result<(), BError> {
+        let mut mode: Mode = Mode::Write;
+
+        if let Some(parent_dir) = self.path.parent() {
+            std::fs::create_dir_all(parent_dir).map_err(|err| BError {
+                code: 1, // You may set the appropriate error code
+                message: format!("Failed to create paranets '{}'", err),
+            })?;
+        }
+
+        // If the archive file exists then we should append the files to the existing
+        // archive else we should create the archive file.
+        if self.path.exists() {
+            // For now let's disable the append until we know for sure that we want
+            // to use append file to archive.
+            mode = Mode::Write;
+            // mode == Mode::Append;
+        }
+
+        if self.extension() == "tar" {
+            if mode == Mode::Append {}
+
+            let mut file: File = File::create(&self.path).map_err(|err| BError {
+                code: 1, // You may set the appropriate error code
+                message: format!("Failed to create archive file '{}'", err),
+            })?;
+
+            let enc: Box<dyn std::io::Write>;
+            let mut tar: tar::Builder<Box<dyn std::io::Write>>;
+            if self.compression() == "gz" {
+                enc = Box::new(flate2::write::GzEncoder::new(
+                    file,
+                    flate2::Compression::default(),
+                ));
+            } else if self.compression() == "bz2" {
+                enc = Box::new(bzip2::write::BzEncoder::new(
+                    file,
+                    bzip2::Compression::default(),
+                ));
+            } else {
+                return Err(BError {
+                    code: 0,
+                    message: format!("Unsupported compression '{}'!", self.compression),
+                });
+            }
+
+            tar = tar::Builder::new(enc);
+            for path in files {
+                let striped_path: PathBuf = path
+                    .strip_prefix(work_dir.as_os_str())
+                    .map_err(|err| BError {
+                        code: 1, // You may set the appropriate error code
+                        message: format!("Failed to strip prefix: '{}'", err),
+                    })?
+                    .to_path_buf();
+                let mut file: File = File::open(path).map_err(|err| BError {
+                    code: 1, // You may set the appropriate error code
+                    message: format!("Failed to open file to add to archive: '{}'", err),
+                })?;
+                tar.append_file(striped_path, &mut file)
+                    .map_err(|err| BError {
+                        code: 1, // You may set the appropriate error code
+                        message: format!("Failed to add file to archive '{}'", err),
+                    })?;
+            }
+            tar.finish().map_err(|err| BError {
+                code: 1, // You may set the appropriate error code
+                message: format!("Failed to create archive '{}'", err),
+            })?;
+        } else if self.extension() == "zip" {
+            if mode == Mode::Append {}
+        }
+
         Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::error::BError;
-    use crate::fs::{json, Archiver};
-
-    use core::arch;
     use std::fs::File;
-    use std::io::{self, Read};
     use std::path::{Path, PathBuf};
     use tempdir::TempDir;
 
+    use crate::error::BError;
+    use crate::fs::Archiver;
+    use crate::helper::Helper;
+
     #[test]
     fn test_archiver_zip() {
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let path: &Path = temp_dir.path();
         let archiver_path: PathBuf = path.join("test-archiver.zip");
         let archiver: Archiver = Archiver::new(&archiver_path).expect("Failed to setup archiver!");
@@ -128,7 +220,8 @@ mod tests {
 
     #[test]
     fn test_archiver_tar_gz() {
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let path: &Path = temp_dir.path();
         let archiver_path: PathBuf = path.join("test-archiver.tar.gz");
         let archiver: Archiver = Archiver::new(&archiver_path).expect("Failed to setup archiver!");
@@ -139,7 +232,8 @@ mod tests {
 
     #[test]
     fn test_archiver_tar_bz() {
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let path: &Path = temp_dir.path();
         let archiver_path: PathBuf = path.join("test-archiver.tar.bz");
         let archiver: Archiver = Archiver::new(&archiver_path).expect("Failed to setup archiver!");
@@ -148,6 +242,7 @@ mod tests {
         assert_eq!(archiver.compression(), "bz");
     }
 
+    /*
     #[test]
     fn test_archiver_tar_xz() {
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
@@ -158,31 +253,75 @@ mod tests {
         assert_eq!(archiver.extension(), "tar");
         assert_eq!(archiver.compression(), "xz");
     }
+    */
 
     #[test]
     fn test_archiver_error_unsupported_archive() {
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let path: &Path = temp_dir.path();
         let archiver_path: PathBuf = path.join("test-archiver.gzip");
-        let error: BError = Archiver::new(&archiver_path).expect_err("We are expecting an error but got an Archiver");
+        let error: BError = Archiver::new(&archiver_path)
+            .expect_err("We are expecting an error but got an Archiver");
         assert_eq!(error.message, "Unsupported archive 'gzip'!".to_string());
     }
 
     #[test]
     fn test_archiver_error_unsupported_compression() {
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let path: &Path = temp_dir.path();
         let archiver_path: PathBuf = path.join("test-archiver.tar.invalid");
-        let error: BError = Archiver::new(&archiver_path).expect_err("We are expecting an error but got an Archiver");
-        assert_eq!(error.message, "Unsupported compression 'invalid'!".to_string());
+        let error: BError = Archiver::new(&archiver_path)
+            .expect_err("We are expecting an error but got an Archiver");
+        assert_eq!(
+            error.message,
+            "Unsupported compression 'invalid'!".to_string()
+        );
     }
 
     #[test]
     fn test_archiver_error_no_compression() {
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let path: &Path = temp_dir.path();
         let archiver_path: PathBuf = path.join("test-archiver.tar");
-        let error: BError = Archiver::new(&archiver_path).expect_err("We are expecting an error but got an Archiver");
-        assert_eq!(error.message, "Archive must have an compression!".to_string());
+        let error: BError = Archiver::new(&archiver_path)
+            .expect_err("We are expecting an error but got an Archiver");
+        assert_eq!(
+            error.message,
+            "Archive must have an compression!".to_string()
+        );
+    }
+
+    #[test]
+    fn test_archiver_file_tar_gz() {
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: &Path = temp_dir.path();
+        //let temp_dir: PathBuf = PathBuf::from("/home/mans/Workspace/rust/bakery/test");
+        //let work_dir: &Path = temp_dir.as_path();
+        let archiver_path: PathBuf = work_dir.join("test-archiver.tar.gz");
+        let files: Vec<PathBuf> = vec![
+            PathBuf::from(work_dir.clone().join("file1.txt")),
+            PathBuf::from(work_dir.clone().join("file2.txt")),
+            PathBuf::from(work_dir.clone().join("file3.txt")),
+        ];
+        files.iter().for_each(|f| {
+            if let Some(parent_dir) = f.parent() {
+                std::fs::create_dir_all(parent_dir).expect("Failed to create parent dir");
+            }
+            let _file: File = File::create(f).expect("Failed to create test file");
+        });
+        let archiver: Archiver = Archiver::new(&archiver_path).expect("Failed to setup archiver!");
+        archiver
+            .add_files(&files, work_dir)
+            .expect("Failed too create archive test-archive.tar.gz");
+        assert!(archiver_path.exists());
+
+        let archived_files: Vec<PathBuf> =
+            Helper::helper_list_files(&archiver, &work_dir.join(PathBuf::from("unpack/")))
+                .expect("Failed to list files in archive");
+        Helper::helper_verify_archived_files(&files, &archived_files, work_dir);
     }
 }
