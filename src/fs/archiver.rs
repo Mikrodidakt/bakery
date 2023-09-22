@@ -320,8 +320,8 @@ mod tests {
         assert!(archiver_path.exists());
 
         let archived_files: Vec<PathBuf> =
-            Helper::helper_list_files(&archiver, &work_dir.join(PathBuf::from("unpack/")))
+            Helper::list_files_in_archive(&archiver, &work_dir.join(PathBuf::from("unpack/")))
                 .expect("Failed to list files in archive");
-        Helper::helper_verify_archived_files(&files, &archived_files, work_dir);
+        Helper::verify_archived_files(&files, &archived_files, work_dir);
     }
 }

@@ -10,7 +10,7 @@ use std::collections::HashSet;
 pub struct Helper;
 
 impl Helper {
-    pub fn helper_list_files(archive: &Archiver, work_dir: &Path) -> Result<Vec<PathBuf>, BError> {
+    pub fn list_files_in_archive(archive: &Archiver, work_dir: &Path) -> Result<Vec<PathBuf>, BError> {
         // TODO: the prefered solution would be to use the entries() of the tar::Archive struct
         // but for some reason it will always only return one entry so we are not able to list
         // the files without unpack the content.
@@ -63,7 +63,7 @@ impl Helper {
         Ok(archived_files)
     }
 
-    pub fn helper_verify_archived_files(expected_files: &Vec<PathBuf>, archived_files: &Vec<PathBuf>, work_dir: &Path) {
+    pub fn verify_archived_files(expected_files: &Vec<PathBuf>, archived_files: &Vec<PathBuf>, work_dir: &Path) {
             // strip the workdir from the files
             let files: Vec<PathBuf> = expected_files.iter()
                 .map(|f| {
