@@ -1,9 +1,7 @@
-use bzip2::read::BzDecoder;
-use bzip2::write::BzEncoder;
-use flate2::read::GzDecoder;
-use flate2::write::GzEncoder;
 use std::fs::File;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use zip::{write::FileOptions, ZipWriter};
 
 use crate::error::BError;
 
@@ -138,24 +136,24 @@ impl Archiver {
             // mode == Mode::Append;
         }
 
+        let mut archive_file: File = File::create(&self.path).map_err(|err| BError {
+            code: 1, // You may set the appropriate error code
+            message: format!("Failed to create archive file '{}'", err),
+        })?;
+
         if self.extension() == "tar" {
             if mode == Mode::Append {}
-
-            let mut file: File = File::create(&self.path).map_err(|err| BError {
-                code: 1, // You may set the appropriate error code
-                message: format!("Failed to create archive file '{}'", err),
-            })?;
 
             let enc: Box<dyn std::io::Write>;
             let mut tar: tar::Builder<Box<dyn std::io::Write>>;
             if self.compression() == "gz" {
                 enc = Box::new(flate2::write::GzEncoder::new(
-                    file,
+                    archive_file,
                     flate2::Compression::default(),
                 ));
             } else if self.compression() == "bz2" {
                 enc = Box::new(bzip2::write::BzEncoder::new(
-                    file,
+                    archive_file,
                     bzip2::Compression::default(),
                 ));
             } else {
@@ -184,12 +182,48 @@ impl Archiver {
                         message: format!("Failed to add file to archive '{}'", err),
                     })?;
             }
+
             tar.finish().map_err(|err| BError {
                 code: 1, // You may set the appropriate error code
                 message: format!("Failed to create archive '{}'", err),
             })?;
         } else if self.extension() == "zip" {
             if mode == Mode::Append {}
+
+            let mut zip: ZipWriter<File> = zip::write::ZipWriter::new(archive_file);
+
+            let options: FileOptions = zip::write::FileOptions::default().unix_permissions(0o755);
+
+            for path in files {
+                let striped_path: PathBuf = path
+                    .strip_prefix(work_dir.as_os_str())
+                    .map_err(|err| BError {
+                        code: 1, // You may set the appropriate error code
+                        message: format!("Failed to strip prefix: '{}'", err),
+                    })?
+                    .to_path_buf();
+
+                let mut file: File = File::open(path).map_err(|err| BError {
+                    code: 1, // You may set the appropriate error code
+                    message: format!("Failed to open file to add to archive: '{}'", err),
+                })?;
+
+                zip.start_file(striped_path.to_string_lossy().to_owned(), options)
+                    .map_err(|err| BError {
+                        code: 1, // You may set the appropriate error code
+                        message: format!("Failed to initialize file to archive: '{}'", err),
+                    })?;
+
+                std::io::copy(&mut file, &mut zip).map_err(|err| BError {
+                    code: 1, // You may set the appropriate error code
+                    message: format!("Failed to copy file into archive: '{}'", err),
+                })?;
+            }
+
+            zip.finish().map_err(|err| BError {
+                code: 1, // You may set the appropriate error code
+                message: format!("Failed to create archive '{}'", err),
+            })?;
         }
 
         Ok(())
@@ -306,15 +340,10 @@ mod tests {
             PathBuf::from(work_dir.clone().join("dir2/file3.txt")),
             PathBuf::from(work_dir.clone().join("dir3/file4.txt")),
         ];
+
+        Helper::create_test_files(&files);
+
         let archiver: Archiver = Archiver::new(&archiver_path).expect("Failed to setup archiver!");
-
-        files.iter().for_each(|f| {
-            if let Some(parent_dir) = f.parent() {
-                std::fs::create_dir_all(parent_dir).expect("Failed to create parent dir");
-            }
-            let _file: File = File::create(f).expect("Failed to create test file");
-        });
-
         archiver
             .add_files(&files, work_dir)
             .expect("Failed too create archive test-archive.tar.gz");
@@ -343,15 +372,10 @@ mod tests {
             PathBuf::from(work_dir.clone().join("dir3/file3.txt")),
             PathBuf::from(work_dir.clone().join("dir1/file4.txt")),
         ];
+
+        Helper::create_test_files(&files);
+
         let archiver: Archiver = Archiver::new(&archiver_path).expect("Failed to setup archiver!");
-
-        files.iter().for_each(|f| {
-            if let Some(parent_dir) = f.parent() {
-                std::fs::create_dir_all(parent_dir).expect("Failed to create parent dir");
-            }
-            let _file: File = File::create(f).expect("Failed to create test file");
-        });
-
         archiver
             .add_files(&files, work_dir)
             .expect("Failed too create archive test-archive.tar.bz2");
@@ -365,6 +389,33 @@ mod tests {
         let archived_files: Vec<PathBuf> =
             Helper::list_files_in_archive(&archiver, &work_dir.join(PathBuf::from("unpack/")))
                 .expect("Failed to list files in archive");
+        Helper::verify_archived_files(&files, &archived_files, work_dir);
+    }
+
+    #[test]
+    fn test_archiver_file_zip() {
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: &Path = temp_dir.path();
+        let archiver_path: PathBuf = work_dir.join("test-archiver.zip");
+        let files: Vec<PathBuf> = vec![
+            PathBuf::from(work_dir.clone().join("dir2/file1.txt")),
+            PathBuf::from(work_dir.clone().join("file2.txt")),
+            PathBuf::from(work_dir.clone().join("dir3/file3.txt")),
+            PathBuf::from(work_dir.clone().join("dir1/file4.txt")),
+        ];
+
+        Helper::create_test_files(&files);
+
+        let archiver: Archiver = Archiver::new(&archiver_path).expect("Failed to setup archiver!");
+        archiver
+            .add_files(&files, work_dir)
+            .expect("Failed too create archive test-archive.zip");
+
+        let archived_files: Vec<PathBuf> =
+            Helper::list_files_in_archive(&archiver, &work_dir.join(PathBuf::from("unpack/")))
+                .expect("Failed to list files in archive");
+
         Helper::verify_archived_files(&files, &archived_files, work_dir);
     }
 }

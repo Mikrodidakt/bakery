@@ -1,15 +1,33 @@
+use rand::rngs::ThreadRng;
+
 use crate::workspace::{WsBuildConfigHandler, WsSettingsHandler, Workspace};
 use crate::error::BError;
 use crate::configs::{WsSettings, BuildConfig, TaskConfig};
 use crate::fs::Archiver;
 
 use std::path::{PathBuf, Path};
-use std::fs::{File, DirEntry};
+use std::fs::File;
+use std::io::Write;
 use std::collections::HashSet;
+use rand::prelude::*;
 
 pub struct Helper;
 
 impl Helper {
+    pub fn create_test_files(files: &Vec<PathBuf>) {
+        let mut rng: ThreadRng = rand::thread_rng();
+
+        files.iter().for_each(|f| {
+            if let Some(parent_dir) = f.parent() {
+                std::fs::create_dir_all(parent_dir).expect("Failed to create parent dir");
+            }
+            let mut file: File = File::create(f).expect("Failed to create test file");
+            let mut buffer = [0u8; 2048]; // Adjust the buffer size as needed
+            rng.fill(&mut buffer);
+            file.write_all(&buffer).expect("Failed to write random data to file");
+        });
+    }
+
     pub fn list_files_in_dir(dir: &Path, files: &mut Vec<PathBuf>, strip: &Path) -> std::io::Result<()> {
         if dir.is_dir() {
             for entry in std::fs::read_dir(dir)? {
@@ -69,6 +87,15 @@ impl Helper {
 
             Helper::list_files_in_dir(&unpack_dir, &mut archived_files, &unpack_dir).expect("Failed to list files in dir");
         } else if archive.extension() == "zip" {
+            let file: File = File::open(archive.path()).map_err(|err| BError {
+                code: 1, // You may set the appropriate error code
+                message: format!("Failed to open archive '{}'", err),
+            })?;
+            let mut zip: zip::ZipArchive<_> = zip::ZipArchive::new(file).expect("Failed to setup zip archive");
+            for i in 0..zip.len() {
+                let mut file: zip::read::ZipFile<'_> = zip.by_index(i).expect("Failed to read content from archive");
+                archived_files.push(PathBuf::from(file.name()));
+            }
         }
 
         Ok(archived_files)
