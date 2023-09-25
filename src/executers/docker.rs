@@ -78,7 +78,12 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
         let json_ws_settings: &str = r#"
         {
-            "version": "4"
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
         }"#;
         let json_build_config: &str = r#"
         {
@@ -122,7 +127,12 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from(test_work_dir.clone());
         let json_ws_settings: &str = r#"
         {
-            "version": "4"
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
         }"#;
         let json_build_config: &str = r#"
         {

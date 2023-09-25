@@ -12,7 +12,7 @@ use crate::error::BError;
 pub struct Workspace {
     settings: WsSettingsHandler,
     config: WsBuildConfigHandler,
-    //configs: IndexMap<PathBuf, String>,
+    configs: IndexMap<PathBuf, String>,
 }
 
 impl Workspace {
@@ -36,10 +36,9 @@ impl Workspace {
         }
     }
 
-    fn setup_settings(work_dir: PathBuf, settings: Option<WsSettings>, default: &mut bool) -> WsSettingsHandler {
+    fn setup_settings(work_dir: PathBuf, settings: Option<WsSettings>) -> WsSettingsHandler {
         match settings {
             Some(ws_settings) => {
-                *default = false;
                 WsSettingsHandler::new(work_dir.clone(), ws_settings)
             },
             None => {
@@ -51,23 +50,16 @@ impl Workspace {
                 // the tests.
                 let default_settings: &str  = r#"
                 {
-                    "version": "4",
-                    "builds": {
-                        "supported": [
-                            "default"
-                        ]
-                    }
+                    "version": "4"
                 }"#;
-                *default = true;
                 WsSettingsHandler::from_str(work_dir.to_str().unwrap(), default_settings).unwrap()
             }
         }
     }
 
-    fn setup_config(settings: &WsSettingsHandler, config: Option<BuildConfig>, default: &mut bool) -> WsBuildConfigHandler {
+    fn setup_config(settings: &WsSettingsHandler, config: Option<BuildConfig>) -> WsBuildConfigHandler {
         match config {
             Some(ws_config) => {
-                *default = false;
                 WsBuildConfigHandler::new(settings, ws_config)
             },
             None => {
@@ -85,7 +77,6 @@ impl Workspace {
                     "arch": "NA",
                     "bb": {}
                 }"#;
-                *default = true;
                 WsBuildConfigHandler::from_str(settings, default_config).unwrap()
             }
         }
@@ -129,28 +120,35 @@ impl Workspace {
         }
 
         let mut build_configs: IndexMap<PathBuf, String> = IndexMap::new();
-        for f in list_of_files {
-            let config_path: PathBuf = settings.configs_dir().join(f);
-            let config_str: String = JsonFileReader::new(config_path.to_string_lossy().to_string()).read_json()?;
-            let config: BuildConfig = BuildConfig::from_str(&config_str)?;
-            build_configs.insert(config_path, config.description().to_string());
+        if list_of_files.len() == 1 &&
+            list_of_files.get(0).unwrap() == &"default.json".to_string() {
+            // This means that we have a default build config which is the absolut
+            // minimum of a build config and will only be used if a command
+            // is used where a build config is not specified. This can occure when
+            // bakery is bootstraped into docker and when running some basic tests
+            build_configs.insert(PathBuf::from(settings.configs_dir().join("default.json")), config.description().to_string());
+        } else {
+            for f in list_of_files {
+                let config_path: PathBuf = settings.configs_dir().join(f);
+                let config_str: String = JsonFileReader::new(config_path.to_string_lossy().to_string()).read_json()?;
+                let config: BuildConfig = BuildConfig::from_str(&config_str)?;
+                build_configs.insert(config_path, config.description().to_string());
+            }
         }
 
         Ok(build_configs)
     }
 
     pub fn new(workdir: Option<PathBuf>, ws_config: Option<WsSettings>, build_config: Option<BuildConfig>) -> Result<Self, BError> {
-        let mut default_settings: bool = false;
-        let mut default_config: bool = false;
         let work_dir: PathBuf = Self::setup_work_directory(&workdir);
-        let settings: WsSettingsHandler = Self::setup_settings(work_dir, ws_config, &mut default_settings);
-        let config: WsBuildConfigHandler = Self::setup_config(&settings, build_config, &mut default_config);
-        //let configs: IndexMap<PathBuf, String> = Self::setup_list_of_available_configs(&settings, &config)?;
+        let settings: WsSettingsHandler = Self::setup_settings(work_dir, ws_config);
+        let config: WsBuildConfigHandler = Self::setup_config(&settings, build_config);
+        let configs: IndexMap<PathBuf, String> = Self::setup_list_of_available_configs(&settings, &config)?;
 
         Ok(Workspace {
             settings,
             config,
-            //configs,
+            configs,
         })
     }
 
@@ -164,10 +162,9 @@ impl Workspace {
 
     // Returns a dictionary including all build configurations names
     // and their description
-    /*pub fn build_configs(&self) -> &IndexMap<PathBuf, String> {
+    pub fn build_configs(&self) -> &IndexMap<PathBuf, String> {
         &self.configs
-    }*/
-
+    }
 
     /*
     pub fn collect(&self, build: &str) -> bool {}
@@ -189,30 +186,75 @@ impl Workspace {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::collections::HashMap;
+    use std::path::{PathBuf, Path};
+    use tempdir::TempDir;
+
     use crate::executers::DockerImage;
     use crate::helper::Helper;
-
-    use super::Workspace;
+    use crate::workspace::Workspace;
 
     #[test]
     fn test_workspace_default() {
-        let test_work_dir: &str = "/test_work_dir";
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let test_work_dir: &Path = temp_dir.path();
+        Helper::setup_test_ws_default_dirs(test_work_dir);
         let ws: Workspace = Workspace::new(
             Some(PathBuf::from(test_work_dir)),
             None, 
             None).expect("Failed to setup workspace");
-        assert_eq!(ws.settings().builds_dir(), PathBuf::from("/test_work_dir/builds"));
-        assert_eq!(ws.settings().cache_dir(), PathBuf::from("/test_work_dir/.cache"));
-        assert_eq!(ws.settings().artifacts_dir(), PathBuf::from("/test_work_dir/artifacts"));
-        assert_eq!(ws.settings().scripts_dir(), PathBuf::from("/test_work_dir/scripts"));
-        assert_eq!(ws.settings().docker_dir(), PathBuf::from("/test_work_dir/docker"));
-        assert_eq!(ws.settings().configs_dir(), PathBuf::from("/test_work_dir/configs"));
-        assert_eq!(ws.settings().include_dir(), PathBuf::from("/test_work_dir/configs/include"));
+        assert_eq!(ws.settings().builds_dir(), test_work_dir.join("builds"));
+        assert_eq!(ws.settings().cache_dir(), test_work_dir.join(".cache"));
+        assert_eq!(ws.settings().artifacts_dir(), test_work_dir.join("artifacts"));
+        assert_eq!(ws.settings().scripts_dir(), test_work_dir.join("scripts"));
+        assert_eq!(ws.settings().docker_dir(), test_work_dir.join("docker"));
+        assert_eq!(ws.settings().configs_dir(), test_work_dir.join("configs"));
+        assert_eq!(ws.settings().include_dir(), test_work_dir.join("configs/include"));
         let docker_image: &DockerImage = ws.settings().docker_image();
         assert_eq!(format!("{}", docker_image), "strixos/bakery-workspace:0.68");
         assert_eq!(ws.settings().docker_args(), &vec!["--rm=true".to_string(), "-t".to_string()]);
-        assert_eq!(ws.settings().supported_builds(), &vec!["default".to_string()]);
+        assert!(ws.settings().supported_builds().is_empty());
+    }
+
+    #[test]
+    fn test_workspace_build_configs() {
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let test_work_dir: &Path = temp_dir.path();
+        let mut configs: HashMap<PathBuf, String> = HashMap::new();
+        let config1_str: &str = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name1",
+            "description": "Test1 Description",
+            "arch": "test-arch",
+            "bb": {}
+        }"#;
+        let config2_str: &str = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name2",
+            "description": "Test2 Description",
+            "arch": "test-arch",
+            "bb": {}
+        }"#;
+        let config1_path: PathBuf = PathBuf::from(format!("{}/test-name1.json", PathBuf::from(test_work_dir).display()));
+        let config2_path: PathBuf = PathBuf::from(format!("{}/test-name2.json", PathBuf::from(test_work_dir).display()));
+        configs.insert(config1_path, config1_str.to_string());
+        configs.insert(config2_path, config2_str.to_string());
+        Helper::setup_test_ws_default_dirs(test_work_dir);
+        let ws: Workspace = Workspace::new(
+            Some(PathBuf::from(test_work_dir)),
+            None, 
+            None).expect("Failed to setup workspace");
+        let mut i: usize = 1;
+        ws.build_configs().iter().for_each(|(config, description)| {
+            assert_eq!(config.as_path(), test_work_dir.join(format!("configs/test-name{}.json", i)));
+            assert_eq!(description.to_string(), format!("Test{} Description", i));
+            i += 1;
+        });
+        
     }
 
     #[test]
@@ -220,7 +262,12 @@ mod tests {
         let test_work_dir: &str = "/test_work_dir";
         let json_settings: &str = r#"
         {
-            "version": "4"
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
         }"#;
         let json_build_config: &str = r#"
         {                                                                                                                   
@@ -241,6 +288,6 @@ mod tests {
         let docker_image: &DockerImage = ws.settings().docker_image();
         assert_eq!(format!("{}", docker_image), "strixos/bakery-workspace:0.68");
         assert_eq!(ws.settings().docker_args(), &vec!["--rm=true".to_string(), "-t".to_string()]);
-        assert!(ws.settings().supported_builds().is_empty());
+        assert_eq!(ws.settings().supported_builds(), &vec!["default".to_string()]);
     }
 }
