@@ -181,6 +181,6 @@ impl Helper {
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
         let ws_config: WsSettings = Self::setup_ws_settings(json_settings);
         let build_config: BuildConfig = Self::setup_build_config(json_build_config);
-        Workspace::new(Some(work_dir), ws_config, build_config)
+        Workspace::new(Some(work_dir), Some(ws_config), Some(build_config)).expect("Failed to setup workspace")
     }
 }

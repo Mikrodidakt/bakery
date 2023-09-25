@@ -1,12 +1,12 @@
 use crate::{configs::WsSettings, executers::DockerImage};
 use crate::error::BError;
 
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 
 
 pub struct WsSettingsHandler {
     work_dir: PathBuf,
-    workspace: WsSettings,
+    wsSettings: WsSettings,
     docker: DockerImage,
 }
 
@@ -32,9 +32,31 @@ impl WsSettingsHandler {
         };
         WsSettingsHandler {
             work_dir,
-            workspace: settings,
+            wsSettings: settings,
             docker,
         }
+    }
+
+    pub fn verify_ws_dir(&self, dir: &Path) -> Result<(), BError> {
+        if !dir.is_dir() || !dir.exists() {
+            return Err(BError {
+                code: 1, // You may set the appropriate error code
+                message: format!("Workspace directory '{}' dosen't exists", dir.display()),
+            });
+        }
+        return Ok(());
+    }
+
+    pub fn verify_ws(&self) -> Result<(), BError> {
+        self.verify_ws_dir(self.configs_dir().as_path())?;
+        // Some directories should be created during run time
+        //self.verify_ws_dir(self.builds_dir().as_path())?;
+        //self.verify_ws_dir(self.artifacts_dir().as_path())?;
+        // Some directories are optional
+        //self.verify_ws_dir(self.include_dir().as_path())?;
+        //self.verify_ws_dir(self.scripts_dir().as_path())?;
+        //self.verify_ws_dir(self.docker_dir().as_path())?;
+        Ok(())
     }
 
     pub fn work_dir(&self) -> PathBuf {
@@ -42,48 +64,48 @@ impl WsSettingsHandler {
     }
 
     pub fn config(&self) -> &WsSettings {
-        &self.workspace
+        &self.wsSettings
     }
 
     pub fn builds_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
-        path_buf.push(&self.workspace.builds_dir);
+        path_buf.push(&self.wsSettings.builds_dir);
         path_buf
     }
 
     pub fn cache_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
-        path_buf.push(&self.workspace.cache_dir);
+        path_buf.push(&self.wsSettings.cache_dir);
         path_buf
     }
 
     pub fn artifacts_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
-        path_buf.push(&self.workspace.artifacts_dir);
+        path_buf.push(&self.wsSettings.artifacts_dir);
         path_buf
     }
 
     pub fn configs_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
-        path_buf.push(&self.workspace.configs_dir);
+        path_buf.push(&self.wsSettings.configs_dir);
         path_buf
     }
 
     pub fn include_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
-        path_buf.push(&self.workspace.include_dir);
+        path_buf.push(&self.wsSettings.include_dir);
         path_buf
     }
 
     pub fn scripts_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
-        path_buf.push(&self.workspace.scripts_dir);
+        path_buf.push(&self.wsSettings.scripts_dir);
         path_buf
     }
 
     pub fn docker_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
-        path_buf.push(&self.workspace.docker_dir);
+        path_buf.push(&self.wsSettings.docker_dir);
         path_buf
     }
 
@@ -92,11 +114,11 @@ impl WsSettingsHandler {
     }
 
     pub fn docker_args(&self) -> &Vec<String> {
-        &self.workspace.docker_args
+        &self.wsSettings.docker_args
     }
 
     pub fn supported_builds(&self) -> &Vec<String> {
-        &self.workspace.supported
+        &self.wsSettings.supported
     }
 }
 

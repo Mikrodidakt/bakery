@@ -98,7 +98,7 @@ mod tests {
         "#;
         let ws_config: WsSettings = Helper::setup_ws_settings(json_ws_settings);
         let build_config: BuildConfig = Helper::setup_build_config(json_build_config);
-        let workspace: Workspace = Workspace::new(Some(work_dir), ws_config, build_config);
+        let workspace: Workspace = Workspace::new(Some(work_dir), Some(ws_config), Some(build_config)).expect("Failed to setup workspace");
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
             &test_cmd,
@@ -135,7 +135,7 @@ mod tests {
         "#;
         let ws_config: WsSettings = Helper::setup_ws_settings(json_ws_settings);
         let build_config: BuildConfig = Helper::setup_build_config(json_build_config);
-        let workspace: Workspace = Workspace::new(Some(work_dir), ws_config, build_config);
+        let workspace: Workspace = Workspace::new(Some(work_dir), Some(ws_config), Some(build_config)).expect("Failed to setup workspace");
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
             &test_cmd,

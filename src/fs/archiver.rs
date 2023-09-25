@@ -416,6 +416,8 @@ mod tests {
             Helper::list_files_in_archive(&archiver, &work_dir.join(PathBuf::from("unpack/")))
                 .expect("Failed to list files in archive");
 
+        // Verify that the archive has been created correctly for the zip archive
+        // we are iterating over the content and is collecting the file names
         Helper::verify_archived_files(&files, &archived_files, work_dir);
     }
 }
