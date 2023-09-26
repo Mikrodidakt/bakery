@@ -132,7 +132,7 @@ impl Workspace {
                 let config_path: PathBuf = settings.configs_dir().join(f);
                 let config_str: String = JsonFileReader::new(config_path.to_string_lossy().to_string()).read_json()?;
                 let config: BuildConfig = BuildConfig::from_str(&config_str)?;
-                build_configs.insert(config_path, config.description().to_string());
+                build_configs.insert(config_path, config.description.to_string());
             }
         }
 
@@ -166,6 +166,8 @@ impl Workspace {
         &self.configs
     }
 
+    // Returns true if the config is part of the list
+    // of build configs supported by the workspace
     pub fn valid_config(&self, config: &str) -> bool {
         self.build_configs().contains_key(&self.settings.configs_dir().join(format!("{}.json", config)))
     }
@@ -181,10 +183,6 @@ impl Workspace {
     
     // Returns a ordered list of the builds
     pub fn builds(&self) -> IndexSet<String> {}
-
-    // Returns true if the config is part of the list
-    // of build configs supported by the workspace
-    pub fn valid_config(&self, config: &str) -> bool {}
     */
 }
 

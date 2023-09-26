@@ -43,17 +43,17 @@ pub enum TType {
 }
 
 pub struct TaskConfig {
-    index: String,
-    name: String,
-    ttype: TType, // Optional if not set for the task the default type 'bitbake' is used
-    disabled: String, // Optional if not set for the task the default value 'false' is used
-    builddir: String,
-    build: String,
-    docker: String,
-    condition: String,
-    clean: String,
-    recipes: Vec<String>, // The list of recipes will be empty if the type for the task is 'non-bitbake'
-    artifacts: Vec<ArtifactConfig>, // For some tasks there might not be any artifacts to collect then this will be empty
+    pub index: String,
+    pub name: String,
+    pub ttype: TType, // Optional if not set for the task the default type 'bitbake' is used
+    pub disabled: String, // Optional if not set for the task the default value 'false' is used
+    pub builddir: String,
+    pub build: String,
+    pub docker: String,
+    pub condition: String,
+    pub clean: String,
+    pub recipes: Vec<String>, // The list of recipes will be empty if the type for the task is 'non-bitbake'
+    pub artifacts: Vec<ArtifactConfig>, // For some tasks there might not be any artifacts to collect then this will be empty
 }
 
 impl Config for TaskConfig {
@@ -145,55 +145,11 @@ impl TaskConfig {
         self.recipes.iter_mut().for_each(|r: &mut String| *r = ctx.expand_str(r));
         self.artifacts.iter_mut().for_each(|a: &mut ArtifactConfig| a.expand_ctx(ctx));
     }
-
-    pub fn index(&self) -> &str {
-        &self.index
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn ttype(&self) -> TType {
-        self.ttype.clone()
-    }
-
-    pub fn docker(&self) -> &str {
-        &self.docker
-    }
-
-    pub fn condition(&self) -> &str {
-        &self.condition
-    }
-
-    pub fn disabled(&self) -> &str {
-        &self.disabled
-    }
-
-    pub fn builddir(&self) -> &str {
-        &self.builddir
-    }
-
-    pub fn build(&self) -> &str {
-        &self.build
-    }
-
-    pub fn clean(&self) -> &str {
-        &self.clean
-    }
-
-    pub fn recipes(&self) -> &Vec<String> {
-        &self.recipes
-    }
-
-    pub fn artifacts(&self) -> &Vec<ArtifactConfig> {
-        &self.artifacts
-    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::configs::{TaskConfig, TType, AType, Context};
+    use crate::configs::{TaskConfig, TType, AType, Context, ArtifactConfig};
     use crate::error::BError;
     use crate::helper::Helper;
 
@@ -214,15 +170,15 @@ mod tests {
         }
         "#;
         let config = Helper::setup_task_config(json_test_str);
-        assert_eq!(config.index(), "0");
-        assert_eq!(config.name(), "task1-name");
-        assert_eq!(config.disabled(), "false");
-        assert_eq!(config.ttype(), TType::NonBitbake);
-        assert_eq!(config.builddir(), "test/builddir");
-        assert_eq!(config.build(), "build-cmd");
-        assert_eq!(config.clean(), "clean-cmd");
-        assert_eq!(config.docker(), "test-registry/test-image:0.1");
-        assert_eq!(config.condition(), "true");
+        assert_eq!(config.index, "0");
+        assert_eq!(config.name, "task1-name");
+        assert_eq!(config.disabled, "false");
+        assert_eq!(config.ttype, TType::NonBitbake);
+        assert_eq!(config.builddir, "test/builddir");
+        assert_eq!(config.build, "build-cmd");
+        assert_eq!(config.clean, "clean-cmd");
+        assert_eq!(config.docker, "test-registry/test-image:0.1");
+        assert_eq!(config.condition, "true");
     }
 
     #[test]
@@ -241,12 +197,12 @@ mod tests {
         }
         "#;
         let config = Helper::setup_task_config(json_test_str);
-        assert_eq!(config.index(), "0");
-        assert_eq!(config.name(), "task1-name");
-        assert_eq!(config.disabled(), "false");
-        assert_eq!(config.condition(), "false");
-        assert_eq!(config.ttype(), TType::Bitbake);
-        assert_eq!(config.recipes(), &vec![String::from("test-image"), String::from("test-image:do_populate_sdk")]);
+        assert_eq!(config.index, "0");
+        assert_eq!(config.name, "task1-name");
+        assert_eq!(config.disabled, "false");
+        assert_eq!(config.condition, "false");
+        assert_eq!(config.ttype, TType::Bitbake);
+        assert_eq!(&config.recipes, &vec![String::from("test-image"), String::from("test-image:do_populate_sdk")]);
     }
 
     #[test]
@@ -261,11 +217,11 @@ mod tests {
         }
         "#;
         let config = Helper::setup_task_config(json_test_str);
-        assert_eq!(config.index(), "0");
-        assert_eq!(config.name(), "task1-name");
-        assert_eq!(config.disabled(), "false");
-        assert_eq!(config.ttype(), TType::Bitbake);
-        assert_eq!(config.recipes(), &vec![String::from("test-image")]);
+        assert_eq!(config.index, "0");
+        assert_eq!(config.name, "task1-name");
+        assert_eq!(config.disabled, "false");
+        assert_eq!(config.ttype, TType::Bitbake);
+        assert_eq!(&config.recipes, &vec![String::from("test-image")]);
     }
 
     #[test]
@@ -299,27 +255,27 @@ mod tests {
             ]
         }
         "#;
-        let config = Helper::setup_task_config(json_test_str);
-        assert_eq!(config.index(), "0");
-        assert_eq!(config.name(), "task1-name");
-        assert_eq!(config.disabled(), "false");
-        assert_eq!(config.ttype(), TType::Bitbake);
-        assert_eq!(config.recipes(), &vec![String::from("test-image")]);
-        assert!(!config.artifacts().is_empty());
-        let artifacts = config.artifacts();
-        assert_eq!(artifacts[0].ttype(), AType::Archive);
-        assert_eq!(artifacts[0].name(), "test.zip");
-        let dir_artifacts = artifacts[0].artifacts();
-        assert_eq!(dir_artifacts[0].ttype(), AType::Directory);
-        assert_eq!(dir_artifacts[0].name(), "dir-name");
-        assert!(!dir_artifacts[0].artifacts().is_empty());
-        let files = dir_artifacts[0].artifacts();
+        let config: TaskConfig = Helper::setup_task_config(json_test_str);
+        assert_eq!(config.index, "0");
+        assert_eq!(config.name, "task1-name");
+        assert_eq!(config.disabled, "false");
+        assert_eq!(config.ttype, TType::Bitbake);
+        assert_eq!(&config.recipes, &vec![String::from("test-image")]);
+        assert!(!config.artifacts.is_empty());
+        let artifacts: &Vec<ArtifactConfig> = &config.artifacts;
+        assert_eq!(artifacts[0].atype, AType::Archive);
+        assert_eq!(artifacts[0].name, "test.zip");
+        let dir_artifacts: &Vec<ArtifactConfig> = &artifacts[0].artifacts;
+        assert_eq!(dir_artifacts[0].atype, AType::Directory);
+        assert_eq!(dir_artifacts[0].name, "dir-name");
+        assert!(!dir_artifacts[0].artifacts.is_empty());
+        let files: &Vec<ArtifactConfig> = &dir_artifacts[0].artifacts;
         let mut i = 1;
         for f in files.iter() {
-            assert_eq!(f.ttype(), AType::File);
-            assert!(f.name().is_empty());
-            assert_eq!(f.source(), &format!("file{}.txt", i));
-            assert!(f.dest().is_empty());
+            assert_eq!(f.atype, AType::File);
+            assert!(f.name.is_empty());
+            assert_eq!(f.source, format!("file{}.txt", i));
+            assert!(f.dest.is_empty());
             i += 1;
         }
     }
@@ -404,26 +360,26 @@ mod tests {
         "#;
         let mut config = Helper::setup_task_config(json_test_str);
         config.expand_ctx(&ctx);
-        assert_eq!(config.index(), "0");
-        assert_eq!(config.name(), "task1-name");
-        assert_eq!(config.disabled(), "false");
-        assert_eq!(config.ttype(), TType::Bitbake);
-        assert_eq!(config.recipes(), &vec![String::from("test-image")]);
-        assert!(!config.artifacts().is_empty());
-        let artifacts = config.artifacts();
-        assert_eq!(artifacts[0].ttype(), AType::Archive);
-        assert_eq!(artifacts[0].name(), "test.zip");
-        let dir_artifacts = artifacts[0].artifacts();
-        assert_eq!(dir_artifacts[0].ttype(), AType::Directory);
-        assert_eq!(dir_artifacts[0].name(), "dir-name");
-        assert!(!dir_artifacts[0].artifacts().is_empty());
-        let files = dir_artifacts[0].artifacts();
+        assert_eq!(config.index, "0");
+        assert_eq!(config.name, "task1-name");
+        assert_eq!(config.disabled, "false");
+        assert_eq!(config.ttype, TType::Bitbake);
+        assert_eq!(&config.recipes, &vec![String::from("test-image")]);
+        assert!(!config.artifacts.is_empty());
+        let artifacts: &Vec<ArtifactConfig> = &config.artifacts;
+        assert_eq!(artifacts[0].atype, AType::Archive);
+        assert_eq!(artifacts[0].name, "test.zip");
+        let dir_artifacts: &Vec<ArtifactConfig> = &artifacts[0].artifacts;
+        assert_eq!(dir_artifacts[0].atype, AType::Directory);
+        assert_eq!(dir_artifacts[0].name, "dir-name");
+        assert!(!dir_artifacts[0].artifacts.is_empty());
+        let files: &Vec<ArtifactConfig> = &dir_artifacts[0].artifacts;
         let mut i = 1;
         for f in files.iter() {
-            assert_eq!(f.ttype(), AType::File);
-            assert!(f.name().is_empty());
-            assert_eq!(f.source(), &format!("file{}.txt", i));
-            assert!(f.dest().is_empty());
+            assert_eq!(f.atype, AType::File);
+            assert!(f.name.is_empty());
+            assert_eq!(f.source, format!("file{}.txt", i));
+            assert!(f.dest.is_empty());
             i += 1;
         }
 

@@ -1,47 +1,44 @@
 use crate::configs::{TType, TaskConfig, ArtifactConfig};
-use crate::workspace::WsBuildConfigHandler;
+use crate::workspace::{WsBuildConfigHandler, WsArtifactConfigHandler};
 
 use std::path::{Path, PathBuf};
 
 pub struct WsTaskConfigHandler<'a> {
     name: String,
     task_config: &'a TaskConfig,
-    ws_config: &'a WsBuildConfigHandler,
+    bb_build_dir: PathBuf,
+    work_dir: PathBuf,
+    artifacts_dir: PathBuf,
 }
 
 impl<'a> WsTaskConfigHandler<'a> {
-    pub fn new(task_config: &'a TaskConfig, ws_config: &'a WsBuildConfigHandler) -> Self {
+    pub fn new(task_config: &'a TaskConfig, ws_config: &WsBuildConfigHandler) -> Self {
         WsTaskConfigHandler {
-            name: task_config.name().to_string(),
+            name: task_config.name.to_string(),
             task_config,
-            ws_config,
+            work_dir: ws_config.work_dir(),
+            bb_build_dir: ws_config.bb_build_dir(),
+            artifacts_dir: ws_config.artifacts_dir(),
         }
     }
 
     pub fn build_dir(&self) -> PathBuf {
-        if self.task_config.ttype() == TType::Bitbake {
-            let task_build_dir: &str = self.task_config.builddir();
+        if self.task_config.ttype == TType::Bitbake {
+            let task_build_dir: &str = &self.task_config.builddir;
             if task_build_dir.is_empty() {
-                return self.ws_config.bb_build_dir();
+                return self.bb_build_dir.clone();
             }
         }
 
-        self.ws_config
-                .work_dir()
-                .join(PathBuf::from(self.task_config.builddir()))
-
-        /*
-        return self.ws_config.context().expand_path(
-            &self
-                .ws_config
-                .work_dir()
-                .join(PathBuf::from(self.task_config.builddir())),
-        );
-         */
+        self.work_dir.clone().join(PathBuf::from(&self.task_config.builddir))
     }
 
-    pub fn ttype(&self) -> TType {
-        self.task_config.ttype()
+    pub fn artifacts_dir(&self) -> PathBuf {
+        self.artifacts_dir.clone()
+    }
+
+    pub fn ttype(&self) -> &TType {
+        &self.task_config.ttype
     }
 
     pub fn name(&self) -> &str {
@@ -49,60 +46,47 @@ impl<'a> WsTaskConfigHandler<'a> {
     }
 
     pub fn build_cmd(&self) -> &str {
-        self.task_config.build()
-        /*
-        self.ws_config
-            .context()
-            .expand_str(self.task_config.build())
-        */
+        &self.task_config.build
     }
 
     pub fn clean_cmd(&self) -> &str {
-        self.task_config.clean()
-        /*
-        self.ws_config
-            .context()
-            .expand_str(self.task_config.clean())
-        */
+        &self.task_config.clean
     }
 
     pub fn docker(&self) -> &str {
-        self.task_config.docker()
-        /*
-        self.ws_config
-            .context()
-            .expand_str(self.task_config.docker())
-        */
+        &self.task_config.docker
     }
 
     pub fn disabled(&self) -> bool {
-        if self.task_config.disabled() == "true" {
+        if self.task_config.disabled == "true" {
             return true;
         }
         return false;
     }
 
     pub fn recipes(&self) -> &Vec<String> {
-        self.task_config.recipes()
-        //self.ws_config.context().expand_vec(self.task_config.recipes())
+        &self.task_config.recipes
     }
 
     pub fn condition(&self) -> bool {
-        let condition: &str = self.task_config.condition();
+        let condition: &str = &self.task_config.condition;
 
         if condition.is_empty() {
             return true;
         }
 
-        //match self.ws_config.context().expand_str(condition).as_str() {
         match condition {
             "1" | "yes" | "y" | "Y" | "true" | "YES" | "TRUE" | "True" | "Yes" => return true,
             _ => return false,
         }
     }
     
-    pub fn artifacts(&self) -> &Vec<ArtifactConfig> {
-        self.task_config.artifacts()
+    pub fn artifacts(&self) -> Vec<WsArtifactConfigHandler> {
+        let mut artifacts: Vec<WsArtifactConfigHandler> = Vec::new();
+        self.task_config.artifacts.iter().for_each(|config| {
+            artifacts.push(WsArtifactConfigHandler::new(config, &self));
+        });
+        artifacts
     }
 }
 
@@ -157,7 +141,7 @@ mod tests {
                     assert_eq!(task.name(), "task-name");
                     assert_eq!(task.build_cmd(), "build-cmd");
                     assert_eq!(task.clean_cmd(), "clean-cmd");
-                    assert_eq!(task.ttype(), TType::NonBitbake);
+                    assert_eq!(task.ttype(), &TType::NonBitbake);
                     assert!(!task.disabled());
                 },
                 Err(e) => {

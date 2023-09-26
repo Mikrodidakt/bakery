@@ -13,12 +13,12 @@ pub enum AType {
 //TODO: we should consider using IndexSet instead of vector to make sure we
 // keep the order from the json file
 pub struct ArtifactConfig {
-    ttype: AType, // Optional if not set for the task the default type 'file' is used
-    name: String, // The name can be a name for a directory, archive, file or manifest
-    source: String, // The source is only used if the type is file 
-    dest: String, // The dest is optional
-    artifacts: Vec<ArtifactConfig>, // The artifacts can be a composite of multiple artifacts nodes
-    manifest: String, // The manifest content will be a json string that can be put in a file. The manifest can then be used by the CI to collect information from the build
+    pub atype: AType, // Optional if not set for the task the default type 'file' is used
+    pub name: String, // The name can be a name for a directory, archive, file or manifest
+    pub source: String, // The source is only used if the type is file 
+    pub dest: String, // The dest is optional
+    pub artifacts: Vec<ArtifactConfig>, // The artifacts can be a composite of multiple artifacts nodes
+    pub manifest: String, // The manifest content will be a json string that can be put in a file. The manifest can then be used by the CI to collect information from the build
 }
 
 impl Config for ArtifactConfig {
@@ -97,7 +97,7 @@ impl ArtifactConfig {
         let artifacts: Vec<ArtifactConfig> = Self::get_artifacts(&data)?;
         Ok(ArtifactConfig {
             name,
-            ttype: enum_ttype,
+            atype: enum_ttype,
             source,
             dest,
             artifacts,
@@ -106,7 +106,7 @@ impl ArtifactConfig {
     }
 
     pub fn expand_ctx(&mut self, ctx: &Context) {
-        match self.ttype {
+        match self.atype {
             AType::File => {
                 self.name = ctx.expand_str(&self.name);
                 self.source = ctx.expand_str(&self.source);
@@ -125,33 +125,9 @@ impl ArtifactConfig {
                 self.manifest = ctx.expand_str(&self.manifest);
             },
             _ => {
-                panic!("Invalid 'artifact' format in build config. Invalid type '{:?}'", self.ttype);
+                panic!("Invalid 'artifact' format in build config. Invalid type '{:?}'", self.atype);
             },
         }
-    }
-
-    pub fn name(&self) -> &String {
-        &self.name
-    }
-
-    pub fn ttype(&self) -> AType {
-        self.ttype.clone()
-    }
-    
-    pub fn source(&self) -> &String {
-        &self.source
-    }
-
-    pub fn dest(&self) -> &String {
-        &self.dest
-    }
-
-    pub fn artifacts(&self) -> &Vec<ArtifactConfig> {
-        &self.artifacts
-    }
-
-    pub fn manifest(&self) -> &String {
-        &self.manifest
     }
 }
 
@@ -185,10 +161,10 @@ mod tests {
         }
         "#;
         let config = helper_artifact_config_from_str(json_test_str);
-        assert!(config.name().is_empty());
-        assert_eq!(config.ttype(), AType::File);
-        assert_eq!(config.source(), "file1.txt");
-        assert!(config.dest().is_empty());
+        assert!(config.name.is_empty());
+        assert_eq!(config.atype, AType::File);
+        assert_eq!(config.source, "file1.txt");
+        assert!(config.dest.is_empty());
     }
 
     #[test]
@@ -200,10 +176,10 @@ mod tests {
         }
         "#;
         let config = helper_artifact_config_from_str(json_test_str);
-        assert!(config.name().is_empty());
-        assert_eq!(config.ttype(), AType::File);
-        assert_eq!(config.source(), "file1.txt");
-        assert_eq!(config.dest(), "dest");
+        assert!(config.name.is_empty());
+        assert_eq!(config.atype, AType::File);
+        assert_eq!(config.source, "file1.txt");
+        assert_eq!(config.dest, "dest");
     }
 
     #[test]
@@ -216,10 +192,10 @@ mod tests {
         }
         "#;
         let config = helper_artifact_config_from_str(json_test_str);
-        assert!(config.name().is_empty());
-        assert_eq!(config.ttype(), AType::File);
-        assert_eq!(config.source(), "file1.txt");
-        assert_eq!(config.dest(), "dest");
+        assert!(config.name.is_empty());
+        assert_eq!(config.atype, AType::File);
+        assert_eq!(config.source, "file1.txt");
+        assert_eq!(config.dest, "dest");
     }
 
     #[test]
@@ -235,15 +211,15 @@ mod tests {
             ]
         }
         "#;
-        let config = helper_artifact_config_from_str(json_test_str);
-        assert_eq!(config.ttype(), AType::Directory);
-        assert_eq!(config.name(), "dir");
-        assert!(!config.artifacts().is_empty());
-        let artifacts = config.artifacts();
-        assert_eq!(artifacts[0].ttype(), AType::File);
-        assert!(artifacts[0].name().is_empty());
-        assert_eq!(artifacts[0].source(), "file1.txt");
-        assert!(artifacts[0].dest().is_empty());
+        let config: ArtifactConfig = helper_artifact_config_from_str(json_test_str);
+        assert_eq!(config.atype, AType::Directory);
+        assert_eq!(config.name, "dir");
+        assert!(!config.artifacts.is_empty());
+        let artifacts: Vec<ArtifactConfig> = config.artifacts;
+        assert_eq!(artifacts[0].atype, AType::File);
+        assert!(artifacts[0].name.is_empty());
+        assert_eq!(artifacts[0].source, "file1.txt");
+        assert!(artifacts[0].dest.is_empty());
     }
 
     #[test]
@@ -268,21 +244,21 @@ mod tests {
             ]
         }
         "#;
-        let config = helper_artifact_config_from_str(json_test_str);
-        assert_eq!(config.ttype(), AType::Archive);
-        assert_eq!(config.name(), "test.zip");
-        assert!(!config.artifacts().is_empty());
-        let artifacts = config.artifacts();
-        assert_eq!(artifacts[0].ttype(), AType::Directory);
-        assert_eq!(artifacts[0].name(), "dir-name");
-        assert!(!artifacts[0].artifacts().is_empty());
-        let files = artifacts[0].artifacts();
+        let config: ArtifactConfig = helper_artifact_config_from_str(json_test_str);
+        assert_eq!(config.atype, AType::Archive);
+        assert_eq!(config.name, "test.zip");
+        assert!(!config.artifacts.is_empty());
+        let artifacts: Vec<ArtifactConfig> = config.artifacts;
+        assert_eq!(artifacts[0].atype, AType::Directory);
+        assert_eq!(artifacts[0].name, "dir-name");
+        assert!(!artifacts[0].artifacts.is_empty());
+        let files: &Vec<ArtifactConfig> = &artifacts[0].artifacts;
         let mut i = 1;
         for f in files.iter() {
-            assert_eq!(f.ttype(), AType::File);
-            assert!(f.name().is_empty());
-            assert_eq!(f.source(), &format!("file{}.txt", i));
-            assert!(f.dest().is_empty());
+            assert_eq!(f.atype, AType::File);
+            assert!(f.name.is_empty());
+            assert_eq!(f.source, format!("file{}.txt", i));
+            assert!(f.dest.is_empty());
             i += 1;
         }
     }
@@ -374,19 +350,19 @@ mod tests {
         "#;
         let mut config: ArtifactConfig = helper_artifact_config_from_str(json_test_str);
         config.expand_ctx(&ctx);
-        assert_eq!(config.name(), "test-archive.zip");
-        assert!(!config.artifacts().is_empty());
-        let artifacts: &Vec<ArtifactConfig> = config.artifacts();
-        assert_eq!(artifacts[0].ttype(), AType::Directory);
-        assert_eq!(artifacts[0].name(), "dir1/test-dir");
-        assert!(!artifacts[0].artifacts().is_empty());
-        let files: &Vec<ArtifactConfig> = artifacts[0].artifacts();
+        assert_eq!(config.name, "test-archive.zip");
+        assert!(!config.artifacts.is_empty());
+        let artifacts: &Vec<ArtifactConfig> = &config.artifacts;
+        assert_eq!(artifacts[0].atype, AType::Directory);
+        assert_eq!(artifacts[0].name, "dir1/test-dir");
+        assert!(!artifacts[0].artifacts.is_empty());
+        let files: &Vec<ArtifactConfig> = &artifacts[0].artifacts;
         let mut i = 2;
         for f in files.iter() {
-            assert_eq!(f.ttype(), AType::File);
-            assert!(f.name().is_empty());
-            assert_eq!(f.source(), &format!("dir{}/file{}.txt", i, i));
-            assert!(f.dest().is_empty());
+            assert_eq!(f.atype, AType::File);
+            assert!(f.name.is_empty());
+            assert_eq!(f.source, format!("dir{}/file{}.txt", i, i));
+            assert!(f.dest.is_empty());
             i += 1;
         }
     }
@@ -417,9 +393,9 @@ mod tests {
         "#;
         let mut config: ArtifactConfig = helper_artifact_config_from_str(json_test_str);
         config.expand_ctx(&ctx);
-        assert_eq!(config.name(), "test-manifest.json");
-        assert!(!config.manifest().is_empty());
-        assert_eq!(config.manifest(), "{\"VAR1\":\"value1\",\"VAR2\":\"value2\",\"VAR3\":\"value3\",\"data\":{\"VAR4\":\"value4\"}}");
+        assert_eq!(config.name, "test-manifest.json");
+        assert!(!config.manifest.is_empty());
+        assert_eq!(config.manifest, "{\"VAR1\":\"value1\",\"VAR2\":\"value2\",\"VAR3\":\"value3\",\"data\":{\"VAR4\":\"value4\"}}");
     }
 
     #[test]
@@ -436,8 +412,8 @@ mod tests {
         "#;
         let mut config: ArtifactConfig = helper_artifact_config_from_str(json_test_str);
         config.expand_ctx(&ctx);
-        assert_eq!(config.name(), "test-manifest.json");
-        assert!(!config.manifest().is_empty());
-        assert_eq!(config.manifest(), "{}");
+        assert_eq!(config.name, "test-manifest.json");
+        assert!(!config.manifest.is_empty());
+        assert_eq!(config.manifest, "{}");
     }
 }

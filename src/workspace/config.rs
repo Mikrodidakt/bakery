@@ -14,6 +14,7 @@ pub struct WsBuildConfigHandler {
     work_dir: PathBuf,
     build_dir: PathBuf,
     cache_dir: PathBuf,
+    artifacts_dir: PathBuf,
 }
 
 impl WsBuildConfigHandler {
@@ -31,11 +32,11 @@ impl WsBuildConfigHandler {
 
     pub fn new(settings: &WsSettingsHandler, config: BuildConfig) -> Self {
         let ctx_variables: IndexMap<String, String> = indexmap! {
-            "MACHINE".to_string() => config.bitbake().machine().to_string(),
-            "ARCH".to_string() => config.arch().to_string(),
-            "DISTRO".to_string() => config.bitbake().distro().to_string(),
+            "MACHINE".to_string() => config.bitbake.machine.to_string(),
+            "ARCH".to_string() => config.arch.to_string(),
+            "DISTRO".to_string() => config.bitbake.distro.to_string(),
             "VARIATN".to_string() => "".to_string(),
-            "PRODUCT_NAME".to_string() => config.name().to_string(),
+            "PRODUCT_NAME".to_string() => config.name.to_string(),
             "BB_BUILD_DIR".to_string() => "".to_string(), // TODO: specify a default value
             "BB_DEPLOY_DIR".to_string() => "".to_string(), // TODO: specify a default value
             "ARTIFACTS_DIR".to_string() => settings.artifacts_dir().to_str().unwrap().to_string(),
@@ -50,7 +51,7 @@ impl WsBuildConfigHandler {
             "DEBUG_SYMBOLS".to_string() => "0".to_string(),
         };
         let mut ctx: Context = Context::new(&ctx_variables);
-        ctx.update(config.context());
+        ctx.update(&config.context);
         let mut mut_config: BuildConfig = config;
         mut_config.expand_ctx(&ctx);
 
@@ -60,6 +61,7 @@ impl WsBuildConfigHandler {
             work_dir: settings.work_dir().clone(),
             build_dir: settings.builds_dir().clone(),
             cache_dir: settings.cache_dir().clone(),
+            artifacts_dir: settings.artifacts_dir().clone(),
         }
     }
 
@@ -67,12 +69,16 @@ impl WsBuildConfigHandler {
         self.work_dir.clone()
     }
 
+    pub fn artifacts_dir(&self) -> PathBuf {
+        self.artifacts_dir.clone()
+    }
+
     pub fn context(&self) -> &Context {
         &self.ctx
     }
 
     pub fn task(&self, task: &str) -> Result<WsTaskConfigHandler, BError> {
-        match self.config.tasks().get(task) {
+        match self.config.tasks.get(task) {
             Some(config) => {
                 return Ok(WsTaskConfigHandler::new(&config, &self));
             },
@@ -83,17 +89,16 @@ impl WsBuildConfigHandler {
     }
 
     pub fn tasks(&self) -> IndexMap<String, WsTaskConfigHandler> {
-        let mut tasks: IndexMap<String, WsTaskConfigHandler> = IndexMap::new();
-        self.config.tasks().iter().for_each(|(key, task_config)|{
-            tasks.insert(key.clone(), WsTaskConfigHandler::new(task_config, &self));
-        });
+        let tasks: IndexMap<String, WsTaskConfigHandler> = self.config.tasks.iter().map(|(key, task_config)|{
+            (key.clone(), WsTaskConfigHandler::new(task_config, &self))
+        }).collect();
         tasks
     }
 
     pub fn extend_ctx(&self, ctx: &Context) {}
 
     pub fn description(&self) -> &str {
-        &self.config.description()
+        &self.config.description
     }
 
     pub fn product_name(&self) -> &str {
@@ -105,7 +110,7 @@ impl WsBuildConfigHandler {
     }
 
     pub fn config_name(&self) -> &str {
-        &self.config.name()
+        &self.config.name
     }
 
     //pub fn config_enabled(&self) -> bool {
@@ -113,24 +118,24 @@ impl WsBuildConfigHandler {
     //}
 
     pub fn version(&self) -> &str {
-        &self.config.version()
+        &self.config.version
     }
 
     pub fn arch(&self) -> &str {
-        &self.config.arch()
+        &self.config.arch
     }
 
     pub fn bb_layers_conf(&self) -> &Vec<String> {
-        &self.config.bitbake().bblayers_conf()
+        &self.config.bitbake.bblayers_conf
     }
 
     pub fn bb_local_conf(&self) -> Vec<String> {
-        let mut local_conf: Vec<String> = self.config.bitbake().local_conf().clone();
+        let mut local_conf: Vec<String> = self.config.bitbake.local_conf.clone();
         local_conf.push(format!("MACHINE ?= {}", self.bb_machine()));
         // TODO: we need to handle VARIANT correctly but this is good enough for now
         local_conf.push(format!("VARIANT ?= {}", "dev".to_string()));
         // TODO: we should define a method product_name() call that instead
-        local_conf.push(format!("PRODUCT_NAME ?= {}", self.config.name()));
+        local_conf.push(format!("PRODUCT_NAME ?= {}", self.config.name));
         local_conf.push(format!("DISTRO ?= {}", self.bb_distro()));
         local_conf.push(format!("SSTATE_DIR ?= {}", self.bb_sstate_dir().to_str().unwrap()));
         local_conf.push(format!("DL_DIR ?= {}", self.bb_dl_dir().to_str().unwrap()));
@@ -143,7 +148,7 @@ impl WsBuildConfigHandler {
     }
 
     pub fn bb_machine(&self) -> &str {
-        &self.config.bitbake().machine()
+        &self.config.bitbake.machine
     }
 
     //pub fn variant(&self) -> &str {
@@ -151,16 +156,16 @@ impl WsBuildConfigHandler {
     //}
 
     pub fn bb_distro(&self) -> &str {
-        &self.config.bitbake().distro()
+        &self.config.bitbake.distro
     }
 
     pub fn bb_build_dir(&self) -> PathBuf {
         let mut path_buf = self.build_dir.clone();
-        path_buf.join(self.config.name())
+        path_buf.join(&self.config.name)
     }
 
     pub fn bb_docker_image(&self) -> String {
-        self.config.bitbake().docker().to_string()
+        self.config.bitbake.docker.to_string()
         // Remove this later on when we have determined we don't need to expand
         // the docker image
         /*let docker: String = self.config.bitbake().docker().to_string();
@@ -183,12 +188,12 @@ impl WsBuildConfigHandler {
     }
 
     pub fn bb_deploy_dir(&self) -> PathBuf {
-        self.bb_build_dir().join(self.config.bitbake().deploy_dir())
+        self.bb_build_dir().join(&self.config.bitbake.deploy_dir)
     }    
 
     pub fn bb_sstate_dir(&self) -> PathBuf {
         let mut path_buf = self.cache_dir.clone();
-        path_buf.join(self.config.arch()).join("sstate-cache".to_string())
+        path_buf.join(&self.config.arch).join("sstate-cache".to_string())
     }
 
     pub fn bb_dl_dir(&self) -> PathBuf {
@@ -433,7 +438,7 @@ mod tests {
             assert_eq!(task.build_cmd(), &format!("cmd{}", i));
             assert_eq!(task.clean_cmd(), &format!("clean{}", i));
             task.artifacts().iter().for_each(|a| {
-                assert_eq!(a.source(), &format!("test/file{}-1.txt", i));
+                assert_eq!(a.source().as_path(), task.build_dir().join(format!("test/file{}-1.txt", i)));
             });
             i += 1;
         });

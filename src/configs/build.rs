@@ -83,13 +83,13 @@ use crate::configs::{TaskConfig, BBConfig, Config, Context};
 use crate::error::BError;
 
 pub struct BuildConfig {
-    version: String,
-    name: String,
-    description: String,
-    arch: String,
-    bitbake: BBConfig,
-    context: IndexMap<String, String>, // Optional if not set default is an empty map
-    tasks: IndexMap<String, TaskConfig>, // The tasks don't have to be defined in the main build config if that is the case this will be empty
+    pub version: String,
+    pub name: String,
+    pub description: String,
+    pub arch: String,
+    pub bitbake: BBConfig,
+    pub context: IndexMap<String, String>, // Optional if not set default is an empty map
+    pub tasks: IndexMap<String, TaskConfig>, // The tasks don't have to be defined in the main build config if that is the case this will be empty
 }
 
 impl Config for BuildConfig {}
@@ -153,34 +153,6 @@ impl BuildConfig {
         self.bitbake.expand_ctx(ctx);
         self.tasks.iter_mut().for_each(|(_key, value)| value.expand_ctx(ctx));
     }
-
-    pub fn version(&self) -> &String {
-        &self.version
-    }
-
-    pub fn name(&self) -> &String {
-        &self.name
-    }
-
-    pub fn description(&self) -> &String {
-        &self.description
-    }
-
-    pub fn arch(&self) -> &String {
-        &self.arch
-    }
-
-    pub fn bitbake(&self) -> &BBConfig {
-        &self.bitbake
-    }
-
-    pub fn tasks(&self) -> &IndexMap<String, TaskConfig> {
-        &self.tasks
-    }
-
-    pub fn context(&self) -> &IndexMap<String, String> {
-        &self.context
-    }
 }
 
 #[cfg(test)]
@@ -213,10 +185,10 @@ mod tests {
             "bb": {}
         }"#;
         let config: BuildConfig = helper_build_config_from_str(json_test_str);
-        assert_eq!(config.version(), "4");
-        assert_eq!(config.name(), "test-name");
-        assert_eq!(config.description(), "Test Description");
-        assert_eq!(config.arch(), "test-arch");
+        assert_eq!(config.version, "4");
+        assert_eq!(config.name, "test-name");
+        assert_eq!(config.description, "Test Description");
+        assert_eq!(config.arch, "test-arch");
     }
 
     #[test]
@@ -246,16 +218,16 @@ mod tests {
         }
         "#;
         let config: BuildConfig = helper_build_config_from_str(json_test_str);
-        assert_eq!(config.bitbake.machine(), "test-machine");
-        assert_eq!(config.bitbake.distro(), "test-distro");
-        assert_eq!(config.bitbake.deploy_dir(), "tmp/test/deploy");
-        assert_eq!(config.bitbake.docker(), "strixos/bakery-workspace:0.68");
-        assert_eq!(config.bitbake.bblayers_conf(), &vec![
+        assert_eq!(config.bitbake.machine, "test-machine");
+        assert_eq!(config.bitbake.distro, "test-distro");
+        assert_eq!(config.bitbake.deploy_dir, "tmp/test/deploy");
+        assert_eq!(config.bitbake.docker, "strixos/bakery-workspace:0.68");
+        assert_eq!(&config.bitbake.bblayers_conf, &vec![
             String::from("BB_LAYERS_CONF_TEST_LINE_1"),
             String::from("BB_LAYERS_CONF_TEST_LINE_2"),
             String::from("BB_LAYERS_CONF_TEST_LINE_3")
         ]);
-        assert_eq!(config.bitbake.local_conf(), &vec![
+        assert_eq!(&config.bitbake.local_conf, &vec![
             String::from("BB_LOCAL_CONF_TEST_LINE_1"),
             String::from("BB_LOCAL_CONF_TEST_LINE_2"),
             String::from("BB_LOCAL_CONF_TEST_LINE_3")
@@ -273,13 +245,13 @@ mod tests {
             "bb": {}
         }"#;
         let config: BuildConfig = helper_build_config_from_str(json_test_str);
-        assert_eq!(config.bitbake.machine(), "");
-        assert_eq!(config.bitbake.distro(), "");
-        assert_eq!(config.bitbake.deploy_dir(), "tmp/deploy/images");
-        assert!(config.bitbake.bblayers_conf().is_empty());
-        assert!(config.bitbake.local_conf().is_empty());
-        assert!(config.tasks().is_empty());
-        assert!(config.context().is_empty());
+        assert_eq!(config.bitbake.machine, "");
+        assert_eq!(config.bitbake.distro, "");
+        assert_eq!(config.bitbake.deploy_dir, "tmp/deploy/images");
+        assert!(config.bitbake.bblayers_conf.is_empty());
+        assert!(config.bitbake.local_conf.is_empty());
+        assert!(config.tasks.is_empty());
+        assert!(config.context.is_empty());
     }
 
     #[test]
@@ -325,21 +297,21 @@ mod tests {
         }
         "#;
         let config: BuildConfig = helper_build_config_from_str(json_test_str);
-        let tasks: &IndexMap<String, TaskConfig> = config.tasks();
+        let tasks: &IndexMap<String, TaskConfig> = &config.tasks;
         let task: &TaskConfig = tasks.get("task1").unwrap();
-        assert_eq!(task.index(), "0");
-        assert_eq!(task.name(), "task1-name");
-        assert_eq!(task.disabled(), "false");
-        assert_eq!(task.ttype(), TType::NonBitbake);
-        assert_eq!(task.builddir(), "test/builddir");
-        assert_eq!(task.build(), "build-cmd");
-        assert_eq!(task.clean(), "clean-cmd");
+        assert_eq!(task.index, "0");
+        assert_eq!(task.name, "task1-name");
+        assert_eq!(task.disabled, "false");
+        assert_eq!(task.ttype, TType::NonBitbake);
+        assert_eq!(task.builddir, "test/builddir");
+        assert_eq!(task.build, "build-cmd");
+        assert_eq!(task.clean, "clean-cmd");
         let task: &TaskConfig = tasks.get("task2").unwrap();
-        assert_eq!(task.index(), "1");
-        assert_eq!(task.name(), "task2-name");
-        assert_eq!(task.disabled(), "false");
-        assert_eq!(task.ttype(), TType::Bitbake);
-        assert_eq!(task.recipes(), &vec![String::from("test-image"), String::from("test-image:do_populate_sdk")]);
+        assert_eq!(task.index, "1");
+        assert_eq!(task.name, "task2-name");
+        assert_eq!(task.disabled, "false");
+        assert_eq!(task.ttype, TType::Bitbake);
+        assert_eq!(&task.recipes, &vec![String::from("test-image"), String::from("test-image:do_populate_sdk")]);
     }
 
     #[test]
@@ -359,9 +331,9 @@ mod tests {
         }
         "#;
         let config: BuildConfig = helper_build_config_from_str(json_test_str);
-        assert!(!config.context().is_empty());
+        assert!(!config.context.is_empty());
         let mut i = 1;
-        for (key, value) in config.context().iter() {
+        for (key, value) in config.context.iter() {
             println!("Key: {}, Value: {}", key, value);
             assert_eq!(key, &format!("CONTEXT_{}", i));
             assert_eq!(value, &format!("context{}", i));
@@ -418,23 +390,23 @@ mod tests {
         }
         "#;
         let config: BuildConfig = helper_build_config_from_str(json_test_str);
-        let ctx: Context = Context::new(config.context());
+        let ctx: Context = Context::new(&config.context);
         let mut config: BuildConfig = config;
         config.expand_ctx(&ctx);
 
-        let tasks: &IndexMap<String, TaskConfig> = config.tasks();
+        let tasks: &IndexMap<String, TaskConfig> = &config.tasks;
         let task: &TaskConfig = tasks.get("task1").unwrap();
-        assert_eq!(task.name(), "task1-name");
-        assert_eq!(task.ttype(), TType::NonBitbake);
-        assert_eq!(task.builddir(), "test/builddir1/sub");
-        assert_eq!(task.build(), "build-cmd -a test");
-        assert_eq!(task.clean(), "clean-cmd");
-        task.artifacts().iter().for_each(|a|{assert_eq!(a.source(), "tmp/test/deploy/test-machine/task1-image-test-machine.test-sdimg")});
+        assert_eq!(task.name, "task1-name");
+        assert_eq!(task.ttype, TType::NonBitbake);
+        assert_eq!(task.builddir, "test/builddir1/sub");
+        assert_eq!(task.build, "build-cmd -a test");
+        assert_eq!(task.clean, "clean-cmd");
+        task.artifacts.iter().for_each(|a|{assert_eq!(a.source, "tmp/test/deploy/test-machine/task1-image-test-machine.test-sdimg")});
         let task: &TaskConfig = tasks.get("task2").unwrap();
-        assert_eq!(task.name(), "task2-name");
-        assert_eq!(task.disabled(), "false");
-        assert_eq!(task.ttype(), TType::Bitbake);
-        assert_eq!(task.recipes(), &vec![String::from("task2-image"), String::from("task2-image:do_populate_sdk")]);
-        task.artifacts().iter().for_each(|a|{assert_eq!(a.source(), "tmp/test/deploy/test-machine/task2-image-test-machine.test-sdimg")});
+        assert_eq!(task.name, "task2-name");
+        assert_eq!(task.disabled, "false");
+        assert_eq!(task.ttype, TType::Bitbake);
+        assert_eq!(&task.recipes, &vec![String::from("task2-image"), String::from("task2-image:do_populate_sdk")]);
+        task.artifacts.iter().for_each(|a|{assert_eq!(a.source, "tmp/test/deploy/test-machine/task2-image-test-machine.test-sdimg")});
     }
 }
