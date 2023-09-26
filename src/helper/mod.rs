@@ -5,6 +5,7 @@ use crate::error::BError;
 use crate::configs::{WsSettings, BuildConfig, TaskConfig};
 use crate::fs::Archiver;
 
+use std::ops::DerefMut;
 use std::path::{PathBuf, Path};
 use std::fs::File;
 use std::io::Write;
@@ -15,27 +16,28 @@ pub struct Helper;
 
 impl Helper {
     pub fn setup_test_ws_default_dirs(work_dir: &Path) {
-        std::fs::create_dir(work_dir.join("configs")).expect("Failed to create config dir!");
-        std::fs::create_dir(work_dir.join("configs/include")).expect("Failed to create include dir!");
-        std::fs::create_dir(work_dir.join("builds")).expect("Failed to create builds dir!");
-        std::fs::create_dir(work_dir.join("artifacts")).expect("Failed to create artifacts dir!");
-        std::fs::create_dir(work_dir.join("scripts")).expect("Failed to create scripts dir!");
-        std::fs::create_dir(work_dir.join("docker")).expect("Failed to create docker dir!");
-        std::fs::create_dir(work_dir.join(".cache")).expect("Failed to create cache dir!");
+        std::fs::create_dir_all(work_dir.join("configs")).expect("Failed to create config dir!");
+        std::fs::create_dir_all(work_dir.join("configs/include")).expect("Failed to create include dir!");
+        std::fs::create_dir_all(work_dir.join("builds")).expect("Failed to create builds dir!");
+        std::fs::create_dir_all(work_dir.join("artifacts")).expect("Failed to create artifacts dir!");
+        std::fs::create_dir_all(work_dir.join("scripts")).expect("Failed to create scripts dir!");
+        std::fs::create_dir_all(work_dir.join("docker")).expect("Failed to create docker dir!");
+        std::fs::create_dir_all(work_dir.join(".cache")).expect("Failed to create cache dir!");
     }
 
     pub fn setup_test_ws_dirs(ws_settings: &WsSettingsHandler) {
-        std::fs::create_dir(ws_settings.configs_dir()).expect("Failed to create config dir!");
-        std::fs::create_dir(ws_settings.include_dir()).expect("Failed to create include dir!");
-        std::fs::create_dir(ws_settings.builds_dir()).expect("Failed to create builds dir!");
-        std::fs::create_dir(ws_settings.artifacts_dir()).expect("Failed to create artifacts dir!");
-        std::fs::create_dir(ws_settings.scripts_dir()).expect("Failed to create scripts dir!");
-        std::fs::create_dir(ws_settings.docker_dir()).expect("Failed to create docker dir!");
-        std::fs::create_dir(ws_settings.cache_dir()).expect("Failed to create cache dir!");
+        std::fs::create_dir_all(ws_settings.configs_dir()).expect("Failed to create config dir!");
+        std::fs::create_dir_all(ws_settings.include_dir()).expect("Failed to create include dir!");
+        std::fs::create_dir_all(ws_settings.builds_dir()).expect("Failed to create builds dir!");
+        std::fs::create_dir_all(ws_settings.artifacts_dir()).expect("Failed to create artifacts dir!");
+        std::fs::create_dir_all(ws_settings.scripts_dir()).expect("Failed to create scripts dir!");
+        std::fs::create_dir_all(ws_settings.docker_dir()).expect("Failed to create docker dir!");
+        std::fs::create_dir_all(ws_settings.cache_dir()).expect("Failed to create cache dir!");
     }
 
     pub fn setup_test_build_configs_files(configs: HashMap<PathBuf, String>) {
         configs.iter().for_each(|(path, data)| {
+            println!("Creating test build config file: {}", path.display());
             let mut file = File::create(path).expect("Failed to create build config");
             file.write_all(data.as_bytes()).expect("Failed to write data to build config");
         });

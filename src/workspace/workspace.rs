@@ -166,6 +166,10 @@ impl Workspace {
         &self.configs
     }
 
+    pub fn valid_config(&self, config: &str) -> bool {
+        self.build_configs().contains_key(&self.settings.configs_dir().join(format!("{}.json", config)))
+    }
+
     /*
     pub fn collect(&self, build: &str) -> bool {}
 
@@ -239,22 +243,25 @@ mod tests {
             "arch": "test-arch",
             "bb": {}
         }"#;
-        let config1_path: PathBuf = PathBuf::from(format!("{}/test-name1.json", PathBuf::from(test_work_dir).display()));
-        let config2_path: PathBuf = PathBuf::from(format!("{}/test-name2.json", PathBuf::from(test_work_dir).display()));
+        let config1_path: PathBuf = PathBuf::from(format!("{}/configs/test-name1.json", PathBuf::from(test_work_dir).display()));
+        let config2_path: PathBuf = PathBuf::from(format!("{}/configs/test-name2.json", PathBuf::from(test_work_dir).display()));
         configs.insert(config1_path, config1_str.to_string());
         configs.insert(config2_path, config2_str.to_string());
         Helper::setup_test_ws_default_dirs(test_work_dir);
+        Helper::setup_test_build_configs_files(configs);
         let ws: Workspace = Workspace::new(
             Some(PathBuf::from(test_work_dir)),
             None, 
             None).expect("Failed to setup workspace");
+        assert!(!ws.build_configs().is_empty());
         let mut i: usize = 1;
         ws.build_configs().iter().for_each(|(config, description)| {
+            println!("{}", config.display());
+            println!("{}", description.to_string());
             assert_eq!(config.as_path(), test_work_dir.join(format!("configs/test-name{}.json", i)));
             assert_eq!(description.to_string(), format!("Test{} Description", i));
             i += 1;
         });
-        
     }
 
     #[test]
@@ -289,5 +296,34 @@ mod tests {
         assert_eq!(format!("{}", docker_image), "strixos/bakery-workspace:0.68");
         assert_eq!(ws.settings().docker_args(), &vec!["--rm=true".to_string(), "-t".to_string()]);
         assert_eq!(ws.settings().supported_builds(), &vec!["default".to_string()]);
+    }
+
+    #[test]
+    fn test_workspace_valid_config() {
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let test_work_dir: &Path = temp_dir.path();
+        let mut configs: HashMap<PathBuf, String> = HashMap::new();
+        let config_str: &str = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {}
+        }"#;
+        let config_path: PathBuf = PathBuf::from(format!("{}/configs/test-name.json", PathBuf::from(test_work_dir).display()));
+        configs.insert(config_path, config_str.to_string());
+        Helper::setup_test_ws_default_dirs(test_work_dir);
+        Helper::setup_test_build_configs_files(configs);
+        let ws: Workspace = Workspace::new(
+            Some(PathBuf::from(test_work_dir)),
+            None, 
+            None).expect("Failed to setup workspace");
+        assert!(!ws.build_configs().is_empty());
+        let (path, description) = ws.build_configs().first().unwrap();
+        assert_eq!(path.as_path(), test_work_dir.join("configs/test-name.json"));
+        assert_eq!(description, "Test Description");
+        assert!(ws.valid_config("test-name"));        
     }
 }
