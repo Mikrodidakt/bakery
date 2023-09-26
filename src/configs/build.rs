@@ -131,13 +131,17 @@ impl BuildConfig {
 
     pub fn from_str(json_string: &str) -> Result<Self, BError> {
         let data: Value = Self::parse(json_string)?;
+        Self::from_value(&data)
+    }
+
+    pub fn from_value(data: &Value) -> Result<Self, BError> {
         let version: String = Self::get_str_value("version", &data, None)?;
         let name: String = Self::get_str_value("name", &data, None)?;
         let description: String = Self::get_str_value("description", &data, None)?;
         let arch: String = Self::get_str_value("arch", &data, None)?;
         let bitbake: BBConfig = Self::get_bitbake(&data)?;
-        let tasks: IndexMap<String, TaskConfig> = Self::get_tasks(&data)?;
         let context: IndexMap<String, String> = Self::get_hashmap_value("context", &data)?;
+        let tasks: IndexMap<String, TaskConfig> = Self::get_tasks(&data)?;
         Ok(BuildConfig {
             version,
             name,

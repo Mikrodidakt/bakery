@@ -80,7 +80,7 @@ impl WsBuildConfigHandler {
     pub fn task(&self, task: &str) -> Result<WsTaskConfigHandler, BError> {
         match self.config.tasks.get(task) {
             Some(config) => {
-                return Ok(WsTaskConfigHandler::new(&config, &self));
+                return Ok(WsTaskConfigHandler::new(config, &self.work_dir(), &self.bb_build_dir(), &self.artifacts_dir()));
             },
             None => {
                 return Err(BError{ code: 0, message: format!("Task '{}' does not exists in build config", task)});
@@ -90,7 +90,7 @@ impl WsBuildConfigHandler {
 
     pub fn tasks(&self) -> IndexMap<String, WsTaskConfigHandler> {
         let tasks: IndexMap<String, WsTaskConfigHandler> = self.config.tasks.iter().map(|(key, task_config)|{
-            (key.clone(), WsTaskConfigHandler::new(task_config, &self))
+            (key.clone(), WsTaskConfigHandler::new(task_config, &self.work_dir(), &self.bb_build_dir(), &self.artifacts_dir()))
         }).collect();
         tasks
     }
@@ -299,6 +299,164 @@ mod tests {
         }"#;
         let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
         assert_eq!(ws_config.bb_docker_image(), "test-registry/test-image:0.1");
+    }
+
+    #[test]
+    fn test_ws_task_config_condition() {
+        let json_settings = r#"
+        {
+            "version": "4"
+        }"#;
+        let json_build_config = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "context": [
+                "TASK1_CONDITION=1",
+                "TASK2_CONDITION=y",
+                "TASK3_CONDITION=Y",
+                "TASK4_CONDITION=yes",
+                "TASK5_CONDITION=Yes",
+                "TASK6_CONDITION=YES",
+                "TASK7_CONDITION=True",
+                "TASK8_CONDITION=TRUE",
+                "TASK9_CONDITION=true"
+            ],
+            "bb": {
+            },
+            "tasks": { 
+                "task1": {
+                    "index": "1",
+                    "name": "task1",
+                    "type": "non-bitbake",
+                    "condition": "${TASK1_CONDITION}"
+                },
+                "task2": {
+                    "index": "2",
+                    "name": "task2",
+                    "type": "non-bitbake",
+                    "condition": "${TASK2_CONDITION}"
+                },
+                "task3": {
+                    "index": "3",
+                    "name": "task3",
+                    "type": "non-bitbake",
+                    "condition": "${TASK3_CONDITION}"
+                },
+                "task4": {
+                    "index": "4",
+                    "name": "task4",
+                    "type": "non-bitbake",
+                    "condition": "${TASK4_CONDITION}"
+                },
+                "task5": {
+                    "index": "5",
+                    "name": "task5",
+                    "type": "non-bitbake",
+                    "condition": "${TASK5_CONDITION}"
+                },
+                "task6": {
+                    "index": "6",
+                    "name": "task6",
+                    "type": "non-bitbake",
+                    "condition": "${TASK6_CONDITION}"
+                },
+                "task7": {
+                    "index": "7",
+                    "name": "task7",
+                    "type": "non-bitbake",
+                    "condition": "${TASK7_CONDITION}"
+                },
+                "task8": {
+                    "index": "8",
+                    "name": "task8",
+                    "type": "non-bitbake",
+                    "condition": "${TASK8_CONDITION}"
+                },
+                "task9": {
+                    "index": "9",
+                    "name": "task9",
+                    "type": "non-bitbake",
+                    "condition": "${TASK8_CONDITION}"
+                }
+            }
+        }"#;
+        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
+        for mut i in 1..9 {
+            let result: Result<WsTaskConfigHandler, BError> = ws_config.task(format!("task{}", i).as_str());
+            match result {
+                Ok(task) => {
+                    if !task.condition() {
+                        panic!("Failed to evaluate condition nbr {}", i);
+                    }
+                },
+                Err(e) => {
+                    panic!("{}", e.message);
+                }
+            }
+            i += 1;
+        }
+    }
+
+    #[test]
+    fn test_ws_task_config_build_dir() {
+        let json_settings = r#"
+        {
+            "version": "4"
+        }"#;
+        let json_build_config = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "context": [
+                "TASK1_BUILD_DIR=task1/build"
+            ],
+            "bb": {
+            },
+            "tasks": { 
+                "task1": {
+                    "index": "1",
+                    "name": "task1",
+                    "type": "non-bitbake",
+                    "builddir": "${TASK1_BUILD_DIR}/dir/"
+                },
+                "task2": {
+                    "index": "2",
+                    "name": "task2",
+                    "type": "bitbake",
+                    "recipes": [
+                        "test-image"
+                    ]
+                }
+            }
+        }"#;
+        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
+        {
+            let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task1");
+            match result {
+                Ok(task) => {
+                    assert_eq!(task.build_dir(), PathBuf::from("/workspace/task1/build/dir/"));
+                },
+                Err(e) => {
+                    panic!("{}", e.message);
+                }
+            }
+        }
+        {
+            let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task2");
+            match result {
+                Ok(task) => {
+                    assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds/test-name"));
+                },
+                Err(e) => {
+                    panic!("{}", e.message);
+                }
+            }
+        }
     }
 
     #[test]

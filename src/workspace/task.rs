@@ -12,13 +12,13 @@ pub struct WsTaskConfigHandler<'a> {
 }
 
 impl<'a> WsTaskConfigHandler<'a> {
-    pub fn new(task_config: &'a TaskConfig, ws_config: &WsBuildConfigHandler) -> Self {
+    pub fn new(task_config: &'a TaskConfig, work_dir: &PathBuf, bb_build_dir: &PathBuf, artifacts_dir: &PathBuf) -> Self {
         WsTaskConfigHandler {
             name: task_config.name.to_string(),
             task_config,
-            work_dir: ws_config.work_dir(),
-            bb_build_dir: ws_config.bb_build_dir(),
-            artifacts_dir: ws_config.artifacts_dir(),
+            work_dir: work_dir.clone(),
+            bb_build_dir: bb_build_dir.clone(),
+            artifacts_dir: artifacts_dir.clone(),
         }
     }
 
@@ -92,220 +92,114 @@ impl<'a> WsTaskConfigHandler<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
+    use std::path::{PathBuf};
+    use indexmap::{IndexMap, indexmap};
 
-    use crate::error::BError;
     use crate::helper::Helper;
-    use crate::workspace::{WsBuildConfigHandler, WsTaskConfigHandler};
-    use crate::configs::TType;
+    use crate::workspace::WsTaskConfigHandler;
+    use crate::configs::{TType, TaskConfig, Context};
 
     #[test]
-    fn test_ws_task_config() {
-        let json_settings = r#"
-        {
-            "version": "4"
+    fn test_ws_task_nonbitbake() {
+        let variables: IndexMap<String, String> = indexmap! {
+            "TASK_BUILD_DIR".to_string() => "task/build/dir".to_string(),
+            "TASK_CONDITION".to_string() => "1".to_string(),
+        };
+        let ctx: Context = Context::new(&variables);
+        let json_task_str: &str = r#"
+        { 
+            "index": "0",
+            "name": "task-name",
+            "type": "non-bitbake",
+            "disabled": "false",
+            "condition": "${TASK_CONDITION}",
+            "builddir": "test/${TASK_BUILD_DIR}",
+            "build": "build-cmd",
+            "clean": "clean-cmd",
+            "artifacts": []
         }"#;
-        let json_build_config = r#"
-        {                                                                                                                   
-            "version": "4",
-            "name": "test-name",
-            "description": "Test Description",
-            "arch": "test-arch",
-            "context": [
-                "TASK_BUILD_DIR=task/build/dir",
-                "TASK_CONDITION=1"
-            ],
-            "bb": {
-            },
-            "tasks": { 
-                "task": {
-                    "index": "0",
-                    "name": "task-name",
-                    "type": "non-bitbake",
-                    "disabled": "false",
-                    "condition": "${TASK_CONDITION}",
-                    "builddir": "test/${TASK_BUILD_DIR}",
-                    "build": "build-cmd",
-                    "clean": "clean-cmd",
-                    "artifacts": []
-                }
-            }
-        }"#;
-        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
-        {
-            let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task");
-            match result {
-                Ok(task) => {
-                    assert_eq!(task.build_dir(), PathBuf::from("/workspace/test/task/build/dir"));
-                    assert!(task.condition());
-                    assert_eq!(task.name(), "task-name");
-                    assert_eq!(task.build_cmd(), "build-cmd");
-                    assert_eq!(task.clean_cmd(), "clean-cmd");
-                    assert_eq!(task.ttype(), &TType::NonBitbake);
-                    assert!(!task.disabled());
-                },
-                Err(e) => {
-                    panic!("{}", e.message);
-                }
-            }
-        }
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let bb_build_dir: PathBuf = PathBuf::from("/workspace/builds/tmp");
+        let artifacts_dir: PathBuf = PathBuf::from("/workspace/artifacts");
+        let mut config: TaskConfig = Helper::setup_task_config(json_task_str);
+        config.expand_ctx(&ctx);
+        let task: WsTaskConfigHandler = WsTaskConfigHandler::new(
+            &config,
+            &work_dir,
+            &bb_build_dir,
+            &artifacts_dir
+        );
+        assert_eq!(task.build_dir(), PathBuf::from("/workspace/test/task/build/dir"));
+        assert!(task.condition());
+        assert_eq!(task.name(), "task-name");
+        assert_eq!(task.build_cmd(), "build-cmd");
+        assert_eq!(task.clean_cmd(), "clean-cmd");
+        assert_eq!(task.ttype(), &TType::NonBitbake);
+        assert!(!task.disabled());
     }
 
     #[test]
-    fn test_ws_task_config_condition() {
-        let json_settings = r#"
-        {
-            "version": "4"
+    fn test_ws_task_bitbake() {
+        let json_task_str: &str = r#"
+        { 
+            "index": "2",
+            "name": "task-name",
+            "type": "bitbake",
+            "recipes": [
+                "test-image"
+            ]
         }"#;
-        let json_build_config = r#"
-        {                                                                                                                   
-            "version": "4",
-            "name": "test-name",
-            "description": "Test Description",
-            "arch": "test-arch",
-            "context": [
-                "TASK1_CONDITION=1",
-                "TASK2_CONDITION=y",
-                "TASK3_CONDITION=Y",
-                "TASK4_CONDITION=yes",
-                "TASK5_CONDITION=Yes",
-                "TASK6_CONDITION=YES",
-                "TASK7_CONDITION=True",
-                "TASK8_CONDITION=TRUE",
-                "TASK9_CONDITION=true"
-            ],
-            "bb": {
-            },
-            "tasks": { 
-                "task1": {
-                    "index": "1",
-                    "name": "task1",
-                    "type": "non-bitbake",
-                    "condition": "${TASK1_CONDITION}"
-                },
-                "task2": {
-                    "index": "2",
-                    "name": "task2",
-                    "type": "non-bitbake",
-                    "condition": "${TASK2_CONDITION}"
-                },
-                "task3": {
-                    "index": "3",
-                    "name": "task3",
-                    "type": "non-bitbake",
-                    "condition": "${TASK3_CONDITION}"
-                },
-                "task4": {
-                    "index": "4",
-                    "name": "task4",
-                    "type": "non-bitbake",
-                    "condition": "${TASK4_CONDITION}"
-                },
-                "task5": {
-                    "index": "5",
-                    "name": "task5",
-                    "type": "non-bitbake",
-                    "condition": "${TASK5_CONDITION}"
-                },
-                "task6": {
-                    "index": "6",
-                    "name": "task6",
-                    "type": "non-bitbake",
-                    "condition": "${TASK6_CONDITION}"
-                },
-                "task7": {
-                    "index": "7",
-                    "name": "task7",
-                    "type": "non-bitbake",
-                    "condition": "${TASK7_CONDITION}"
-                },
-                "task8": {
-                    "index": "8",
-                    "name": "task8",
-                    "type": "non-bitbake",
-                    "condition": "${TASK8_CONDITION}"
-                },
-                "task9": {
-                    "index": "9",
-                    "name": "task9",
-                    "type": "non-bitbake",
-                    "condition": "${TASK8_CONDITION}"
-                }
-            }
-        }"#;
-        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
-        for mut i in 1..9 {
-            let result: Result<WsTaskConfigHandler, BError> = ws_config.task(format!("task{}", i).as_str());
-            match result {
-                Ok(task) => {
-                    if !task.condition() {
-                        panic!("Failed to evaluate condition nbr {}", i);
-                    }
-                },
-                Err(e) => {
-                    panic!("{}", e.message);
-                }
-            }
-            i += 1;
-        }
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let bb_build_dir: PathBuf = PathBuf::from("/workspace/builds/tmp");
+        let artifacts_dir: PathBuf = PathBuf::from("/workspace/artifacts");
+        let config: TaskConfig = Helper::setup_task_config(json_task_str);
+        let task: WsTaskConfigHandler = WsTaskConfigHandler::new(
+            &config,
+            &work_dir,
+            &bb_build_dir,
+            &artifacts_dir
+        );
+        assert_eq!(task.build_dir(), bb_build_dir);
+        assert!(task.condition());
+        assert_eq!(task.name(), "task-name");
+        assert_eq!(task.ttype(), &TType::Bitbake);
+        assert_eq!(task.recipes(), &vec!["test-image".to_string()]);
+        assert!(!task.disabled());
     }
 
     #[test]
-    fn test_ws_task_config_build_dir() {
-        let json_settings = r#"
-        {
-            "version": "4"
-        }"#;
-        let json_build_config = r#"
-        {                                                                                                                   
-            "version": "4",
-            "name": "test-name",
-            "description": "Test Description",
-            "arch": "test-arch",
-            "context": [
-                "TASK1_BUILD_DIR=task1/build"
+    fn test_ws_task_bitbake_artifacts() {
+        let json_task_str: &str = r#"
+        { 
+            "index": "2",
+            "name": "task-name",
+            "type": "bitbake",
+            "recipes": [
+                "test-image"
             ],
-            "bb": {
-            },
-            "tasks": { 
-                "task1": {
-                    "index": "1",
-                    "name": "task1",
-                    "type": "non-bitbake",
-                    "builddir": "${TASK1_BUILD_DIR}/dir/"
-                },
-                "task2": {
-                    "index": "2",
-                    "name": "task2",
-                    "type": "bitbake",
-                    "recipes": [
-                        "test-image"
-                    ]
+            "artifacts": [
+                {
+                    "source": "test/test.img"
                 }
-            }
+            ]
         }"#;
-        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
-        {
-            let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task1");
-            match result {
-                Ok(task) => {
-                    assert_eq!(task.build_dir(), PathBuf::from("/workspace/task1/build/dir/"));
-                },
-                Err(e) => {
-                    panic!("{}", e.message);
-                }
-            }
-        }
-        {
-            let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task2");
-            match result {
-                Ok(task) => {
-                    assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds/test-name"));
-                },
-                Err(e) => {
-                    panic!("{}", e.message);
-                }
-            }
-        }
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let bb_build_dir: PathBuf = PathBuf::from("/workspace/builds/tmp");
+        let artifacts_dir: PathBuf = PathBuf::from("/workspace/artifacts");
+        let config: TaskConfig = Helper::setup_task_config(json_task_str);
+        let task: WsTaskConfigHandler = WsTaskConfigHandler::new(
+            &config,
+            &work_dir,
+            &bb_build_dir,
+            &artifacts_dir
+        );
+        assert_eq!(task.build_dir(), bb_build_dir);
+        assert!(task.condition());
+        assert_eq!(task.name(), "task-name");
+        assert_eq!(task.ttype(), &TType::Bitbake);
+        assert_eq!(task.recipes(), &vec!["test-image".to_string()]);
+        assert!(!task.disabled());
+        assert_eq!(task.artifacts().get(0).unwrap().source(), bb_build_dir.join("test/test.img"));
+        assert_eq!(task.artifacts().get(0).unwrap().dest(), artifacts_dir);
     }
 }
