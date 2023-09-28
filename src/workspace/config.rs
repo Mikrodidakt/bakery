@@ -1,68 +1,58 @@
 use indexmap::{IndexMap, indexmap};
-use serde_json::value::Index;
 use std::path::PathBuf;
+use serde_json::Value;
 
-use crate::configs::{Context, BuildConfig};
-use crate::workspace::WsSettingsHandler;
+use crate::configs::{Context, BuildConfig, TType};
+use crate::workspace::{WsSettingsHandler, WsBuildData, WsTaskHandler};
 use crate::error::BError;
-
-use super::WsTaskConfigHandler;
+use crate::fs::JsonFileReader;
 
 pub struct WsBuildConfigHandler {
-    ctx: Context,
+    data: WsBuildData,
     config: BuildConfig,
     work_dir: PathBuf,
     build_dir: PathBuf,
     cache_dir: PathBuf,
     artifacts_dir: PathBuf,
+    tasks: IndexMap<String, WsTaskHandler>,
 }
 
 impl WsBuildConfigHandler {
-    pub fn from_str(ws_settings: &WsSettingsHandler, json_config: &str) -> Result<Self, BError> {
-        let result: Result<BuildConfig, BError> = BuildConfig::from_str(json_config);
-        match result {
-            Ok(config) => {
-                Ok(Self::new(&ws_settings, config))
-            }
-            Err(e) => {
-                Err(e)
-            } 
-        }
+    pub fn from_str(json_config: &str, settings: &mut WsSettingsHandler) -> Result<Self, BError> {
+        let data: Value = JsonFileReader::parse(json_config)?;
+        Self::new(&data, settings)
     }
 
-    pub fn new(settings: &WsSettingsHandler, config: BuildConfig) -> Self {
+    pub fn new(data: &Value, settings: &WsSettingsHandler) -> Result<Self, BError> {
+        let mut config: BuildConfig = BuildConfig::from_value(&data)?;
+        // Define the context variables that is only defined in the build config
         let ctx_variables: IndexMap<String, String> = indexmap! {
             "MACHINE".to_string() => config.bitbake.machine.to_string(),
             "ARCH".to_string() => config.arch.to_string(),
             "DISTRO".to_string() => config.bitbake.distro.to_string(),
-            "VARIATN".to_string() => "".to_string(),
-            "PRODUCT_NAME".to_string() => config.name.to_string(),
-            "BB_BUILD_DIR".to_string() => "".to_string(), // TODO: specify a default value
-            "BB_DEPLOY_DIR".to_string() => "".to_string(), // TODO: specify a default value
-            "ARTIFACTS_DIR".to_string() => settings.artifacts_dir().to_str().unwrap().to_string(),
-            "WORK_DIR".to_string() => settings.work_dir().to_str().unwrap().to_string(),
-            "PLATFORM_VERSION".to_string() => "0.0.0".to_string(),
-            "BUILD_NUMBER".to_string() => "0".to_string(),                                                                                 
-            "PLATFORM_RELEASE".to_string() => "0.0.0-0".to_string(),                                                                       
-            "BUILD_SHA".to_string() => "dev".to_string(),                                                                                  
-            "RELEASE_BUILD".to_string() => "0".to_string(),
-            "BUILD_VARIANT".to_string() => "dev".to_string(),                                                                              
-            "ARCHIVER".to_string() => "0".to_string(), 
-            "DEBUG_SYMBOLS".to_string() => "0".to_string(),
+            "VARIANT".to_string() => "".to_string()
         };
-        let mut ctx: Context = Context::new(&ctx_variables);
-        ctx.update(&config.context);
-        let mut mut_config: BuildConfig = config;
-        mut_config.expand_ctx(&ctx);
+        let mut ws_build_data: WsBuildData = WsBuildData::new(
+            &config.name,
+            &config.bitbake.deploy_dir,
+            ctx_variables,
+            settings
+        )?;
+        // Update the context with variables defined in the build config
+        ws_build_data.update_context(&config.context);
+        // Expand all context variables in the main build config
+        config.expand_ctx(ws_build_data.context());
+        let tasks: IndexMap<String, WsTaskHandler> = ws_build_data.get_tasks(&data)?;
 
-        WsBuildConfigHandler {
-            config: mut_config,
-            ctx,
+        Ok(WsBuildConfigHandler {
+            config,
+            data: ws_build_data,
             work_dir: settings.work_dir().clone(),
             build_dir: settings.builds_dir().clone(),
             cache_dir: settings.cache_dir().clone(),
             artifacts_dir: settings.artifacts_dir().clone(),
-        }
+            tasks,
+        })
     }
 
     pub fn work_dir(&self) -> PathBuf {
@@ -74,13 +64,13 @@ impl WsBuildConfigHandler {
     }
 
     pub fn context(&self) -> &Context {
-        &self.ctx
+        self.data.context()
     }
 
-    pub fn task(&self, task: &str) -> Result<WsTaskConfigHandler, BError> {
-        match self.config.tasks.get(task) {
+    pub fn task(&self, task: &str) -> Result<&WsTaskHandler, BError> {
+        match self.tasks.get(task) {
             Some(config) => {
-                return Ok(WsTaskConfigHandler::new(config, &self.work_dir(), &self.bb_build_dir(), &self.artifacts_dir()));
+                return Ok(config);
             },
             None => {
                 return Err(BError{ code: 0, message: format!("Task '{}' does not exists in build config", task)});
@@ -88,11 +78,8 @@ impl WsBuildConfigHandler {
         }
     }
 
-    pub fn tasks(&self) -> IndexMap<String, WsTaskConfigHandler> {
-        let tasks: IndexMap<String, WsTaskConfigHandler> = self.config.tasks.iter().map(|(key, task_config)|{
-            (key.clone(), WsTaskConfigHandler::new(task_config, &self.work_dir(), &self.bb_build_dir(), &self.artifacts_dir()))
-        }).collect();
-        tasks
+    pub fn tasks(&self) -> &IndexMap<String, WsTaskHandler> {
+        &self.tasks
     }
 
     pub fn extend_ctx(&self, ctx: &Context) {}
@@ -160,19 +147,11 @@ impl WsBuildConfigHandler {
     }
 
     pub fn bb_build_dir(&self) -> PathBuf {
-        let mut path_buf = self.build_dir.clone();
-        path_buf.join(&self.config.name)
+        self.data.bb_build_dir()
     }
 
     pub fn bb_docker_image(&self) -> String {
         self.config.bitbake.docker.to_string()
-        // Remove this later on when we have determined we don't need to expand
-        // the docker image
-        /*let docker: String = self.config.bitbake().docker().to_string();
-        if !docker.is_empty() {
-            return self.ctx.expand_str(docker.as_str())
-        }
-        docker*/
     }
 
     pub fn bb_build_config_dir(&self) -> PathBuf {
@@ -188,7 +167,7 @@ impl WsBuildConfigHandler {
     }
 
     pub fn bb_deploy_dir(&self) -> PathBuf {
-        self.bb_build_dir().join(&self.config.bitbake.deploy_dir)
+        self.data.bb_deploy_dir()
     }    
 
     pub fn bb_sstate_dir(&self) -> PathBuf {
@@ -223,7 +202,7 @@ impl WsBuildConfigHandler {
 mod tests {
     use std::path::{PathBuf, Path};
 
-    use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, WsTaskConfigHandler};
+    use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, WsTaskHandler};
     use crate::helper::Helper;
     use crate::error::BError;
 
@@ -241,7 +220,9 @@ mod tests {
             "arch": "test-arch",
             "bb": {}
         }"#;
-        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
         assert_eq!(ws_config.version(), "4".to_string());
         assert_eq!(ws_config.arch(), "test-arch".to_string());
         assert_eq!(ws_config.description(), "Test Description".to_string());
@@ -297,7 +278,9 @@ mod tests {
                 "docker": "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}"
             }
         }"#;
-        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
         assert_eq!(ws_config.bb_docker_image(), "test-registry/test-image:0.1");
     }
 
@@ -383,9 +366,11 @@ mod tests {
                 }
             }
         }"#;
-        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
         for mut i in 1..9 {
-            let result: Result<WsTaskConfigHandler, BError> = ws_config.task(format!("task{}", i).as_str());
+            let result: Result<&WsTaskHandler, BError> = ws_config.task(format!("task{}", i).as_str());
             match result {
                 Ok(task) => {
                     if !task.condition() {
@@ -434,29 +419,11 @@ mod tests {
                 }
             }
         }"#;
-        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
-        {
-            let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task1");
-            match result {
-                Ok(task) => {
-                    assert_eq!(task.build_dir(), PathBuf::from("/workspace/task1/build/dir/"));
-                },
-                Err(e) => {
-                    panic!("{}", e.message);
-                }
-            }
-        }
-        {
-            let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task2");
-            match result {
-                Ok(task) => {
-                    assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds/test-name"));
-                },
-                Err(e) => {
-                    panic!("{}", e.message);
-                }
-            }
-        }
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
+        assert_eq!(ws_config.task("task1").unwrap().build_dir(), PathBuf::from("/workspace/task1/build/dir"));
+        assert_eq!(ws_config.task("task2").unwrap().build_dir(), PathBuf::from("/workspace/builds/test-name"));
     }
 
     #[test]
@@ -497,34 +464,16 @@ mod tests {
                 }
             }
         }"#;
-        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
+        assert_eq!(ws_config.task("task1").unwrap().build_dir(), PathBuf::from("/workspace/test/task1/build/dir"));
+        assert_eq!(ws_config.task("task2").unwrap().build_dir(), PathBuf::from("/workspace/builds/test-name"));
         {
-            let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task1");
-            match result {
-                Ok(task) => {
-                    assert_eq!(task.build_dir(), PathBuf::from("/workspace/test/task1/build/dir"))
-                },
-                Err(e) => {
-                    panic!("{}", e.message);
-                }
-            }
-        }
-        {
-            let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task2");
-            match result {
-                Ok(task) => {
-                    assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds/test-name"))
-                },
-                Err(e) => {
-                    panic!("{}", e.message);
-                }
-            }
-        }
-        {
-            let result: Result<WsTaskConfigHandler, BError> = ws_config.task("task3");
+            let result: Result<&WsTaskHandler, BError> = ws_config.task("task3");
             match result {
                 Ok(_task) => {
-                    panic!("We should have recived an error because we have no recipes defined!");
+                    panic!("We should have recived an error because we have no task3 defined!");
                 },
                 Err(e) => {
                     assert_eq!(e.message, "Task 'task3' does not exists in build config".to_string());
@@ -588,7 +537,10 @@ mod tests {
                 }
             }
         }"#;
-        let ws_config: WsBuildConfigHandler = Helper::setup_ws_config_handler("/workspace", json_settings, json_build_config);
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
+        
         let mut i: i32 = 0;
         ws_config.tasks().iter().for_each(|(name, task)| {
             assert_eq!(name, &format!("task{}", i));

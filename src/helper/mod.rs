@@ -190,17 +190,17 @@ impl Helper {
 
     pub fn setup_ws_config_handler(test_work_dir: &str, json_settings: &str, json_build_config: &str) -> WsBuildConfigHandler {
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
-        let settings: WsSettingsHandler = WsSettingsHandler::new(
+        let mut settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,
             Helper::setup_ws_settings(json_settings),
         );
-        let result: Result<WsBuildConfigHandler, BError> = WsBuildConfigHandler::from_str(&settings, json_build_config);
+        let result: Result<WsBuildConfigHandler, BError> = WsBuildConfigHandler::from_str(json_build_config, &mut settings);
         match result {
             Ok(ws_config) => {
                 ws_config
             }
-            Err(e) => {
-                eprintln!("Error parsing build config: {}", e);
+            Err    (e) => {
+            eprintln!("Error parsing build config: {}", e);
                 panic!();
             } 
         }
@@ -208,8 +208,8 @@ impl Helper {
 
     pub fn setup_ws(test_work_dir: &str, json_settings: &str, json_build_config: &str) -> Workspace {
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
-        let ws_config: WsSettings = Self::setup_ws_settings(json_settings);
-        let build_config: BuildConfig = Self::setup_build_config(json_build_config);
-        Workspace::new(Some(work_dir), Some(ws_config), Some(build_config)).expect("Failed to setup workspace")
+        let mut settings: WsSettingsHandler = WsSettingsHandler::new(work_dir.clone(), Self::setup_ws_settings(json_settings)); 
+        let config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut settings).expect("Failed to parse build config");
+        Workspace::new(Some(work_dir), Some(settings), Some(config)).expect("Failed to setup workspace")
     }
 }

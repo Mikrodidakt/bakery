@@ -5,7 +5,7 @@ use std::io::Error;
 use indexmap::IndexMap;
 
 use crate::fs::JsonFileReader;
-use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, WsTaskConfigHandler};
+use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, WsTaskHandler};
 use crate::configs::{WsSettings, BuildConfig, settings};
 use crate::error::BError;
 
@@ -36,10 +36,10 @@ impl Workspace {
         }
     }
 
-    fn setup_settings(work_dir: PathBuf, settings: Option<WsSettings>) -> WsSettingsHandler {
+    fn setup_settings(work_dir: PathBuf, settings: Option<WsSettingsHandler>) -> WsSettingsHandler {
         match settings {
             Some(ws_settings) => {
-                WsSettingsHandler::new(work_dir.clone(), ws_settings)
+                ws_settings
             },
             None => {
                 // If settings is not supplied we use default
@@ -52,15 +52,15 @@ impl Workspace {
                 {
                     "version": "4"
                 }"#;
-                WsSettingsHandler::from_str(work_dir.to_str().unwrap(), default_settings).unwrap()
+                WsSettingsHandler::from_str(&work_dir, default_settings).unwrap()
             }
         }
     }
 
-    fn setup_config(settings: &WsSettingsHandler, config: Option<BuildConfig>) -> WsBuildConfigHandler {
+    fn setup_config(settings: &mut WsSettingsHandler, config: Option<WsBuildConfigHandler>) -> WsBuildConfigHandler {
         match config {
             Some(ws_config) => {
-                WsBuildConfigHandler::new(settings, ws_config)
+                ws_config
             },
             None => {
                 // If config is not supplied we use default
@@ -77,7 +77,7 @@ impl Workspace {
                     "arch": "NA",
                     "bb": {}
                 }"#;
-                WsBuildConfigHandler::from_str(settings, default_config).unwrap()
+                WsBuildConfigHandler::from_str(default_config, settings).unwrap()
             }
         }
     }
@@ -139,10 +139,10 @@ impl Workspace {
         Ok(build_configs)
     }
 
-    pub fn new(workdir: Option<PathBuf>, ws_config: Option<WsSettings>, build_config: Option<BuildConfig>) -> Result<Self, BError> {
+    pub fn new(workdir: Option<PathBuf>, settings: Option<WsSettingsHandler>, config: Option<WsBuildConfigHandler>) -> Result<Self, BError> {
         let work_dir: PathBuf = Self::setup_work_directory(&workdir);
-        let settings: WsSettingsHandler = Self::setup_settings(work_dir, ws_config);
-        let config: WsBuildConfigHandler = Self::setup_config(&settings, build_config);
+        let mut settings: WsSettingsHandler = Self::setup_settings(work_dir, settings);
+        let config: WsBuildConfigHandler = Self::setup_config(&mut settings, config);
         let configs: IndexMap<PathBuf, String> = Self::setup_list_of_available_configs(&settings, &config)?;
 
         Ok(Workspace {

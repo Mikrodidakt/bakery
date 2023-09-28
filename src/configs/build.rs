@@ -89,12 +89,13 @@ pub struct BuildConfig {
     pub arch: String,
     pub bitbake: BBConfig,
     pub context: IndexMap<String, String>, // Optional if not set default is an empty map
-    pub tasks: IndexMap<String, TaskConfig>, // The tasks don't have to be defined in the main build config if that is the case this will be empty
+    //pub tasks: IndexMap<String, TaskConfig>, // The tasks don't have to be defined in the main build config if that is the case this will be empty
 }
 
 impl Config for BuildConfig {}
 
 impl BuildConfig {
+    /*
     fn get_tasks(data: &Value) -> Result<IndexMap<String, TaskConfig>, BError> {
         match data.get("tasks") {
             Some(value) => {
@@ -117,6 +118,7 @@ impl BuildConfig {
             }
         }
     }
+    */
 
     fn get_bitbake(data: &Value) -> Result<BBConfig, BError> {
         match data.get("bb") {
@@ -141,7 +143,7 @@ impl BuildConfig {
         let arch: String = Self::get_str_value("arch", &data, None)?;
         let bitbake: BBConfig = Self::get_bitbake(&data)?;
         let context: IndexMap<String, String> = Self::get_hashmap_value("context", &data)?;
-        let tasks: IndexMap<String, TaskConfig> = Self::get_tasks(&data)?;
+        //let tasks: IndexMap<String, TaskConfig> = Self::get_tasks(&data)?;
         Ok(BuildConfig {
             version,
             name,
@@ -149,13 +151,12 @@ impl BuildConfig {
             arch,
             bitbake,
             context,
-            tasks,
+            //tasks,
         })
     }
 
     pub fn expand_ctx(&mut self, ctx: &Context) {
         self.bitbake.expand_ctx(ctx);
-        self.tasks.iter_mut().for_each(|(_key, value)| value.expand_ctx(ctx));
     }
 }
 
@@ -254,7 +255,6 @@ mod tests {
         assert_eq!(config.bitbake.deploy_dir, "tmp/deploy/images");
         assert!(config.bitbake.bblayers_conf.is_empty());
         assert!(config.bitbake.local_conf.is_empty());
-        assert!(config.tasks.is_empty());
         assert!(config.context.is_empty());
     }
 
@@ -301,7 +301,7 @@ mod tests {
         }
         "#;
         let config: BuildConfig = helper_build_config_from_str(json_test_str);
-        let tasks: &IndexMap<String, TaskConfig> = &config.tasks;
+        /*
         let task: &TaskConfig = tasks.get("task1").unwrap();
         assert_eq!(task.index, "0");
         assert_eq!(task.name, "task1-name");
@@ -316,6 +316,7 @@ mod tests {
         assert_eq!(task.disabled, "false");
         assert_eq!(task.ttype, TType::Bitbake);
         assert_eq!(&task.recipes, &vec![String::from("test-image"), String::from("test-image:do_populate_sdk")]);
+        */
     }
 
     #[test]
@@ -397,7 +398,7 @@ mod tests {
         let ctx: Context = Context::new(&config.context);
         let mut config: BuildConfig = config;
         config.expand_ctx(&ctx);
-
+        /*
         let tasks: &IndexMap<String, TaskConfig> = &config.tasks;
         let task: &TaskConfig = tasks.get("task1").unwrap();
         assert_eq!(task.name, "task1-name");
@@ -412,5 +413,6 @@ mod tests {
         assert_eq!(task.ttype, TType::Bitbake);
         assert_eq!(&task.recipes, &vec![String::from("task2-image"), String::from("task2-image:do_populate_sdk")]);
         task.artifacts.iter().for_each(|a|{assert_eq!(a.source, "tmp/test/deploy/test-machine/task2-image-test-machine.test-sdimg")});
+        */
     }
 }

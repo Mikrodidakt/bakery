@@ -3,16 +3,17 @@ use crate::error::BError;
 
 use std::path::{PathBuf, Path};
 
-
+#[derive(Clone)]
 pub struct WsSettingsHandler {
     work_dir: PathBuf,
     wsSettings: WsSettings,
     docker: DockerImage,
+    curr_cfg_name: String,
 }
 
 impl WsSettingsHandler {
-    pub fn from_str(work_dir: &str, json_settings: &str) -> Result<Self, BError> {
-        let work_dir: PathBuf = PathBuf::from(work_dir);
+    pub fn from_str(work_dir: &PathBuf, json_settings: &str) -> Result<Self, BError> {
+        let work_dir: PathBuf = work_dir.clone();
         let result: Result<WsSettings, BError> = WsSettings::from_str(json_settings);
         match result {
             Ok(rsettings) => {
@@ -34,6 +35,7 @@ impl WsSettingsHandler {
             work_dir,
             wsSettings: settings,
             docker,
+            curr_cfg_name: "".to_string(),
         }
     }
 

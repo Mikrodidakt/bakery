@@ -17,7 +17,6 @@ pub struct ArtifactConfig {
     pub name: String, // The name can be a name for a directory, archive, file or manifest
     pub source: String, // The source is only used if the type is file 
     pub dest: String, // The dest is optional
-    pub artifacts: Vec<ArtifactConfig>, // The artifacts can be a composite of multiple artifacts nodes
     pub manifest: String, // The manifest content will be a json string that can be put in a file. The manifest can then be used by the CI to collect information from the build
 }
 
@@ -25,29 +24,6 @@ impl Config for ArtifactConfig {
 }
 
 impl ArtifactConfig {
-    fn get_artifacts(data: &Value) -> Result<Vec<ArtifactConfig>, BError> {
-        match data.get("artifacts") {
-            Some(value) => {
-                if value.is_array() {
-                    if let Some(artifact_vec) = value.as_array() {
-                        let mut artifacts: Vec<ArtifactConfig> = Vec::new();
-                        for artifact_data in artifact_vec.iter() {
-                            let artifact: ArtifactConfig = ArtifactConfig::from_value(&artifact_data)?;
-                            artifacts.push(artifact);
-                        }
-                        return Ok(artifacts);
-                    }
-                    return Err(BError{ code: 0, message: format!("Invalid 'artifacts' format in build config")});
-                } else {
-                    return Err(BError{ code: 0, message: format!("Invalid 'artifacts' format in build config")});
-                }
-            }
-            None => {
-                return Ok(Vec::new());
-            }
-        }
-    }
-
     pub fn from_str(json_string: &str) -> Result<Self, BError> {
         let data: Value = Self::parse(json_string)?;
         Self::from_value(&data)
@@ -94,13 +70,11 @@ impl ArtifactConfig {
             },
         }
 
-        let artifacts: Vec<ArtifactConfig> = Self::get_artifacts(&data)?;
         Ok(ArtifactConfig {
             name,
             atype: enum_ttype,
             source,
             dest,
-            artifacts,
             manifest,
         })
     }
@@ -114,11 +88,9 @@ impl ArtifactConfig {
             },
             AType::Directory => {
                 self.name = ctx.expand_str(&self.name);
-                self.artifacts.iter_mut().for_each(|a: &mut ArtifactConfig| a.expand_ctx(ctx));
             },
             AType::Archive => {
                 self.name = ctx.expand_str(&self.name);
-                self.artifacts.iter_mut().for_each(|a: &mut ArtifactConfig| a.expand_ctx(ctx));
             },
             AType::Manifest => {
                 self.name = ctx.expand_str(&self.name);
@@ -214,53 +186,6 @@ mod tests {
         let config: ArtifactConfig = helper_artifact_config_from_str(json_test_str);
         assert_eq!(config.atype, AType::Directory);
         assert_eq!(config.name, "dir");
-        assert!(!config.artifacts.is_empty());
-        let artifacts: Vec<ArtifactConfig> = config.artifacts;
-        assert_eq!(artifacts[0].atype, AType::File);
-        assert!(artifacts[0].name.is_empty());
-        assert_eq!(artifacts[0].source, "file1.txt");
-        assert!(artifacts[0].dest.is_empty());
-    }
-
-    #[test]
-    fn test_artifact_config_composite() {
-        let json_test_str = r#"
-        {
-            "type": "archive",
-            "name": "test.zip",
-            "artifacts": [
-                {
-                    "type": "directory",
-                    "name": "dir-name",
-                    "artifacts": [
-                        {
-                            "source": "file1.txt"
-                        },
-                        {
-                            "source": "file2.txt"
-                        }
-                    ]
-                }
-            ]
-        }
-        "#;
-        let config: ArtifactConfig = helper_artifact_config_from_str(json_test_str);
-        assert_eq!(config.atype, AType::Archive);
-        assert_eq!(config.name, "test.zip");
-        assert!(!config.artifacts.is_empty());
-        let artifacts: Vec<ArtifactConfig> = config.artifacts;
-        assert_eq!(artifacts[0].atype, AType::Directory);
-        assert_eq!(artifacts[0].name, "dir-name");
-        assert!(!artifacts[0].artifacts.is_empty());
-        let files: &Vec<ArtifactConfig> = &artifacts[0].artifacts;
-        let mut i = 1;
-        for f in files.iter() {
-            assert_eq!(f.atype, AType::File);
-            assert!(f.name.is_empty());
-            assert_eq!(f.source, format!("file{}.txt", i));
-            assert!(f.dest.is_empty());
-            i += 1;
-        }
     }
 
     #[test]
@@ -351,20 +276,6 @@ mod tests {
         let mut config: ArtifactConfig = helper_artifact_config_from_str(json_test_str);
         config.expand_ctx(&ctx);
         assert_eq!(config.name, "test-archive.zip");
-        assert!(!config.artifacts.is_empty());
-        let artifacts: &Vec<ArtifactConfig> = &config.artifacts;
-        assert_eq!(artifacts[0].atype, AType::Directory);
-        assert_eq!(artifacts[0].name, "dir1/test-dir");
-        assert!(!artifacts[0].artifacts.is_empty());
-        let files: &Vec<ArtifactConfig> = &artifacts[0].artifacts;
-        let mut i = 2;
-        for f in files.iter() {
-            assert_eq!(f.atype, AType::File);
-            assert!(f.name.is_empty());
-            assert_eq!(f.source, format!("dir{}/file{}.txt", i, i));
-            assert!(f.dest.is_empty());
-            i += 1;
-        }
     }
 
     #[test]

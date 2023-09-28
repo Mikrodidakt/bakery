@@ -3,8 +3,7 @@ use std::path::PathBuf;
 
 use crate::commands::{BCommand, BError, BBaseCommand};
 use crate::executers::{DockerImage, Docker, Executer};
-use crate::configs::{WsSettings, BuildConfig};
-use crate::workspace::WsSettingsHandler;
+use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
 use crate::workspace::Workspace;
 use crate::cli::Cli;
 
@@ -26,36 +25,28 @@ impl BCommand for BuildCommand {
     }
 
     fn execute(&self, cli: &Cli) -> Result<(), BError> {
-        // TODO: we need to handle the configs and workspace in some other way
-        // for now let's keep it like this
-        let json_test_str = r#"
+        let json_ws_settings: &str = r#"
         {
-            "version": "4"
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
         }"#;
-        let result: Result<WsSettings, BError> = WsSettings::from_str(json_test_str);
-        let config: WsSettings;
-        match result {
-            Ok(rsettings) => {
-                config = rsettings;
-            }
-            Err(e) => {
-                eprintln!("Error parsing JSON: {}", e);
-                panic!();
-            } 
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {}
         }
-        let result: Result<BuildConfig, BError> = BuildConfig::from_str(json_test_str);
-        let build_config: BuildConfig;
-        match result {
-            Ok(bconfig) => {
-                build_config = bconfig;
-            }
-            Err(e) => {
-                eprintln!("Error parsing build config: {}", e);
-                panic!();
-            } 
-        }
+        "#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let workspace: Workspace = Workspace::new(Some(work_dir), Some(config), Some(build_config)).expect("Failed to setup workspace");
+        let mut settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_ws_settings).expect("Failed to parse settings.json");
+        let config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut settings).expect("Failed to parse build config");
+        let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config)).expect("Failed to setup workspace");
         let exec: Executer = Executer::new(&workspace, cli);
         let docker_image: DockerImage = DockerImage {
             registry: String::from("registry"),

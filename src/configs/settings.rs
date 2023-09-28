@@ -50,6 +50,7 @@ pub const BAKERY_DOCKER_IMAGE: &str = "bakery-workspace";
 pub const BAKERY_DOCKER_TAG: &str = "0.68";                                                                                      
 pub const BAKERY_DOCKER_REGISTRY: &str = "strixos";
 
+#[derive(Clone)]
 pub struct WsSettings {
     pub version: String,
     pub configs_dir: String,

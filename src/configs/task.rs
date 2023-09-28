@@ -53,7 +53,6 @@ pub struct TaskConfig {
     pub condition: String,
     pub clean: String,
     pub recipes: Vec<String>, // The list of recipes will be empty if the type for the task is 'non-bitbake'
-    pub artifacts: Vec<ArtifactConfig>, // For some tasks there might not be any artifacts to collect then this will be empty
 }
 
 impl Config for TaskConfig {
@@ -99,7 +98,6 @@ impl TaskConfig {
         let build: String = Self::get_str_value("build", &data, Some(String::from("")))?;
         let clean: String = Self::get_str_value("clean", &data, Some(String::from("")))?;
         let recipes: Vec<String> = Self::get_array_value("recipes", &data, Some(vec![]))?;
-        let artifacts: Vec<ArtifactConfig> = Self::get_artifacts(&data)?;
         if ttype != "bitbake" && ttype != "non-bitbake" {
             return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. Invalid type '{}'", ttype)}); 
         }
@@ -133,7 +131,6 @@ impl TaskConfig {
             build,
             clean,
             recipes,
-            artifacts,
         })
     }
     
@@ -143,7 +140,6 @@ impl TaskConfig {
         self.clean = ctx.expand_str(&self.clean);
         self.condition = ctx.expand_str(&self.condition);
         self.recipes.iter_mut().for_each(|r: &mut String| *r = ctx.expand_str(r));
-        self.artifacts.iter_mut().for_each(|a: &mut ArtifactConfig| a.expand_ctx(ctx));
     }
 }
 
@@ -261,23 +257,6 @@ mod tests {
         assert_eq!(config.disabled, "false");
         assert_eq!(config.ttype, TType::Bitbake);
         assert_eq!(&config.recipes, &vec![String::from("test-image")]);
-        assert!(!config.artifacts.is_empty());
-        let artifacts: &Vec<ArtifactConfig> = &config.artifacts;
-        assert_eq!(artifacts[0].atype, AType::Archive);
-        assert_eq!(artifacts[0].name, "test.zip");
-        let dir_artifacts: &Vec<ArtifactConfig> = &artifacts[0].artifacts;
-        assert_eq!(dir_artifacts[0].atype, AType::Directory);
-        assert_eq!(dir_artifacts[0].name, "dir-name");
-        assert!(!dir_artifacts[0].artifacts.is_empty());
-        let files: &Vec<ArtifactConfig> = &dir_artifacts[0].artifacts;
-        let mut i = 1;
-        for f in files.iter() {
-            assert_eq!(f.atype, AType::File);
-            assert!(f.name.is_empty());
-            assert_eq!(f.source, format!("file{}.txt", i));
-            assert!(f.dest.is_empty());
-            i += 1;
-        }
     }
 
     #[test]
@@ -365,23 +344,5 @@ mod tests {
         assert_eq!(config.disabled, "false");
         assert_eq!(config.ttype, TType::Bitbake);
         assert_eq!(&config.recipes, &vec![String::from("test-image")]);
-        assert!(!config.artifacts.is_empty());
-        let artifacts: &Vec<ArtifactConfig> = &config.artifacts;
-        assert_eq!(artifacts[0].atype, AType::Archive);
-        assert_eq!(artifacts[0].name, "test.zip");
-        let dir_artifacts: &Vec<ArtifactConfig> = &artifacts[0].artifacts;
-        assert_eq!(dir_artifacts[0].atype, AType::Directory);
-        assert_eq!(dir_artifacts[0].name, "dir-name");
-        assert!(!dir_artifacts[0].artifacts.is_empty());
-        let files: &Vec<ArtifactConfig> = &dir_artifacts[0].artifacts;
-        let mut i = 1;
-        for f in files.iter() {
-            assert_eq!(f.atype, AType::File);
-            assert!(f.name.is_empty());
-            assert_eq!(f.source, format!("file{}.txt", i));
-            assert!(f.dest.is_empty());
-            i += 1;
-        }
-
     }
 }

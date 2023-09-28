@@ -10,6 +10,7 @@ pub struct Docker<'a> {
     _interactive: bool,
 }
 
+#[derive(Clone)]
 pub struct DockerImage {
     pub image: String,
     pub tag: String,
@@ -26,7 +27,7 @@ impl<'a> Docker<'a> {
     pub fn new(workspace: &'a Workspace, image: &'a DockerImage, interactive: bool) -> Self {
         Docker {
             _workspace: workspace,
-            image: image,
+            image,
             _interactive: interactive,
         }
     }
@@ -43,7 +44,7 @@ mod tests {
 
     use crate::commands::build;
     use crate::executers::{Docker, DockerImage, Executer};
-    use crate::workspace::Workspace;
+    use crate::workspace::{Workspace, WsSettingsHandler, WsBuildConfigHandler};
     use crate::configs::{WsSettings, BuildConfig};
     use crate::cli::*;
     use crate::error::BError;
@@ -67,15 +68,15 @@ mod tests {
 
     #[test]
     fn test_executer_docker() {
-        let test_work_dir = String::from("test_work_dir");
-        let test_cmd = String::from("test_cmd");
+        let test_work_dir: String = String::from("test_work_dir");
+        let test_cmd: String = String::from("test_cmd");
         let docker_image: DockerImage = DockerImage {
             registry: String::from("test-registry"),
             image: String::from("test-image"),
             tag: String::from("0.1"),
         };
         let verification_str = format!("Execute inside docker image {} 'cd {} && {}'", docker_image, test_work_dir, test_cmd);
-        let work_dir: PathBuf = PathBuf::from(test_work_dir);
+        let work_dir: PathBuf = PathBuf::from(&test_work_dir);
         let json_ws_settings: &str = r#"
         {
             "version": "4",
@@ -94,9 +95,9 @@ mod tests {
             "bb": {}
         }
         "#;
-        let ws_config: WsSettings = Helper::setup_ws_settings(json_ws_settings);
-        let build_config: BuildConfig = Helper::setup_build_config(json_build_config);
-        let workspace: Workspace = Workspace::new(Some(work_dir), Some(ws_config), Some(build_config)).expect("Failed to setup workspace");
+        let mut settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_ws_settings).expect("Failed to parse settings.json");
+        let config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut settings).expect("Failed to parse build config");
+        let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config)).expect("Failed to setup workspace");
         let docker: Docker = Docker::new(&workspace, &docker_image, true);
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
@@ -143,9 +144,9 @@ mod tests {
             "bb": {}
         }
         "#;
-        let ws_config: WsSettings = Helper::setup_ws_settings(json_ws_settings);
-        let build_config: BuildConfig = Helper::setup_build_config(json_build_config);
-        let workspace: Workspace = Workspace::new(Some(work_dir), Some(ws_config), Some(build_config)).expect("Failed to setup workspace");
+        let mut settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_ws_settings).expect("Failed to parse settings.json");
+        let config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut settings).expect("Failed to parse build config");
+        let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config)).expect("Failed to setup workspace");
         let result = helper_test_docker(
             &verification_str,
             &test_cmd,
