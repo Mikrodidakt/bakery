@@ -95,31 +95,6 @@ pub struct BuildConfig {
 impl Config for BuildConfig {}
 
 impl BuildConfig {
-    /*
-    fn get_tasks(data: &Value) -> Result<IndexMap<String, TaskConfig>, BError> {
-        match data.get("tasks") {
-            Some(value) => {
-                if value.is_object() {
-                    if let Some(task_map) = value.as_object() {
-                        let mut tasks: IndexMap<String, TaskConfig> = IndexMap::new();
-                        for (task_name, task_data) in task_map.iter() {
-                            let t: TaskConfig = TaskConfig::from_value(&task_data)?;
-                            tasks.insert(task_name.clone(), t);
-                        }
-                        return Ok(tasks);
-                    }
-                    return Err(BError{ code: 0, message: format!("Invalid 'tasks' format in build config")});
-                } else {
-                    return Err(BError{ code: 0, message: format!("Invalid 'tasks' format in build config")});
-                }
-            }
-            None => {
-                return Ok(IndexMap::new());
-            }
-        }
-    }
-    */
-
     fn get_bitbake(data: &Value) -> Result<BBConfig, BError> {
         match data.get("bb") {
             Some(value) => {
@@ -143,7 +118,6 @@ impl BuildConfig {
         let arch: String = Self::get_str_value("arch", &data, None)?;
         let bitbake: BBConfig = Self::get_bitbake(&data)?;
         let context: IndexMap<String, String> = Self::get_hashmap_value("context", &data)?;
-        //let tasks: IndexMap<String, TaskConfig> = Self::get_tasks(&data)?;
         Ok(BuildConfig {
             version,
             name,
@@ -151,7 +125,6 @@ impl BuildConfig {
             arch,
             bitbake,
             context,
-            //tasks,
         })
     }
 
@@ -259,67 +232,6 @@ mod tests {
     }
 
     #[test]
-    fn test_build_config_tasks() {
-        let json_test_str: &str = r#"
-        {                                                                                                                   
-            "version": "4",
-            "name": "test-name",
-            "description": "Test Description",
-            "arch": "test-arch",
-            "bb": {},
-            "tasks": { 
-                "task1": {
-                    "index": "0",
-                    "name": "task1-name",
-                    "disabled": "false",
-                    "type": "non-bitbake",
-                    "builddir": "test/builddir",
-                    "build": "build-cmd",
-                    "clean": "clean-cmd",
-                    "artifacts": [   
-                        {
-                            "source": "${BB_DEPLOY_DIR}/${MACHINE}/test-image-${MACHINE}.test-sdimg"
-                        }
-                    ]
-                },
-                "task2": {
-                    "index": "1",
-                    "name": "task2-name",
-                    "disabled": "false",
-                    "type": "bitbake",
-                    "recipes": [
-                        "test-image",
-                        "test-image:do_populate_sdk"
-                    ],
-                    "artifacts": [   
-                        {
-                            "source": "${BB_DEPLOY_DIR}/${MACHINE}/test-image-${MACHINE}.test-sdimg"
-                        }
-                    ]
-                }
-            }
-        }
-        "#;
-        let config: BuildConfig = helper_build_config_from_str(json_test_str);
-        /*
-        let task: &TaskConfig = tasks.get("task1").unwrap();
-        assert_eq!(task.index, "0");
-        assert_eq!(task.name, "task1-name");
-        assert_eq!(task.disabled, "false");
-        assert_eq!(task.ttype, TType::NonBitbake);
-        assert_eq!(task.builddir, "test/builddir");
-        assert_eq!(task.build, "build-cmd");
-        assert_eq!(task.clean, "clean-cmd");
-        let task: &TaskConfig = tasks.get("task2").unwrap();
-        assert_eq!(task.index, "1");
-        assert_eq!(task.name, "task2-name");
-        assert_eq!(task.disabled, "false");
-        assert_eq!(task.ttype, TType::Bitbake);
-        assert_eq!(&task.recipes, &vec![String::from("test-image"), String::from("test-image:do_populate_sdk")]);
-        */
-    }
-
-    #[test]
     fn test_build_config_context() {
         let json_test_str: &str = r#"
         {                                                                                                                   
@@ -344,75 +256,5 @@ mod tests {
             assert_eq!(value, &format!("context{}", i));
             i += 1;
         }
-    }
-
-    #[test]
-    fn test_build_config_expand_context() {
-        let json_test_str: &str = r#"
-        {                                                                                                                   
-            "version": "4",
-            "name": "test-name",
-            "description": "Test Description",
-            "arch": "test-arch",
-            "context": [
-                "TASK1_BUILD_DIR=test/builddir1",
-                "TASK1_BUILD_CMD_ARGS=-a test",
-                "TASK1_IMAGE=task1-image",
-                "TASK2_IMAGE=task2-image",
-                "TASK2_RECIPE_NAME=${TASK2_IMAGE}",
-                "TEST_DEPLOY_DIR=tmp/test/deploy",
-                "TEST_MACHINE=test-machine"
-            ],
-            "bb": {},
-            "tasks": { 
-                "task1": {
-                    "index": "0",
-                    "name": "task1-name",
-                    "type": "non-bitbake",
-                    "builddir": "${TASK1_BUILD_DIR}/sub",
-                    "build": "build-cmd ${TASK1_BUILD_CMD_ARGS}",
-                    "clean": "clean-cmd",
-                    "artifacts": [   
-                        {
-                            "source": "${TEST_DEPLOY_DIR}/${TEST_MACHINE}/${TASK1_IMAGE}-${TEST_MACHINE}.test-sdimg"
-                        }
-                    ]
-                },
-                "task2": {
-                    "index": "1",
-                    "name": "task2-name",
-                    "recipes": [
-                        "${TASK2_RECIPE_NAME}",
-                        "${TASK2_RECIPE_NAME}:do_populate_sdk"
-                    ],
-                    "artifacts": [   
-                        {
-                            "source": "${TEST_DEPLOY_DIR}/${TEST_MACHINE}/${TASK2_IMAGE}-${TEST_MACHINE}.test-sdimg"
-                        }
-                    ]
-                }
-            }
-        }
-        "#;
-        let config: BuildConfig = helper_build_config_from_str(json_test_str);
-        let ctx: Context = Context::new(&config.context);
-        let mut config: BuildConfig = config;
-        config.expand_ctx(&ctx);
-        /*
-        let tasks: &IndexMap<String, TaskConfig> = &config.tasks;
-        let task: &TaskConfig = tasks.get("task1").unwrap();
-        assert_eq!(task.name, "task1-name");
-        assert_eq!(task.ttype, TType::NonBitbake);
-        assert_eq!(task.builddir, "test/builddir1/sub");
-        assert_eq!(task.build, "build-cmd -a test");
-        assert_eq!(task.clean, "clean-cmd");
-        task.artifacts.iter().for_each(|a|{assert_eq!(a.source, "tmp/test/deploy/test-machine/task1-image-test-machine.test-sdimg")});
-        let task: &TaskConfig = tasks.get("task2").unwrap();
-        assert_eq!(task.name, "task2-name");
-        assert_eq!(task.disabled, "false");
-        assert_eq!(task.ttype, TType::Bitbake);
-        assert_eq!(&task.recipes, &vec![String::from("task2-image"), String::from("task2-image:do_populate_sdk")]);
-        task.artifacts.iter().for_each(|a|{assert_eq!(a.source, "tmp/test/deploy/test-machine/task2-image-test-machine.test-sdimg")});
-        */
     }
 }

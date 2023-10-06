@@ -22,9 +22,9 @@ pub trait BCommand {
 }
 
 pub struct BBaseCommand {
-    _cmd_str: String,
-    _subcmd: clap::Command,
-    _interactive: bool,
+    cmd_str: String,
+    subcmd: clap::Command,
+    interactive: bool,
     //_env: Vars,
 }
 

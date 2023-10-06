@@ -5,8 +5,8 @@ use std::io::Error;
 use indexmap::IndexMap;
 
 use crate::fs::JsonFileReader;
-use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, WsTaskHandler};
-use crate::configs::{WsSettings, BuildConfig, settings};
+use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
+use crate::configs::BuildConfig;
 use crate::error::BError;
 
 pub struct Workspace {

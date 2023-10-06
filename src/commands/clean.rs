@@ -9,11 +9,11 @@ pub struct CleanCommand {
 
 impl BCommand for CleanCommand {
     fn cmd_str(&self) -> &str {
-        &self.cmd._cmd_str
+        &self.cmd.cmd_str
     }
 
     fn subcommand(&self) -> &clap::Command {
-        &self.cmd._subcmd
+        &self.cmd.subcmd
     }
 }
 
@@ -36,9 +36,9 @@ impl CleanCommand {
         CleanCommand {
             // Initialize fields if any
             cmd : BBaseCommand {
-                _cmd_str: String::from(BCOMMAND),
-                _subcmd: subcmd,
-                _interactive: true,
+                cmd_str: String::from(BCOMMAND),
+                subcmd: subcmd,
+                interactive: true,
             }
         }
     }
