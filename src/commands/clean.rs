@@ -13,7 +13,7 @@ impl BCommand for CleanCommand {
     }
 
     fn subcommand(&self) -> &clap::Command {
-        &self.cmd.subcmd
+        &self.cmd.sub_cmd
     }
 }
 
@@ -37,7 +37,7 @@ impl CleanCommand {
             // Initialize fields if any
             cmd : BBaseCommand {
                 cmd_str: String::from(BCOMMAND),
-                subcmd: subcmd,
+                sub_cmd: subcmd,
                 interactive: true,
             }
         }

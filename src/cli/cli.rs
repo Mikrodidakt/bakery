@@ -1,28 +1,37 @@
+use clap::ArgMatches;
+
 use crate::commands::{CmdHandler, BCommand};
 use crate::error::BError;
 use crate::cli::Logger;
 
 pub struct Cli {
-    _cmd_handler: CmdHandler,
+    args: ArgMatches,
+    cmd_handler: CmdHandler,
     pub logger: Box<dyn Logger>,
 }
 
 impl Cli {
-    pub fn new(logger: Box<dyn Logger>) -> Self {
-        let cmd_handler = CmdHandler::new();
+    pub fn new(logger: Box<dyn Logger>, cmd: clap::Command) -> Self {
+        let cmd_handler: CmdHandler = CmdHandler::new();
+        let args: ArgMatches = cmd_handler.build_cli(cmd).get_matches();
         Cli {
-            _cmd_handler: cmd_handler,
+            args,
+            cmd_handler,
             logger: logger,
         } 
     }
 
-    pub fn get_command(&self, cmd_name: String) -> Result<&Box<dyn BCommand>, BError> {
-        self._cmd_handler.get_cmd(&cmd_name)
+    pub fn get_command(&self, name: &str) -> Result<&Box<dyn BCommand>, BError> {
+        self.cmd_handler.get_cmd(&name)
     }
 
-    pub fn build_cli(&self, cmd: &clap::Command) -> clap::ArgMatches {
-        self._cmd_handler.build_cli(cmd.clone()).get_matches()
+    pub fn get_args(&self) -> &ArgMatches {
+        &self.args
     }
+
+    //pub fn build_cli(&self, cmd: &clap::Command) -> clap::ArgMatches {
+    //    self.cmd_handler.build_cli(cmd.clone()).get_matches()
+    //}
 
     pub fn get_logger(&self) -> &Box<dyn Logger> {
         &self.logger
@@ -38,5 +47,9 @@ impl Cli {
 
     pub fn error(&self, message: String) {
         (*self.logger).error(message);
+    }
+
+    pub fn stdout(&self, message: String) {
+        (*self.logger).stdout(message);
     }
 }

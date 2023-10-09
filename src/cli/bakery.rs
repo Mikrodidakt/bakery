@@ -1,42 +1,77 @@
 use crate::cli::{BLogger, Cli};
 use crate::commands::BCommand;
 use crate::error::BError;
+use crate::workspace::{WsSettingsHandler, Workspace, WsBuildConfigHandler};
 
-use clap::Command;
+use clap::{Command, ArgMatches};
+use std::path::PathBuf;
 
 pub struct Bakery {
     cli: Cli,
-    cli_matches: clap::ArgMatches,
 }
 
 impl Bakery {
     pub fn new() -> Self {
-        let cli: Cli = Cli::new(Box::new(BLogger::new()));
         /*
             TODO: We should try and use command! macro in clap so
             the about, author and version can be read out from the
             Cargo.toml
         */
-        let cmd = Command::new("bakery")
-            .version("0.0.1")
-            .subcommand_required(true)
-            .arg_required_else_help(true)
-            .about("Build engine for the Yocto/OE")
-            .author("bakery by Mikrodidakt(mikro.io)");
-        let matches = cli.build_cli(&cmd);
+        let cli: Cli = Cli::new(Box::new(BLogger::new()), 
+            Command::new("bakery")
+                .version("0.0.1")
+                .subcommand_required(true)
+                .arg_required_else_help(true)
+                .about("Build engine for the Yocto/OE")
+                .author("bakery by Mikrodidakt(mikro.io)")
+        );
         Bakery {
             cli: cli,
-            cli_matches: matches,
         }
     }
 
     pub fn bake(&self) {
-        let cmd_name = self.cli_matches.subcommand_name();
-        let cmd: Result<&Box<dyn BCommand>, BError> = self.cli.get_command(String::from(cmd_name.unwrap()));
+        let json_ws_settings: &str = r#"
+        {
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {},
+            "tasks": { 
+                "task1": {
+                    "index": "1",
+                    "name": "task1",
+                    "type": "non-bitbake"
+                },
+                "task2": {
+                    "index": "2",
+                    "name": "task2",
+                    "type": "non-bitbake"
+                }
+            }
+        }
+        "#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let mut settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_ws_settings).expect("Failed to parse settings.json");
+        let config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut settings).expect("Failed to parse build config");
+        let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config)).expect("Failed to setup workspace");
+
+        let cmd_name: &str = self.cli.get_args().subcommand_name().unwrap();
+        let cmd: Result<&Box<dyn BCommand>, BError> = self.cli.get_command(cmd_name);
 
         match cmd {
             Ok(command) => {
-                let error: Result<(), BError> = command.execute(&self.cli);
+                let error: Result<(), BError> = command.execute(&self.cli, &workspace);
                 match error {
                     Err(err) => {
                         self.cli.error(format!("{}", err.message));

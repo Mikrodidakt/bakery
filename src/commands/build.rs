@@ -1,14 +1,15 @@
 use std::env;
 use std::path::PathBuf;
 
+use clap::ArgMatches;
+
 use crate::commands::{BCommand, BError, BBaseCommand};
 use crate::executers::{DockerImage, Docker, Executer};
-use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
-use crate::workspace::Workspace;
+use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, Workspace};
 use crate::cli::Cli;
 
 static BCOMMAND: &str = "build";
-static BCOMMAND_ABOUT: &str = "Build one of the components";
+static BCOMMAND_ABOUT: &str = "Execute a build either a full build or a task of one of the builds";
 
 pub struct BuildCommand {
     cmd: BBaseCommand,
@@ -21,32 +22,10 @@ impl BCommand for BuildCommand {
     }
 
     fn subcommand(&self) -> &clap::Command {
-        &self.cmd.subcmd
+        &self.cmd.sub_cmd
     }
 
-    fn execute(&self, cli: &Cli) -> Result<(), BError> {
-        let json_ws_settings: &str = r#"
-        {
-            "version": "4",
-            "builds": {
-                "supported": [
-                    "default"
-                ]
-            }
-        }"#;
-        let json_build_config: &str = r#"
-        {
-            "version": "4",
-            "name": "test-name",
-            "description": "Test Description",
-            "arch": "test-arch",
-            "bb": {}
-        }
-        "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let mut settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_ws_settings).expect("Failed to parse settings.json");
-        let config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut settings).expect("Failed to parse build config");
-        let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config)).expect("Failed to setup workspace");
+    fn execute(&self, cli: &Cli, workspace: &Workspace) -> Result<(), BError> {
         let exec: Executer = Executer::new(&workspace, cli);
         let docker_image: DockerImage = DockerImage {
             registry: String::from("registry"),
@@ -69,7 +48,7 @@ impl BuildCommand {
                     .short('c')
                     .long("config")
                     .help("The build config defining all the components for the full build")
-                    .value_name("path")
+                    .value_name("name")
                     .required(true),
             )
             .arg(
@@ -183,7 +162,7 @@ impl BuildCommand {
             // Initialize fields if any
             cmd : BBaseCommand {
                 cmd_str: String::from(BCOMMAND),
-                subcmd: subcmd,
+                sub_cmd: subcmd,
                 interactive: true
             }
         }

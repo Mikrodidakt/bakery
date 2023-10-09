@@ -7,6 +7,8 @@ pub trait Logger {
     fn warn(&self, message: String);
 
     fn error(&self, message: String);
+
+    fn stdout(&self, message: String);
 }
 
 pub struct BLogger {}
@@ -19,7 +21,7 @@ impl BLogger {
 
 impl Logger for BLogger {
     fn info(&self, message: String) {
-        println!("INFO: {}", message);
+        self.stdout(format!("INFO: {}", message));
     }
 
     fn warn(&self, message: String) {
@@ -27,8 +29,12 @@ impl Logger for BLogger {
     }
 
     fn error(&self, message: String) {
-        eprintln!("ERR: {}", message);
-    }    
+        eprintln!("ERROR: {}", message);
+    }
+
+    fn stdout(&self, message: String) {
+        println!("{}", message);
+    }   
 }
 
 

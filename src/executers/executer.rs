@@ -63,7 +63,7 @@ mod tests {
     fn helper_test_docker(verification_str: &String, test_cmd: &String, test_work_dir: Option<String>, image: &DockerImage, workspace: &Workspace) -> Result<(), BError> {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger.expect_info().with(mockall::predicate::eq(verification_str.clone())).once().returning(|_x|());
-        let cli: Cli = Cli::new(Box::new(mocked_logger));
+        let cli: Cli = Cli::new(Box::new(mocked_logger), clap::Command::new("bakery"));
         let docker: Docker = Docker::new(&workspace, image, true);
         docker.run_cmd(test_cmd.clone(), test_work_dir.unwrap(), &cli)
     }
@@ -71,7 +71,7 @@ mod tests {
     fn helper_test_executer(verification_str: &String, test_cmd: &String, test_build_dir: Option<String>, docker: Option<Docker>, workspace: &Workspace) -> Result<(), BError> {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger.expect_info().with(mockall::predicate::eq(verification_str.clone())).once().returning(|_x|());
-        let cli: Cli = Cli::new(Box::new(mocked_logger));
+        let cli: Cli = Cli::new(Box::new(mocked_logger), clap::Command::new("bakery"));
         let exec: Executer = Executer::new(workspace, &cli);
         exec.execute(&test_cmd, std::env::vars(), test_build_dir, docker, true) 
     }
