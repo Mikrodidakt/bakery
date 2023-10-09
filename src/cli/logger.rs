@@ -34,7 +34,7 @@ impl Logger for BLogger {
 
     fn stdout(&self, message: String) {
         println!("{}", message);
-    }   
+    }
 }
 
 

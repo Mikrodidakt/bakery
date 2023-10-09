@@ -39,6 +39,7 @@ impl CleanCommand {
                 cmd_str: String::from(BCOMMAND),
                 sub_cmd: subcmd,
                 interactive: true,
+                require_docker: false,
             }
         }
     }

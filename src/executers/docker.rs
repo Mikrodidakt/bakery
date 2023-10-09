@@ -1,4 +1,7 @@
 use std::fmt;
+use std::path::{Path, PathBuf};
+
+use clap::ArgMatches;
 
 use crate::workspace::Workspace;
 use crate::error::BError;
@@ -24,12 +27,23 @@ impl fmt::Display for DockerImage {
 }
 
 impl<'a> Docker<'a> {
+    pub fn inside_docker() -> bool {
+        let path: PathBuf = PathBuf::from("/.dockerenv");
+        // Potentially it would be better to use try_exists
+        // for now lets just use exists
+        path.exists()
+    }
+
     pub fn new(workspace: &'a Workspace, image: &'a DockerImage, interactive: bool) -> Self {
         Docker {
             _workspace: workspace,
             image,
             _interactive: interactive,
         }
+    }
+
+    pub fn bootstrap_bakery(&self, args: &ArgMatches) -> Result<(), BError> {
+        Ok(())
     }
 
     pub fn run_cmd(&self, cmd_line: String, _dir: String, cli: &Cli) -> Result<(), BError> {
@@ -53,7 +67,7 @@ mod tests {
     fn helper_test_docker(verification_str: &String, test_cmd: &String, test_work_dir: Option<String>, image: &DockerImage, workspace: &Workspace) -> Result<(), BError> {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger.expect_info().with(mockall::predicate::eq(verification_str.clone())).once().returning(|_x|());
-        let cli: Cli = Cli::new(Box::new(mocked_logger), clap::Command::new("bakery"));
+        let cli: Cli = Cli::new(Box::new(mocked_logger), clap::Command::new("bakery"), None);
         let docker: Docker = Docker::new(&workspace, image, true);
         docker.run_cmd(test_cmd.clone(), test_work_dir.unwrap(), &cli)
     }
@@ -61,7 +75,7 @@ mod tests {
     fn helper_test_executer(verification_str: &String, test_cmd: &String, test_build_dir: Option<String>, docker: Option<Docker>, workspace: &Workspace) -> Result<(), BError> {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger.expect_info().with(mockall::predicate::eq(verification_str.clone())).once().returning(|_x|());
-        let cli: Cli = Cli::new(Box::new(mocked_logger), clap::Command::new("bakery"));
+        let cli: Cli = Cli::new(Box::new(mocked_logger), clap::Command::new("bakery"), None);
         let exec: Executer = Executer::new(workspace, &cli);
         exec.execute(&test_cmd, std::env::vars(), test_build_dir, docker, true) 
     }

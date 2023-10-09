@@ -18,7 +18,7 @@ pub struct WsBuildConfigHandler {
 }
 
 impl WsBuildConfigHandler {
-    pub fn from_str(json_config: &str, settings: &mut WsSettingsHandler) -> Result<Self, BError> {
+    pub fn from_str(json_config: &str, settings: &WsSettingsHandler) -> Result<Self, BError> {
         let data: Value = JsonFileReader::parse(json_config)?;
         Self::new(&data, settings)
     }

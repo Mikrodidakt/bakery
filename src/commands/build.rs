@@ -163,7 +163,8 @@ impl BuildCommand {
             cmd : BBaseCommand {
                 cmd_str: String::from(BCOMMAND),
                 sub_cmd: subcmd,
-                interactive: true
+                interactive: true,
+                require_docker: true,
             }
         }
     }

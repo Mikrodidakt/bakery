@@ -17,6 +17,10 @@ pub trait BCommand {
         Ok(())
     }
 
+    fn is_docker_required(&self) -> bool {
+        false
+    }
+
     // Return a clap sub-command containing the args
     // for the bakery command
     fn subcommand(&self) -> &clap::Command;
@@ -28,6 +32,7 @@ pub struct BBaseCommand {
     cmd_str: String,
     sub_cmd: clap::Command,
     interactive: bool,
+    require_docker: bool,
     //_env: Vars,
 }
 

@@ -1,4 +1,4 @@
-use clap::ArgMatches;
+use clap::{ArgMatches, Arg};
 
 use crate::commands::{CmdHandler, BCommand};
 use crate::error::BError;
@@ -11,13 +11,21 @@ pub struct Cli {
 }
 
 impl Cli {
-    pub fn new(logger: Box<dyn Logger>, cmd: clap::Command) -> Self {
+    pub fn new(logger: Box<dyn Logger>, cmd: clap::Command, cmd_line: Option<Vec<&str>>) -> Self {
         let cmd_handler: CmdHandler = CmdHandler::new();
-        let args: ArgMatches = cmd_handler.build_cli(cmd).get_matches();
+        let args: ArgMatches;
+        match cmd_line {
+            Some(cline) => {
+                args = cmd_handler.build_cli(cmd).get_matches_from(cline);
+            },
+            None => {
+                args = cmd_handler.build_cli(cmd).get_matches();
+            }
+        }
         Cli {
             args,
             cmd_handler,
-            logger: logger,
+            logger,
         } 
     }
 

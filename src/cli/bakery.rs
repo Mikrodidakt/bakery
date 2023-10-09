@@ -1,6 +1,7 @@
 use crate::cli::{BLogger, Cli};
 use crate::commands::BCommand;
 use crate::error::BError;
+use crate::executers::Docker;
 use crate::workspace::{WsSettingsHandler, Workspace, WsBuildConfigHandler};
 
 use clap::{Command, ArgMatches};
@@ -23,7 +24,8 @@ impl Bakery {
                 .subcommand_required(true)
                 .arg_required_else_help(true)
                 .about("Build engine for the Yocto/OE")
-                .author("bakery by Mikrodidakt(mikro.io)")
+                .author("bakery by Mikrodidakt(mikro.io)"),
+            None
         );
         Bakery {
             cli: cli,
@@ -71,6 +73,13 @@ impl Bakery {
 
         match cmd {
             Ok(command) => {
+                if command.is_docker_required() && !Docker::inside_docker() {
+                    self.cli.info(format!("Bootstrap bakery into docker"));
+                    let docker: Docker = Docker::new(&workspace, workspace.settings().docker_image(), true);
+                    let result: Result<(), BError> = docker.bootstrap_bakery(self.cli.get_args());
+                    std::process::exit(0);
+                }
+
                 let error: Result<(), BError> = command.execute(&self.cli, &workspace);
                 match error {
                     Err(err) => {
