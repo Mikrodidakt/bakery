@@ -15,26 +15,17 @@ impl Manifest {
         let name: String = path
             .file_name()
             .and_then(|file_name| file_name.to_str())
-            .ok_or(BError {
-                code: 0,
-                message: "Manifest file name is not valid UTF-8!".to_string(),
-            })?
+            .ok_or(BError::ParseManifestError("Manifest file name is not valid UTF-8!".to_string()))?
             .to_string();
 
         let suffix: String = path
             .extension()
             .and_then(|extension| extension.to_str())
-            .ok_or(BError {
-                code: 0,
-                message: "Manifest file extension is not valid UTF-8!".to_string(),
-            })?
+            .ok_or(BError::ParseManifestError("Manifest file extension is not valid UTF-8!".to_string()))?
             .to_string();
 
         if suffix != "json" {
-            return Err(BError {
-                code: 0,
-                message: format!("Unsupported manifest extension '{}'!", suffix),
-            });
+            return Err(BError::ParseManifestError(format!("Unsupported manifest extension '{}'!", suffix)));
         }
 
         Ok(Manifest {
@@ -58,22 +49,13 @@ impl Manifest {
 
     pub fn write(&self, json_str: &str) -> Result<(), BError> {
         if let Some(parent_dir) = self.path.parent() {
-            std::fs::create_dir_all(parent_dir).map_err(|err| BError {
-                code: 1, // You may set the appropriate error code
-                message: format!("Failed to create paranets '{}'", err),
-            })?;
+            std::fs::create_dir_all(parent_dir)?;
         }
 
-        let mut file: File = File::create(&self.path).map_err(|err| BError {
-            code: 1, // You may set the appropriate error code
-            message: format!("Failed to create manifest file '{}'", err),
-        })?;
+        let mut file: File = File::create(&self.path)?;
 
         // Write the JSON string to the file.
-        file.write_all(json_str.as_bytes()).map_err(|err| BError {
-            code: 1, // You may set the appropriate error code
-            message: format!("Failed to write to manifest '{}'", err),
-        })?;
+        file.write_all(json_str.as_bytes())?;
 
         Ok(())
     }
@@ -145,7 +127,7 @@ mod tests {
                 panic!("We should have recived an error because the extension is not json");
             }
             Err(e) => {
-                assert_eq!(e.message, "Unsupported manifest extension 'txt'!");
+                assert_eq!(e.to_string(), "Invalid 'manifest' node in build config. Unsupported manifest extension 'txt'!");
             }
         }
     }

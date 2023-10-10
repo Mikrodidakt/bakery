@@ -36,19 +36,19 @@ impl ArtifactConfig {
         let dest: String = Self::get_str_value("dest", &data, Some(String::from("")))?;
         let manifest: String = Self::get_str_manifest("content", &data, Some(String::from("{}")))?;
         if ttype != "file" && ttype != "directory" && ttype != "archive" && ttype != "manifest" {
-            return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. Invalid type '{}'", ttype)});
+            return Err(BError::ParseArtifactsError(format!("Invalid type '{}'", ttype)));
         }
         if ttype == "file" && source.is_empty() {
-            return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. The 'file' type requires a defined 'source'")});
+            return Err(BError::ParseArtifactsError(format!("The 'file' type requires a 'source'")));
         }
         if ttype == "directory" && name.is_empty() {
-            return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. The 'directory' type requires a 'name'")}); 
+            return Err(BError::ParseArtifactsError(format!("The 'directory' type requires a 'name'")));
         }
         if ttype == "archive" && name.is_empty() {
-            return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. The 'archive' type requires a 'name'")}); 
+            return Err(BError::ParseArtifactsError(format!("The 'archive' type requires a 'name'")));
         }
         if ttype == "manifest" && name.is_empty() {
-            return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. The 'manifest' type requires a 'name'")}); 
+            return Err(BError::ParseArtifactsError(format!("The 'manifest' type requires a 'name'")));
         }
 
         let enum_ttype: AType;
@@ -66,7 +66,7 @@ impl ArtifactConfig {
                 enum_ttype = AType::Manifest;
             },
             _ => {
-                return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. Invalid type '{}'", ttype)});
+                return Err(BError::ParseArtifactsError(format!("Invalid type '{}'", ttype)));
             },
         }
 
@@ -203,7 +203,7 @@ mod tests {
                 panic!("We should have recived an error because the type is invalid!");
             }
             Err(e) => {
-                assert_eq!(e.message, String::from("Invalid 'artifact' format in build config. Invalid type 'invalid'"));
+                assert_eq!(e.to_string(), String::from("Invalid 'artifact' node in build config. Invalid type 'invalid'"));
             } 
         }
     }
@@ -221,7 +221,7 @@ mod tests {
                 panic!("We should have recived an error because the type is invalid!");
             }
             Err(e) => {
-                assert_eq!(e.message, String::from("Invalid 'artifact' format in build config. The 'directory' type requires a 'name'"));
+                assert_eq!(e.to_string(), String::from("Invalid 'artifact' node in build config. The 'directory' type requires a 'name'"));
             } 
         }
     }
@@ -239,7 +239,7 @@ mod tests {
                 panic!("We should have recived an error because the type is invalid!");
             }
             Err(e) => {
-                assert_eq!(e.message, String::from("Invalid 'artifact' format in build config. The 'manifest' type requires a 'name'"));
+                assert_eq!(e.to_string(), String::from("Invalid 'artifact' node in build config. The 'manifest' type requires a 'name'"));
             } 
         }
     }

@@ -56,13 +56,10 @@ impl<'a> Docker<'a> {
 mod tests {
     use std::path::PathBuf;
 
-    use crate::commands::build;
     use crate::executers::{Docker, DockerImage, Executer};
     use crate::workspace::{Workspace, WsSettingsHandler, WsBuildConfigHandler};
-    use crate::configs::{WsSettings, BuildConfig};
     use crate::cli::*;
     use crate::error::BError;
-    use crate::helper::Helper;
 
     fn helper_test_docker(verification_str: &String, test_cmd: &String, test_work_dir: Option<String>, image: &DockerImage, workspace: &Workspace) -> Result<(), BError> {
         let mut mocked_logger: MockLogger = MockLogger::new();
@@ -122,7 +119,7 @@ mod tests {
         );
         match result {
             Err(err) => {
-                assert_eq!("Executer failed", err.message);
+                assert_eq!("Executer failed", err.to_string());
             }
             Ok(()) => {}
         }
@@ -170,7 +167,7 @@ mod tests {
         );
         match result {
             Err(err) => {
-                assert_eq!("Docker run failed", err.message);
+                assert_eq!("Docker run failed", err.to_string());
             }
             Ok(()) => {}
         }

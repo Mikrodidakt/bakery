@@ -31,10 +31,7 @@ impl Archiver {
         let name: String = path
             .file_name()
             .and_then(|file_name| file_name.to_str())
-            .ok_or(BError {
-                code: 0,
-                message: "Archive file name is not valid UTF-8!".to_string(),
-            })?
+            .ok_or(BError::ArchiverError("Archive file name is not valid UTF-8!".to_string()))?
             .to_string();
         let mut extensions: Vec<String> = suffixes.clone();
         let mut extension: String = suffixes.get(0).unwrap_or(&String::from("")).clone();
@@ -57,39 +54,24 @@ impl Archiver {
                         // compression suffixe and store them in the suffixe vector.
                         extensions = suffixes.iter().rev().take(2).cloned().collect();
                     } else if suffixes.get(0) == Some(&String::from("tar")) {
-                        return Err(BError {
-                            code: 0,
-                            message: "Archive must have an compression!".to_string(),
-                        });
+                        return Err(BError::ArchiverError("Archive must have an compression!".to_string()));
                     }
                 }
             } else {
-                return Err(BError {
-                    code: 0,
-                    message: format!("Unsupported archive '{}'!", suffixes.get(0).unwrap()),
-                });
+                return Err(BError::ArchiverError(format!("Unsupported archive '{}'!", suffixes.get(0).unwrap())));
             }
         } else {
-            return Err(BError {
-                code: 0,
-                message: "Archive must have an extension!".to_string(),
-            });
+            return Err(BError::ArchiverError("Archive must have an extension!".to_string()));
         }
 
         extension = extensions.get(0).unwrap().clone();
         if extensions.first() == Some(&String::from("tar")) {
             if extensions.len() < 2 {
-                return Err(BError {
-                    code: 0,
-                    message: "Archive must have an compression!".to_string(),
-                });
+                return Err(BError::ArchiverError("Archive must have an compression!".to_string()));
             }
             compression = extensions.last().unwrap().clone();
             if !["gz", "bz2"].contains(&compression.as_str()) {
-                return Err(BError {
-                    code: 0,
-                    message: format!("Unsupported compression '{}'!", compression),
-                });
+                return Err(BError::ArchiverError(format!("Unsupported compression '{}'!", compression)));
             }
         }
 
@@ -121,10 +103,7 @@ impl Archiver {
         let mut mode: Mode = Mode::Write;
 
         if let Some(parent_dir) = self.path.parent() {
-            std::fs::create_dir_all(parent_dir).map_err(|err| BError {
-                code: 1, // You may set the appropriate error code
-                message: format!("Failed to create paranets '{}'", err),
-            })?;
+            std::fs::create_dir_all(parent_dir)?;
         }
 
         // If the archive file exists then we should append the files to the existing
@@ -136,10 +115,7 @@ impl Archiver {
             // mode == Mode::Append;
         }
 
-        let mut archive_file: File = File::create(&self.path).map_err(|err| BError {
-            code: 1, // You may set the appropriate error code
-            message: format!("Failed to create archive file '{}'", err),
-        })?;
+        let mut archive_file: File = File::create(&self.path)?;
 
         if self.extension() == "tar" {
             if mode == Mode::Append {}
@@ -157,36 +133,19 @@ impl Archiver {
                     bzip2::Compression::default(),
                 ));
             } else {
-                return Err(BError {
-                    code: 0,
-                    message: format!("Unsupported compression '{}'!", self.compression),
-                });
+                return Err(BError::ArchiverError(format!("Unsupported compression '{}'!", self.compression)));
             }
 
             tar = tar::Builder::new(enc);
             for path in files {
                 let striped_path: PathBuf = path
-                    .strip_prefix(work_dir.as_os_str())
-                    .map_err(|err| BError {
-                        code: 1, // You may set the appropriate error code
-                        message: format!("Failed to strip prefix: '{}'", err),
-                    })?
+                    .strip_prefix(work_dir.as_os_str())?
                     .to_path_buf();
-                let mut file: File = File::open(path).map_err(|err| BError {
-                    code: 1, // You may set the appropriate error code
-                    message: format!("Failed to open file to add to archive: '{}'", err),
-                })?;
-                tar.append_file(striped_path, &mut file)
-                    .map_err(|err| BError {
-                        code: 1, // You may set the appropriate error code
-                        message: format!("Failed to add file to archive '{}'", err),
-                    })?;
+                let mut file: File = File::open(path)?;
+                tar.append_file(striped_path, &mut file)?;
             }
 
-            tar.finish().map_err(|err| BError {
-                code: 1, // You may set the appropriate error code
-                message: format!("Failed to create archive '{}'", err),
-            })?;
+            tar.finish()?;
         } else if self.extension() == "zip" {
             if mode == Mode::Append {}
 
@@ -196,34 +155,17 @@ impl Archiver {
 
             for path in files {
                 let striped_path: PathBuf = path
-                    .strip_prefix(work_dir.as_os_str())
-                    .map_err(|err| BError {
-                        code: 1, // You may set the appropriate error code
-                        message: format!("Failed to strip prefix: '{}'", err),
-                    })?
+                    .strip_prefix(work_dir.as_os_str())?
                     .to_path_buf();
 
-                let mut file: File = File::open(path).map_err(|err| BError {
-                    code: 1, // You may set the appropriate error code
-                    message: format!("Failed to open file to add to archive: '{}'", err),
-                })?;
+                let mut file: File = File::open(path)?;
 
-                zip.start_file(striped_path.to_string_lossy().to_owned(), options)
-                    .map_err(|err| BError {
-                        code: 1, // You may set the appropriate error code
-                        message: format!("Failed to initialize file to archive: '{}'", err),
-                    })?;
+                zip.start_file(striped_path.to_string_lossy().to_owned(), options)?;
 
-                std::io::copy(&mut file, &mut zip).map_err(|err| BError {
-                    code: 1, // You may set the appropriate error code
-                    message: format!("Failed to copy file into archive: '{}'", err),
-                })?;
+                std::io::copy(&mut file, &mut zip)?;
             }
 
-            zip.finish().map_err(|err| BError {
-                code: 1, // You may set the appropriate error code
-                message: format!("Failed to create archive '{}'", err),
-            })?;
+            zip.finish()?;
         }
 
         Ok(())
@@ -297,7 +239,7 @@ mod tests {
         let archiver_path: PathBuf = path.join("test-archiver.gzip");
         let error: BError = Archiver::new(&archiver_path)
             .expect_err("We are expecting an error but got an Archiver");
-        assert_eq!(error.message, "Unsupported archive 'gzip'!".to_string());
+        assert_eq!(error.to_string(), "Unsupported archive 'gzip'!".to_string());
     }
 
     #[test]
@@ -309,7 +251,7 @@ mod tests {
         let error: BError = Archiver::new(&archiver_path)
             .expect_err("We are expecting an error but got an Archiver");
         assert_eq!(
-            error.message,
+            error.to_string(),
             "Unsupported compression 'invalid'!".to_string()
         );
     }
@@ -323,7 +265,7 @@ mod tests {
         let error: BError = Archiver::new(&archiver_path)
             .expect_err("We are expecting an error but got an Archiver");
         assert_eq!(
-            error.message,
+            error.to_string(),
             "Archive must have an compression!".to_string()
         );
     }

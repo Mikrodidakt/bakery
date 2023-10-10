@@ -11,15 +11,8 @@ pub struct JsonFileReader {
 
 impl JsonFileReader {
     pub fn parse(json_string: &str) -> Result<Value, BError> {
-        match serde_json::from_str(json_string) {
-            Ok(data) => {
-                Ok(data) 
-            },
-            Err(err) => {
-                let error_message = format!("Failed to parse JSON: {}", err);
-                Err(BError { code: 1, message: error_message })
-            }
-        }
+        let value: serde_json::Value = serde_json::from_str(json_string)?;
+        Ok(value)
     }
 
     pub fn new(file_path: String) -> Self {
@@ -29,16 +22,9 @@ impl JsonFileReader {
     }
 
     pub fn read_json(&self) -> Result<String, BError> {
-        let mut file = File::open(&self.file_path).map_err(|err| BError {
-            code: 1, // You may set the appropriate error code
-            message: format!("Failed to open file: '{}'", err),
-        })?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents).map_err(|err| BError {
-            code: 1, // You may set the appropriate error code
-            message: format!("Failed to parse json: '{}'", err),
-        })?;
-
+        let mut file: File = File::open(&self.file_path)?;
+        let mut contents: String = String::new();
+        file.read_to_string(&mut contents)?;
         Ok(contents)
     }
 }

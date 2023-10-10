@@ -18,7 +18,7 @@ impl CmdHandler {
     pub fn get_cmd(&self, cmd_str: &str) -> Result<&Box<dyn BCommand>, BError> {
         match self.cmds.get(cmd_str) {
             Some(command) => Ok(command),
-            None => Err(BError{ code: 0, message: String::from("Invalid command") }),
+            None => Err(BError::CmdError(String::from("Invalid command"))),
         }
     }
 

@@ -2,7 +2,7 @@ use indexmap::{indexmap, IndexMap};
 use serde_json::Value;
 use std::path::PathBuf;
 
-use crate::configs::{bitbake, BuildConfig, Context, TaskConfig};
+use crate::configs::Context;
 use crate::error::BError;
 use crate::workspace::{WsArtifactsHandler, WsSettingsHandler, WsTaskHandler};
 
@@ -72,15 +72,9 @@ impl WsBuildData {
                         }
                         return Ok(artifacts);
                     }
-                    return Err(BError {
-                        code: 0,
-                        message: format!("Invalid 'artifacts' format in build config"),
-                    });
+                    return Err(BError::ParseArtifactsError("Invalid 'artifacts' node in build config".to_string()));
                 } else {
-                    return Err(BError {
-                        code: 0,
-                        message: format!("No 'artifacts' array node found in build config"),
-                    });
+                    return Err(BError::ParseArtifactsError("No 'artifacts' array node found in build config".to_string()));
                 }
             }
             None => {
@@ -101,15 +95,9 @@ impl WsBuildData {
                         }
                         return Ok(tasks);
                     }
-                    return Err(BError {
-                        code: 0,
-                        message: format!("Invalid 'task' format in build config"),
-                    });
+                    return Err(BError::ParseTasksError("Invalid 'task' format in build config".to_string()));
                 } else {
-                    return Err(BError {
-                        code: 0,
-                        message: format!("No 'tasks' node found in build config"),
-                    });
+                    return Err(BError::ParseTasksError("No 'tasks' node found in build config".to_string()));
                 }
             }
             None => {
@@ -317,8 +305,8 @@ mod tests {
             }
             Err(e) => {
                 assert_eq!(
-                    e.message,
-                    String::from("No 'tasks' node found in build config")
+                    e.to_string(),
+                    String::from("Invalid 'task' node in build config. No 'tasks' node found in build config")
                 );
             }
         }
@@ -455,8 +443,8 @@ mod tests {
             }
             Err(e) => {
                 assert_eq!(
-                    e.message,
-                    String::from("No 'artifacts' array node found in build config")
+                    e.to_string(),
+                    String::from("Invalid 'artifact' node in build config. No 'artifacts' array node found in build config")
                 );
             }
         }

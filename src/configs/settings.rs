@@ -81,6 +81,12 @@ impl WsSettings {
         let mut scripts_dir: String = String::from("scripts");
         let mut docker_dir: String = String::from("docker");
         let mut cache_dir: String = String::from(".cache");
+        let supported: Vec<String>;
+        let mut docker_image: String = String::from(BAKERY_DOCKER_IMAGE);
+        let mut docker_tag: String = String::from(BAKERY_DOCKER_TAG);
+        let mut docker_registry: String = String::from(BAKERY_DOCKER_REGISTRY);
+        let mut docker_args: Vec<String> = vec![String::from("--rm=true"), String::from("-t")];
+
         match Self::get_value("workspace", &data) {
             Ok(ws_data) => { 
                 configs_dir = Self::get_str_value("configsdir", ws_data, Some(String::from("configs")))?;
@@ -94,7 +100,7 @@ impl WsSettings {
             },
             Err(_err) => {}
         }
-        let supported: Vec<String>;
+
         match Self::get_value("builds", &data) {
             Ok(build_data) => {
                 supported = Self::get_array_value("supported", build_data, Some(vec![]))?;
@@ -103,10 +109,7 @@ impl WsSettings {
                 supported = vec![];
             }
         }
-        let mut docker_image: String = String::from(BAKERY_DOCKER_IMAGE);
-        let mut docker_tag: String = String::from(BAKERY_DOCKER_TAG);
-        let mut docker_registry: String = String::from(BAKERY_DOCKER_REGISTRY);
-        let mut docker_args: Vec<String> = vec![String::from("--rm=true"), String::from("-t")];
+
         match Self::get_value("docker", &data) {
             Ok(docker_data) => {
                 docker_image = Self::get_str_value("image", docker_data, Some(String::from(BAKERY_DOCKER_IMAGE)))?;
@@ -116,6 +119,7 @@ impl WsSettings {
             },
             Err(_err) => {}
         }
+
         Ok(WsSettings {
             version,
             configs_dir,
@@ -136,8 +140,6 @@ impl WsSettings {
 
 #[cfg(test)]
 mod tests {
-    use crate::configs::WsSettings;
-    use crate::error::BError;
     use crate::helper::Helper;
 
     #[test]

@@ -89,37 +89,25 @@ impl Helper {
         let unpack_dir: PathBuf = work_dir.join(PathBuf::from("unpack/"));
 
         if !archive.path().exists() {
-            return Err(BError {
-                code: 1, // You may set the appropriate error code
-                message: format!("No such archive '{}'", archive.path().display()),
-            });
+            return Err(BError::ArchiverError(format!("No such archive '{}'", archive.path().display())));
         }
 
         if archive.extension() == "tar" {
-            let file: File = File::open(archive.path()).map_err(|err| BError {
-                code: 1, // You may set the appropriate error code
-                message: format!("Failed to open archive '{}'", err),
-            })?;
+            let file: File = File::open(archive.path())?;
             let mut tar: tar::Archive<Box<dyn std::io::Read>>;
             if archive.compression() == "gz" {
                 tar = tar::Archive::new(Box::new(flate2::read::GzDecoder::new(file)));
             } else if archive.compression() == "bz2" {
                 tar = tar::Archive::new(Box::new(bzip2::read::BzDecoder::new(file)));
             } else {
-                return Err(BError {
-                    code: 0,
-                    message: format!("Unsupported compression '{}'!", archive.compression()),
-                });
+                return Err(BError::ArchiverError(format!("Unsupported compression '{}'!", archive.compression())));
             }
 
             tar.unpack(unpack_dir.to_str().unwrap()).unwrap();
 
             Helper::list_files_in_dir(&unpack_dir, &mut archived_files, &unpack_dir).expect("Failed to list files in dir");
         } else if archive.extension() == "zip" {
-            let file: File = File::open(archive.path()).map_err(|err| BError {
-                code: 1, // You may set the appropriate error code
-                message: format!("Failed to open archive '{}'", err),
-            })?;
+            let file: File = File::open(archive.path())?;
             let mut zip: zip::ZipArchive<_> = zip::ZipArchive::new(file).expect("Failed to setup zip archive");
             for i in 0..zip.len() {
                 let mut file: zip::read::ZipFile<'_> = zip.by_index(i).expect("Failed to read content from archive");

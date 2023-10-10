@@ -87,16 +87,10 @@ impl Workspace {
         if settings.supported_builds().is_empty() {
             // If the list of supported builds is empty in the settings
             // all build configs are supported
-            let config_dir: std::fs::ReadDir = std::fs::read_dir(settings.configs_dir()).map_err(|err| BError {
-                code: 1, // You may set the appropriate error code
-                message: format!("Failed to read config dir: '{}'", err),
-            })?;
+            let config_dir: std::fs::ReadDir = std::fs::read_dir(settings.configs_dir())?;
 
             for entry in config_dir {
-                let e: DirEntry = entry.map_err(|err| BError {
-                    code: 1, // You may set the appropriate error code
-                    message: format!("Failed read dir entry: '{}'", err),
-                })?;
+                let e: DirEntry = entry.map_err(|err| BError::WsError(format!("Failed read dir entry: '{}'", err)))?;
                 let path: PathBuf = e.path();
         
                 if path.is_file() {

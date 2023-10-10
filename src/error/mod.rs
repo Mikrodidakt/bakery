@@ -1,18 +1,55 @@
-use std::fmt;
+use std::{fmt, path::StripPrefixError};
 
-#[derive(Debug, PartialEq)] // derive std::fmt::Debug on BError
-pub struct BError {
-    pub code: usize,
-    pub message: String,
+use thiserror::Error;
+use serde_json::Error;
+use zip::result::ZipError;
+
+#[derive(Error, Debug)]
+pub enum BError {
+  #[error("{0}")]
+  ParseError(String),
+  #[error("Invalid 'artifact' node in build config. {0}")]
+  ParseArtifactsError(String),
+  #[error("Invalid 'task' node in build config. {0}")]
+  ParseTasksError(String),
+  #[error("Invalid 'manifest' node in build config. {0}")]
+  ParseManifestError(String),
+  #[error("Failed to parse JSON. {0}")]
+  JsonParseError(String),
+  #[error("{0}")]
+  IOError(String),
+  #[error("{0}")]
+  ValueError(String),
+  #[error("{0}")]
+  WsError(String),
+  #[error("{0}")]
+  CliError(String),
+  #[error("{0}")]
+  ArchiverError(String),
+  #[error("{0}")]
+  CmdError(String),
 }
 
-impl fmt::Display for BError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let err_msg = match self.code {
-            1 => format!("Task failed trying to run '{}'", self.message),
-            _ => format!("{}", self.message),
-        };
+impl std::convert::From<serde_json::Error> for BError {
+    fn from(err: serde_json::Error) -> Self {
+        BError::JsonParseError(err.to_string())
+    }
+}
 
-        write!(f, "{}", err_msg)
+impl std::convert::From<std::io::Error> for BError {
+    fn from(err: std::io::Error) -> Self {
+        BError::IOError(err.to_string())
+    }
+}
+
+impl std::convert::From<StripPrefixError> for BError {
+    fn from(err: StripPrefixError) -> Self {
+        BError::ArchiverError(err.to_string())
+    }
+}
+
+impl std::convert::From<ZipError> for BError {
+    fn from(err: ZipError) -> Self {
+        BError::ArchiverError(err.to_string())
     }
 }

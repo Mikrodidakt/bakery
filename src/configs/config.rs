@@ -8,18 +8,12 @@ pub trait Config {
                 if value.is_object() {
                     return Ok(value.to_string());
                 }
-                return Err(BError {
-                    code: 0,
-                    message: format!("Failed to read '{}'", name),
-                });
+                return Err(BError::ParseError(format!("Failed to parse manifest. Error when reading object '{}'", name)));
             }
             None => {
                 match default {
                     Some(default_value) => Ok(default_value),
-                    None => Err(BError {
-                        code: 0,
-                        message: format!("Failed to read '{}'", name),
-                    }),
+                    None => Err(BError::ValueError(format!("Failed to read manifest value '{}'", name))),
                 }
             }
         }
@@ -34,10 +28,7 @@ pub trait Config {
             None => {
                 match default {
                     Some(default_value) => Ok(default_value),
-                    None => Err(BError {
-                        code: 0,
-                        message: format!("Failed to read '{}'", name),
-                    }),
+                    None => Err(BError::ValueError(format!("Failed to read string value '{}'", name))),
                 }
             }
         }
@@ -55,16 +46,13 @@ pub trait Config {
                     .map(|s| s.to_owned())
                     .collect());
                 } else {
-                    return Err(BError{ code: 0, message: format!("Failed to read '{}' is not a string", name)});
+                    return Err(BError::ParseError(format!("Failed to read array '{}'", name)));
                 }
             }
             None => {
                 match default {
                     Some(default_value) => Ok(default_value),
-                    None => Err(BError {
-                        code: 0,
-                        message: format!("Failed to read '{}'", name),
-                    }),
+                    None => Err(BError::ValueError(format!("Failed to read array value '{}'", name))),
                 }
             }
         }
@@ -90,11 +78,10 @@ pub trait Config {
                     }
                     Ok(hashmap)
                 } else {
-                    return Err(BError{ code: 0, message: format!("Failed to read '{}' is not a string", name)});
+                    return Err(BError::ParseError(format!("Failed to parse hashmap. Error when reading object '{}'", name)));
                 }
             }
             None => {
-                //return Err(BError{ code: 0, message: format!("Failed to read '{}'", name)});
                 return Ok(IndexMap::new());
             }
         }
@@ -103,10 +90,7 @@ pub trait Config {
     fn get_value<'a>(name: &str, data: &'a Value) -> Result<&'a Value, BError> {
         match data.get(name) {
             Some(value) => Ok(value),
-            None => Err(BError {
-                code: 0,
-                message: format!("Failed to read '{}'", name),
-            }),
+            None => Err(BError::ParseError(format!("Failed to get value '{}'", name))),
         }
     }
 
@@ -115,10 +99,7 @@ pub trait Config {
             Ok(data) => {
                 Ok(data) 
             },
-            Err(err) => {
-                let error_message = format!("Failed to parse JSON: {}", err);
-                Err(BError { code: 1, message: error_message })
-            }
+            Err(err) => Err(BError::ParseError(format!("Failed to parse JSON: {}", err))),
         }
     }
 }

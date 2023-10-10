@@ -71,9 +71,9 @@ impl TaskConfig {
                         }
                         return Ok(artifacts);
                     }
-                    return Err(BError{ code: 0, message: format!("Invalid 'artifacts' format in build config")});
+                    return Err(BError::ParseArtifactsError(format!("Invalid 'artifacts' node in build config")));
                 } else {
-                    return Err(BError{ code: 0, message: format!("Invalid 'artifacts' format in build config")});
+                    return Err(BError::ParseArtifactsError(format!("Node is not an array")));
                 }
             }
             None => {
@@ -98,9 +98,6 @@ impl TaskConfig {
         let build: String = Self::get_str_value("build", &data, Some(String::from("")))?;
         let clean: String = Self::get_str_value("clean", &data, Some(String::from("")))?;
         let recipes: Vec<String> = Self::get_array_value("recipes", &data, Some(vec![]))?;
-        if ttype != "bitbake" && ttype != "non-bitbake" {
-            return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. Invalid type '{}'", ttype)}); 
-        }
 
         let enum_ttype: TType;
         match ttype.as_str() {
@@ -111,13 +108,13 @@ impl TaskConfig {
                 enum_ttype = TType::NonBitbake;
             },
             _ => {
-                return Err(BError{ code: 0, message: format!("Invalid 'artifact' format in build config. Invalid type '{}'", ttype)});
+                return Err(BError::ParseTasksError(format!("Invalid type '{}'", ttype)));
             },
         }
 
         // if the task type is bitbake then at least one recipe is required
         if recipes.is_empty() && ttype == "bitbake" {
-            return Err(BError{ code: 0, message: format!("Invalid 'task' format in build config. The 'bitbake' type requires at least one entry in 'recipes'")});
+            return Err(BError::ParseTasksError(format!("The 'bitbake' type requires at least one entry in 'recipes'")));
         }
 
         Ok(TaskConfig {
@@ -145,7 +142,7 @@ impl TaskConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::configs::{TaskConfig, TType, AType, Context, ArtifactConfig};
+    use crate::configs::{TaskConfig, TType, Context};
     use crate::error::BError;
     use crate::helper::Helper;
 
@@ -274,7 +271,7 @@ mod tests {
                 panic!("We should have recived an error because we have no recipes defined!");
             }
             Err(e) => {
-                assert_eq!(e.message, String::from("Invalid 'task' format in build config. The 'bitbake' type requires at least one entry in 'recipes'"));
+                assert_eq!(e.to_string(), String::from("Invalid 'task' node in build config. The 'bitbake' type requires at least one entry in 'recipes'"));
             } 
         }
     }
@@ -294,7 +291,7 @@ mod tests {
                 panic!("We should have recived an error because we have no recipes defined!");
             }
             Err(e) => {
-                assert_eq!(e.message, String::from("Invalid 'artifact' format in build config. Invalid type 'invalid'"));
+                assert_eq!(e.to_string(), String::from("Invalid 'task' node in build config. Invalid type 'invalid'"));
             }
         }
     }

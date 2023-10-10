@@ -89,7 +89,6 @@ pub struct BuildConfig {
     pub arch: String,
     pub bitbake: BBConfig,
     pub context: IndexMap<String, String>, // Optional if not set default is an empty map
-    //pub tasks: IndexMap<String, TaskConfig>, // The tasks don't have to be defined in the main build config if that is the case this will be empty
 }
 
 impl Config for BuildConfig {}

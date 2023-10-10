@@ -52,10 +52,7 @@ impl BCommand for ListCommand {
                         });
                         return Ok(());
                     }
-                    return Err(BError {
-                        code: 1, // You may set the appropriate error code
-                        message: format!("Unsupported build config '{}'", config),
-                    });
+                    return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
                 }
             }
         }
@@ -110,7 +107,6 @@ mod tests {
             WsBuildConfigHandler::from_str(json_build_config, &settings)?;
         let workspace: Workspace =
             Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config))?;
-        //mocked_logger.expect_info().with(mockall::predicate::eq(verification_str.clone())).once().returning(|_x|());
         let cli: Cli = Cli::new(
             Box::new(mocker),
             clap::Command::new("bakery"),
@@ -251,7 +247,7 @@ mod tests {
             }
             Err(e) => {
                 assert_eq!(
-                    e.message,
+                    e.to_string(),
                     "Unsupported build config 'invalid'".to_string()
                 );
             }

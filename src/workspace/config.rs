@@ -73,7 +73,7 @@ impl WsBuildConfigHandler {
                 return Ok(config);
             },
             None => {
-                return Err(BError{ code: 0, message: format!("Task '{}' does not exists in build config", task)});
+                return Err(BError::ValueError(format!("Task '{}' does not exists in build config", task)));
             }
         }
     }
@@ -203,7 +203,6 @@ mod tests {
     use std::path::{PathBuf, Path};
 
     use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, WsTaskHandler};
-    use crate::helper::Helper;
     use crate::error::BError;
 
     #[test]
@@ -378,7 +377,7 @@ mod tests {
                     }
                 },
                 Err(e) => {
-                    panic!("{}", e.message);
+                    panic!("{}", e.to_string());
                 }
             }
             i += 1;
@@ -476,7 +475,7 @@ mod tests {
                     panic!("We should have recived an error because we have no task3 defined!");
                 },
                 Err(e) => {
-                    assert_eq!(e.message, "Task 'task3' does not exists in build config".to_string());
+                    assert_eq!(e.to_string(), "Task 'task3' does not exists in build config".to_string());
                 }
             }
         }

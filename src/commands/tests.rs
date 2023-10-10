@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
     use crate::commands::*;
-    use crate::error::BError;
 
     #[test]
     fn test_build_command() {
@@ -56,7 +55,7 @@ mod tests {
             }
             Err(err) => {
                 // TODO: we should make sure that BError is using PartialEq and Eq Traits
-                assert_eq!("Invalid command", err.message);
+                assert_eq!("Invalid command", err.to_string());
             }
         } 
     }

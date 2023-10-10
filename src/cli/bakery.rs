@@ -4,7 +4,7 @@ use crate::error::BError;
 use crate::executers::Docker;
 use crate::workspace::{WsSettingsHandler, Workspace, WsBuildConfigHandler};
 
-use clap::{Command, ArgMatches};
+use clap::Command;
 use std::path::PathBuf;
 
 pub struct Bakery {
@@ -83,14 +83,14 @@ impl Bakery {
                 let error: Result<(), BError> = command.execute(&self.cli, &workspace);
                 match error {
                     Err(err) => {
-                        self.cli.error(format!("{}", err.message));
+                        self.cli.error(format!("{}", err.to_string()));
                         std::process::exit(1);
                     }
                     Ok(()) => {}
                 }
             }
             Err(err) => {
-                self.cli.error(format!("{}", err.message));
+                self.cli.error(format!("{}", err.to_string()));
                 std::process::exit(1);
             }
         }

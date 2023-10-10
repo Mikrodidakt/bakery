@@ -1,12 +1,10 @@
 use std::env;
-use std::path::PathBuf;
 
-use clap::ArgMatches;
-
-use crate::commands::{BCommand, BError, BBaseCommand};
+use crate::commands::{BCommand, BBaseCommand};
 use crate::executers::{DockerImage, Docker, Executer};
-use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, Workspace};
+use crate::workspace::Workspace;
 use crate::cli::Cli;
+use crate::error::BError;
 
 static BCOMMAND: &str = "build";
 static BCOMMAND_ABOUT: &str = "Execute a build either a full build or a task of one of the builds";

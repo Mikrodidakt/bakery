@@ -41,10 +41,7 @@ impl WsSettingsHandler {
 
     pub fn verify_ws_dir(&self, dir: &Path) -> Result<(), BError> {
         if !dir.is_dir() || !dir.exists() {
-            return Err(BError {
-                code: 1, // You may set the appropriate error code
-                message: format!("Workspace directory '{}' dosen't exists", dir.display()),
-            });
+            return Err(BError::WsError(format!("Workspace directory '{}' dosen't exists", dir.display())));
         }
         return Ok(());
     }
