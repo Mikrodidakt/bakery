@@ -7,6 +7,8 @@ use crate::workspace::{WsSettingsHandler, Workspace, WsBuildConfigHandler};
 use clap::Command;
 use std::path::PathBuf;
 
+use super::BSystem;
+
 pub struct Bakery {
     cli: Cli,
 }
@@ -19,6 +21,7 @@ impl Bakery {
             Cargo.toml
         */
         let cli: Cli = Cli::new(Box::new(BLogger::new()), 
+            Box::new(BSystem::new()),
             Command::new("bakery")
                 .version("0.0.1")
                 .subcommand_required(true)

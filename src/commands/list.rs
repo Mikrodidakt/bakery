@@ -33,7 +33,8 @@ impl BCommand for ListCommand {
     fn execute(&self, cli: &Cli, workspace: &Workspace) -> Result<(), BError> {
         if let Some(sub_matches) = cli.get_args().subcommand_matches(BCOMMAND) {
             if let Some(config) = sub_matches.get_one::<String>("config") {
-                if config == "all" {
+                if config == "all" { // default value if not specified
+                    // If no config is specified then we will list all supported build configs
                     workspace
                         .build_configs()
                         .iter()
@@ -46,6 +47,7 @@ impl BCommand for ListCommand {
                         });
                     return Ok(());
                 } else {
+                    // List all tasks for a build config
                     if workspace.valid_config(config) {
                         workspace.config().tasks().iter().for_each(|(name, task)| {
                             cli.stdout(format!("{}", task.name()));
@@ -96,7 +98,8 @@ mod tests {
     fn helper_test_list_subcommand(
         json_ws_settings: &str,
         json_build_config: &str,
-        mocker: MockLogger,
+        mlogger: MockLogger,
+        msystem: MockSystem,
         cmd_line: Vec<&str>,
     ) -> Result<(), BError> {
         let temp_dir: TempDir =
@@ -108,7 +111,8 @@ mod tests {
         let workspace: Workspace =
             Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config))?;
         let cli: Cli = Cli::new(
-            Box::new(mocker),
+            Box::new(mlogger),
+            Box::new(msystem),
             clap::Command::new("bakery"),
             Some(cmd_line),
         );
@@ -148,6 +152,7 @@ mod tests {
             json_ws_settings,
             json_build_config,
             mocked_logger,
+            MockSystem::new(),
             vec!["bakery", "list"],
         );
     }
@@ -199,6 +204,7 @@ mod tests {
             json_ws_settings,
             json_build_config,
             mocked_logger,
+            MockSystem::new(),
             vec!["bakery", "list", "--config", "default"],
         );
     }
@@ -239,6 +245,7 @@ mod tests {
             json_ws_settings,
             json_build_config,
             MockLogger::new(),
+            MockSystem::new(),
             vec!["bakery", "list", "--config", "invalid"],
         );
         match result {
