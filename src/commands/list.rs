@@ -31,31 +31,27 @@ impl BCommand for ListCommand {
     }
 
     fn execute(&self, cli: &Cli, workspace: &Workspace) -> Result<(), BError> {
-        if let Some(sub_matches) = cli.get_args().subcommand_matches(BCOMMAND) {
-            if let Some(config) = sub_matches.get_one::<String>("config") {
-                if config == "all" { // default value if not specified
-                    // If no config is specified then we will list all supported build configs
-                    workspace
-                        .build_configs()
-                        .iter()
-                        .for_each(|(path, description)| {
-                            cli.stdout(format!(
-                                "{}: {}",
-                                path.file_name().unwrap().to_string_lossy(),
-                                description
-                            ));
-                        });
-                    return Ok(());
-                } else {
-                    // List all tasks for a build config
-                    if workspace.valid_config(config) {
-                        workspace.config().tasks().iter().for_each(|(name, task)| {
-                            cli.stdout(format!("{}", task.name()));
-                        });
-                        return Ok(());
-                    }
-                    return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
-                }
+        let config: String = self.get_args_config(cli, BCOMMAND)?;
+        if config == "all" { // default value if not specified
+            // If no config is specified then we will list all supported build configs
+            workspace
+                .build_configs()
+                .iter()
+                .for_each(|(path, description)| {
+                    cli.stdout(format!(
+                        "{}: {}",
+                        path.file_name().unwrap().to_string_lossy(),
+                        description
+                    ));
+                });
+        } else {
+            // List all tasks for a build config
+            if workspace.valid_config(config.as_str()) {
+                workspace.config().tasks().iter().for_each(|(_name, task)| {
+                    cli.stdout(format!("{}", task.name()));
+                });
+            } else {
+                return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
             }
         }
         Ok(())

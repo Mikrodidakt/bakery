@@ -21,6 +21,15 @@ pub trait BCommand {
         false
     }
 
+    fn get_args_config(&self, cli: &Cli, name: &str) -> Result<String, BError> {
+        if let Some(sub_matches) = cli.get_args().subcommand_matches(name) {
+            if let Some(config) = sub_matches.get_one::<String>("config") {
+                return Ok(config.clone());
+            }
+        }
+        return Err(BError::CliError(format!("Invalid build config")));
+    }
+
     // Return a clap sub-command containing the args
     // for the bakery command
     fn subcommand(&self) -> &clap::Command;
