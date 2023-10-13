@@ -55,7 +55,7 @@ impl WsTaskHandler {
         Ok(())
     }
 
-    fn execute_recipes(&self, cli: &Cli, workspace: &Workspace, env: &HashMap<String, String>) -> Result<(), BError> {
+    fn execute_recipes(&self, cli: &Cli, workspace: &Workspace, env: &HashMap<String, String>, interactive: bool) -> Result<(), BError> {
         for r in self.recipes() {
             let recipe: Recipe = Recipe::new(r);
             let executer: Executer = Executer::new(workspace, cli);
@@ -66,7 +66,7 @@ impl WsTaskHandler {
                 docker_option = Some(image);
             }
 
-            executer.execute(&mut recipe.bitbake_cmd(), env, Some(self.build_dir()), docker_option, true)?;
+            executer.execute(&mut recipe.bitbake_cmd(), env, Some(self.build_dir()), docker_option, interactive)?;
         }
         Ok(())
     }
@@ -77,7 +77,7 @@ impl WsTaskHandler {
         Ok(HashMap::new())
     }
 
-    fn execute(&self, cli: &Cli, workspace: &Workspace, env: &HashMap<String, String>) -> Result<(), BError> {
+    fn execute(&self, cli: &Cli, workspace: &Workspace, env: &HashMap<String, String>, interactive: bool) -> Result<(), BError> {
         let executer: Executer = Executer::new(workspace, cli);
         let mut docker_option: Option<DockerImage> = None;
         let mut cmd_line: Vec<String> = self.build_cmd().split(' ').map(|c| c.to_string()).collect();
@@ -87,7 +87,7 @@ impl WsTaskHandler {
             docker_option = Some(image);
         }
         
-        executer.execute(&mut cmd_line, env, Some(self.build_dir()), docker_option, true)?;
+        executer.execute(&mut cmd_line, env, Some(self.build_dir()), docker_option, interactive)?;
         Ok(())
     }
 
@@ -106,10 +106,10 @@ impl WsTaskHandler {
                 }
 
                 let env: HashMap<String, String> = self.bb_build_env(workspace, env_variables)?;
-                self.execute_recipes(cli, workspace, &env)?;
+                self.execute_recipes(cli, workspace, &env, interactive)?;
             }
             TType::NonBitbake => {
-                self.execute(cli, workspace, env_variables)?;
+                self.execute(cli, workspace, env_variables, interactive)?;
             }
             _ => {
                 return Err(BError::ValueError("Invalid task type".to_string()));
