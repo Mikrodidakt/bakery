@@ -6,7 +6,6 @@ use crate::fs::JsonFileReader;
 use crate::cli::Cli;
 
 use std::path::PathBuf;
-use indexmap::IndexMap;
 use std::collections::HashMap;
 use serde_json::Value;
 
@@ -52,7 +51,7 @@ impl WsTaskHandler {
         })
     }
 
-    fn create_bitbake_configs(&self, workspace: &Workspace, bb_variables: &Vec<String>, force: bool) -> Result<(), BError> {
+    fn create_bitbake_configs(&self, _workspace: &Workspace, _bb_variables: &Vec<String>, _force: bool) -> Result<(), BError> {
         Ok(())
     }
 
@@ -72,7 +71,7 @@ impl WsTaskHandler {
         Ok(())
     }
 
-    fn bb_build_env<'a>(&self, workspace: &Workspace, env_variables: &HashMap<String, String>) -> Result<HashMap<String, String>, BError> {
+    fn bb_build_env<'a>(&self, _workspace: &Workspace, _env_variables: &HashMap<String, String>) -> Result<HashMap<String, String>, BError> {
         //let task_env = self.env();
         //let os_env = env::vars();
         Ok(HashMap::new())
@@ -187,7 +186,7 @@ mod tests {
     use indexmap::{IndexMap, indexmap};
     
     use crate::workspace::{WsTaskHandler, WsSettingsHandler, WsArtifactsHandler, WsBuildData};
-    use crate::configs::{TType, AType, Context};
+    use crate::configs::{TType, AType};
 
     #[test]
     fn test_ws_task_nonbitbake() {
@@ -263,7 +262,7 @@ mod tests {
             "version": "4"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, default_settings).unwrap();
+        let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, default_settings).unwrap();
         let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &ws_settings).expect("Failed to setup build data");
         let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
         assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds"));
@@ -362,7 +361,6 @@ mod tests {
             "KEY_CONTEXT3".to_string() => "VAR3".to_string(),
             "KEY_CONTEXT4".to_string() => "VAR4".to_string()
         };
-        let ctx: Context = Context::new(&variables);
         let default_settings: &str = r#"
         {
             "version": "4"

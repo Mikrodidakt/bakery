@@ -29,7 +29,7 @@ impl fmt::Display for DockerImage {
 
 impl DockerImage {
     pub fn new(image_str: &str) -> Self {
-        let mut split: Vec<String> = image_str.split(' ').map(|c| c.to_string()).collect();
+        let mut split: Vec<String> = image_str.split('/').map(|c| c.to_string()).collect();
         let registry: String = split[0].clone();
         split = split[1].split(':').map(|c| c.to_string()).collect();
         let image: String = split[0].clone();
@@ -127,11 +127,7 @@ mod tests {
     fn test_executer_docker_cmd_line() {
         let test_work_dir: String = String::from("test_work_dir");
         let test_cmd: String = String::from("test_cmd");
-        let docker_image: DockerImage = DockerImage {
-            registry: String::from("test-registry"),
-            image: String::from("test-image"),
-            tag: String::from("0.1"),
-        };
+        let docker_image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
         let work_dir: PathBuf = PathBuf::from(&test_work_dir);
         let json_ws_settings: &str = r#"
         {
@@ -168,11 +164,7 @@ mod tests {
     fn test_executer_docker() {
         let test_work_dir: String = String::from("test_work_dir");
         let test_cmd: String = String::from("test_cmd");
-        let docker_image: DockerImage = DockerImage {
-            registry: String::from("test-registry"),
-            image: String::from("test-image"),
-            tag: String::from("0.1"),
-        };
+        let docker_image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
         let verification_str = format!(
             "docker run {} cd {} && {}",
             docker_image, test_work_dir, test_cmd
@@ -219,11 +211,7 @@ mod tests {
         let test_work_dir = String::from("test_work_dir");
         let test_build_dir = String::from("test_build_dir");
         let test_cmd: String = format!("cd {} && test", test_build_dir);
-        let docker_image: DockerImage = DockerImage {
-            registry: String::from("test-registry"),
-            image: String::from("test-image"),
-            tag: String::from("0.1"),
-        };
+        let docker_image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
         let verification_str = format!("docker run {} {}", docker_image, test_cmd);
         let work_dir: PathBuf = PathBuf::from(test_work_dir.clone());
         let json_ws_settings: &str = r#"
