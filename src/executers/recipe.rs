@@ -28,7 +28,7 @@ impl Recipe {
         }
     }
 
-    pub fn bake_cmd(&self) -> Vec<String> {
+    pub fn bitbake_cmd(&self) -> Vec<String> {
         let mut cmd: Vec<String> = vec!["bitbake".to_string(), self.recipe.clone()];
         if !self.task.is_empty() {
             cmd.extend(vec!["-c".to_string(), self.task.clone()]);
@@ -44,24 +44,24 @@ mod tests {
     #[test]
     fn test_recipe_no_task() {
         let recipe: Recipe = Recipe::new("test-image");
-        assert_eq!(recipe.bake_cmd(), vec!["bitbake", "test-image"]);
+        assert_eq!(recipe.bitbake_cmd(), vec!["bitbake", "test-image"]);
     }
 
     #[test]
     fn test_recipe_sdk() {
         let recipe: Recipe = Recipe::new("test-image:sdk");
-        assert_eq!(recipe.bake_cmd(), vec!["bitbake", "test-image", "-c", "do_populate_sdk"]);
+        assert_eq!(recipe.bitbake_cmd(), vec!["bitbake", "test-image", "-c", "do_populate_sdk"]);
     }
 
     #[test]
     fn test_recipe_do_task() {
         let recipe: Recipe = Recipe::new("test-image:do_test_task");
-        assert_eq!(recipe.bake_cmd(), vec!["bitbake", "test-image", "-c", "do_test_task"]);
+        assert_eq!(recipe.bitbake_cmd(), vec!["bitbake", "test-image", "-c", "do_test_task"]);
     }
 
     #[test]
     fn test_recipe_task() {
         let recipe: Recipe = Recipe::new("test-image:test");
-        assert_eq!(recipe.bake_cmd(), vec!["bitbake", "test-image", "-c", "do_test"]);
+        assert_eq!(recipe.bitbake_cmd(), vec!["bitbake", "test-image", "-c", "do_test"]);
     }
 }

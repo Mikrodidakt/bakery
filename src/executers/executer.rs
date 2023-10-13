@@ -1,9 +1,12 @@
 use std::collections::HashMap;
 use std::env::Vars;
+use std::path::PathBuf;
+
+use indexmap::IndexMap;
 
 use crate::cli::Cli;
 use crate::error::BError;
-use crate::executers::Docker;
+use crate::executers::{Docker, DockerImage};
 use crate::workspace::Workspace;
 
 pub struct Executer<'a> {
@@ -20,52 +23,41 @@ impl<'a> Executer<'a> {
     }
 
     pub fn execute(
-        &self,
-        cmd: &str,
-        env: Vars,
-        dir: Option<String>,
-        docker: Option<Docker>,
-        interactive: bool,
-    ) -> Result<(), BError> {
+        &self, cmd: &mut Vec<String>, env: &HashMap<String, String>, dir: Option<PathBuf>,
+        docker_image: Option<DockerImage>, interactive: bool,) -> Result<(), BError> {
         let mut cmd_line: Vec<String> = vec![];
-        let mut cmd: Vec<String> = cmd.split(' ').map(|c| c.to_string()).collect();
         let exec_dir: String;
 
         // If no directory is specified we should use the Workspace work directory
         // as the directory to execute the command from
         match dir {
             Some(directory) => {
-                exec_dir = directory;
+                exec_dir = directory.to_string_lossy().to_string();
                 cmd_line.append(&mut vec![
                     "cd".to_string(),
                     exec_dir.clone(),
                     "&&".to_string(),
                 ]);
-                cmd_line.append(&mut cmd);
+                cmd_line.append(cmd);
             }
             None => {
-                exec_dir = self
-                    .workspace
-                    .settings()
-                    .work_dir()
-                    .to_string_lossy()
-                    .to_string();
+                exec_dir = self.workspace.settings().work_dir().to_string_lossy().to_string();
                 cmd_line.append(&mut vec![
                     "cd".to_string(),
                     exec_dir.clone(),
                     "&&".to_string(),
                 ]);
-                cmd_line.append(&mut cmd);
+                cmd_line.append(cmd);
             }
         }
 
-        match docker {
-            Some(docker) => {
+        match docker_image {
+            Some(image) => {
+                let docker: Docker = Docker::new(self.workspace, &image, interactive);
                 docker.run_cmd(&mut cmd_line, env, exec_dir, &self.cli)?;
             }
             None => {
-                let env: HashMap<String, String> = env.map(|(key, value)| (key, value)).collect();
-                self.cli.check_call(&cmd_line, &env, true)?;
+                self.cli.check_call(&cmd_line, env, true)?;
             }
         }
 
@@ -75,18 +67,19 @@ impl<'a> Executer<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::path::PathBuf;
 
     use crate::cli::*;
     use crate::error::BError;
-    use crate::executers::{Docker, Executer};
+    use crate::executers::{DockerImage, Executer};
     use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
 
     fn helper_test_executer(
         verification_str: &String,
-        test_cmd: &String,
-        test_build_dir: Option<String>,
-        docker: Option<Docker>,
+        test_cmd: String,
+        test_build_dir: Option<PathBuf>,
+        image: Option<DockerImage>,
         workspace: &Workspace,
     ) -> Result<(), BError> {
         let mut mocked_logger: MockLogger = MockLogger::new();
@@ -102,15 +95,15 @@ mod tests {
             None,
         );
         let exec: Executer = Executer::new(workspace, &cli);
-        exec.execute(&test_cmd, std::env::vars(), test_build_dir, docker, true)
+        exec.execute(&mut vec![test_cmd], &HashMap::new(), test_build_dir, image, true)
     }
 
     #[test]
     fn test_executer_build_dir() {
-        let test_work_dir = String::from("/test_work_dir");
-        let test_build_dir = String::from("test_build_dir");
-        let test_cmd = String::from("test_cmd");
-        let verification_str = format!("cd {} && {}", test_build_dir, test_cmd);
+        let test_work_dir: String = String::from("/test_work_dir");
+        let test_build_dir: PathBuf = PathBuf::from("test_build_dir");
+        let test_cmd: String = String::from("test_cmd");
+        let verification_str: String = format!("cd {} && {}", test_build_dir.to_string_lossy().to_string(), test_cmd);
         let work_dir: PathBuf = PathBuf::from(&test_work_dir);
         let json_ws_settings: &str = r#"
         {
@@ -140,7 +133,7 @@ mod tests {
             .expect("Failed to setup workspace");
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
-            &test_cmd,
+            test_cmd,
             Some(test_build_dir),
             None,
             &workspace,
@@ -186,7 +179,7 @@ mod tests {
         let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config))
             .expect("Failed to setup workspace");
         let result: Result<(), BError> =
-            helper_test_executer(&verification_str, &test_cmd, None, None, &workspace);
+            helper_test_executer(&verification_str, test_cmd, None, None, &workspace);
         match result {
             Err(err) => {
                 assert_eq!("Executer failed", err.to_string());

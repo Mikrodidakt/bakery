@@ -31,7 +31,7 @@ impl BCommand for ListCommand {
     }
 
     fn execute(&self, cli: &Cli, workspace: &Workspace) -> Result<(), BError> {
-        let config: String = self.get_args_config(cli, BCOMMAND)?;
+        let config: String = self.get_arg_str(cli, "config", BCOMMAND)?;
         if config == "all" { // default value if not specified
             // If no config is specified then we will list all supported build configs
             workspace

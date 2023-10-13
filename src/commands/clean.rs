@@ -1,7 +1,7 @@
 use crate::commands::{BCommand, BBaseCommand};
 
 static BCOMMAND: &str = "clean";
-static BCOMMAND_ABOUT: &str = "Clean one of the components";
+static BCOMMAND_ABOUT: &str = "Clean one or all the tasks defined in a build config";
 pub struct CleanCommand {
     cmd: BBaseCommand,
     // Your struct fields and methods here

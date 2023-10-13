@@ -20,14 +20,36 @@ pub trait BCommand {
     fn is_docker_required(&self) -> bool {
         false
     }
-
-    fn get_args_config(&self, cli: &Cli, name: &str) -> Result<String, BError> {
-        if let Some(sub_matches) = cli.get_args().subcommand_matches(name) {
-            if let Some(config) = sub_matches.get_one::<String>("config") {
-                return Ok(config.clone());
+    fn get_arg_str(&self, cli: &Cli, id: &str, cmd: &str) -> Result<String, BError> {
+        if let Some(sub_matches) = cli.get_args().subcommand_matches(cmd) {
+            if sub_matches.contains_id(id) {
+                if let Some(value) = sub_matches.get_one::<String>(id) {
+                    return Ok(value.clone());
+                }
             }
         }
-        return Err(BError::CliError(format!("Invalid build config")));
+        return Err(BError::CliError(format!("Failed to read arg {}", id)));
+    }
+
+    fn get_arg_flag(&self, cli: &Cli, id: &str, cmd: &str) -> Result<bool, BError> {
+        if let Some(sub_matches) = cli.get_args().subcommand_matches(cmd) {
+            if sub_matches.contains_id(id) {
+                let flag: bool = sub_matches.get_flag(id);
+                return Ok(flag);
+            }
+        }
+        return Err(BError::CliError(format!("Failed to read arg {}", id)));
+    }
+
+    fn get_arg_many<'a>(&'a self, cli: &'a Cli, id: &str, cmd: &str) -> Result<Vec<&String>, BError> {
+        if let Some(sub_matches) = cli.get_args().subcommand_matches(cmd) {
+            if sub_matches.contains_id(id) {
+                let many: Vec<&String> = sub_matches.get_many::<String>(id).unwrap_or_default().collect::<Vec<_>>();
+                return Ok(many);
+            }
+            return Ok(Vec::new());
+        }
+        return Err(BError::CliError(format!("Failed to read arg {}", id)));
     }
 
     // Return a clap sub-command containing the args

@@ -1,10 +1,14 @@
-use std::env;
+use core::arch;
+
+use indexmap::{IndexMap, indexmap};
+use std::collections::HashMap;
+use serde_json::value::Index;
 
 use crate::commands::{BCommand, BBaseCommand};
-use crate::executers::{DockerImage, Docker, Executer};
-use crate::workspace::Workspace;
+use crate::workspace::{Workspace, WsTaskHandler};
 use crate::cli::Cli;
 use crate::error::BError;
+use crate::configs::{Context, context};
 
 static BCOMMAND: &str = "build";
 static BCOMMAND_ABOUT: &str = "Execute a build either a full build or a task of one of the builds";
@@ -24,19 +28,116 @@ impl BCommand for BuildCommand {
     }
 
     fn execute(&self, cli: &Cli, workspace: &Workspace) -> Result<(), BError> {
-        let exec: Executer = Executer::new(&workspace, cli);
-        let docker_image: DockerImage = DockerImage {
-            registry: String::from("registry"),
-            image: String::from("test"),
-            tag: String::from("0.1"),
+        let config: String = self.get_arg_str(cli, "config", BCOMMAND)?;
+        let version: String = self.get_arg_str(cli, "platform_version", BCOMMAND)?;
+        let build_id: String = self.get_arg_str(cli, "build_id", BCOMMAND)?;
+        let sha: String = self.get_arg_str(cli, "build_sha", BCOMMAND)?;
+        let build_history: bool = self.get_arg_flag(cli, "build_history", BCOMMAND)?;
+        let archiver: bool = self.get_arg_flag(cli, "archiver", BCOMMAND)?;
+        let debug_symbols: bool = self.get_arg_flag(cli, "debug_symbols", BCOMMAND)?;
+        let tar_balls: bool = self.get_arg_flag(cli, "tar_balls", BCOMMAND)?;
+        let dry_run: bool = self.get_arg_flag(cli, "dry_run", BCOMMAND)?;
+        let interactive_str: String = self.get_arg_str(cli, "interactive", BCOMMAND)?;
+        let ctx: Vec<&String> = self.get_arg_many(cli, "ctx", BCOMMAND)?;
+        let env: Vec<&String> = self.get_arg_many(cli, "env", BCOMMAND)?;
+        let volumes: Vec<&String> = self.get_arg_many(cli, "volume", BCOMMAND)?;
+        let tasks: Vec<&String> = self.get_arg_many(cli, "tasks", BCOMMAND)?;
+        let variant: String = self.get_arg_str(cli, "variant", BCOMMAND)?;
+        let mut bb_variables: Vec<String> = Vec::new();
+        let mut interactive: bool = false;
+
+        if interactive_str == "true" {
+            interactive = true;
+        }
+
+        if !workspace.valid_config(config.as_str()) {
+            return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
+        }
+
+        /*
+        if !workspace.config().enabled() {
+            return Err(BError::CliError(format!("Build config '{}' is currently not enabled", config)));
+        }
+        */
+
+        if tar_balls {
+            bb_variables.push("BB_GENERATE_MIRROR_TARBALLS = \"1\"".to_string());
+        }
+
+        if build_history {
+            bb_variables.push("INHERIT += \"buildhistory\"".to_string());
+            bb_variables.push("BUILDHISTORY_COMMIT = \"1\"".to_string());
+        }
+
+        if archiver {
+            bb_variables.push("INHERIT += \"archiver\"".to_string());
+            bb_variables.push("ARCHIVER_MODE[src] = \"original\"".to_string());
+        }
+
+        if debug_symbols {
+            bb_variables.push("IMAGE_GEN_DEBUGFS = \"1\"".to_string());
+            bb_variables.push("IMAGE_FSTYPES_DEBUGFS = \"tar.bz2\"".to_string());
+        }
+        
+        let env_variables: HashMap<String, String> = self.setup_env(env);
+        let mut args_context: Context = self.setup_context(ctx);
+
+        let mut extra_ctx: IndexMap<String, String> = indexmap! {
+            "PLATFORM_VERSION".to_string() => version.clone(),
+            "BUILD_ID".to_string() => build_id.clone(),
+            "BUILD_SHA".to_string() => sha,
+            "RELEASE_BUILD".to_string() => "0".to_string(),
+            "BUILD_VARIANT".to_string() => variant.clone(),
+            "PLATFORM_RELEASE".to_string() => format!("{}-{}", version, build_id),
+            "ARCHIVER".to_string() => (archiver as i32).to_string(),
+            "DEBUG_SYMBOLS".to_string() => (debug_symbols as i32).to_string(),
         };
-        let docker: Docker = Docker::new(&workspace, &docker_image, true);
-        exec.execute(self.cmd_str(), env::vars(), Some(String::from("test2")), Some(docker), self.cmd.interactive)?;
+
+        if variant == "release" {
+            extra_ctx.insert("BUILD_VARIANT".to_string(), "1".to_string());
+        }
+
+        args_context.update(&extra_ctx);
+        // Update the config context with the context from the args
+        workspace.config().extend_ctx(&args_context);
+
+        if tasks.len() > 1 {
+            for t_name in tasks {
+                let task: &WsTaskHandler = workspace.config().task(t_name)?;
+                task.run(cli, workspace, &bb_variables, &env_variables, dry_run, interactive)?;
+            }
+        } else {
+            let task: &String = tasks.get(0).unwrap();
+            if task == "all" {
+                for (_t_name, task) in workspace.config().tasks() {
+                    task.run(cli, workspace, &bb_variables, &env_variables, dry_run, interactive)?;
+                }
+            } else {
+                let task: &WsTaskHandler = workspace.config().task(tasks.get(0).unwrap())?;
+                task.run(cli, workspace, &bb_variables, &env_variables, dry_run, interactive)?;
+            }
+        }
         Ok(())
     }
 }
 
 impl BuildCommand {
+    fn setup_context(&self, ctx: Vec<&String>) -> Context {
+        let context: IndexMap<std::string::String, std::string::String> = ctx.iter().map(|&c|{
+            let v: Vec<&str> = c.split('=').collect();
+            (v[0].to_string(), v[1].to_string())
+        }).collect();
+        Context::new(&context)
+    }
+
+    fn setup_env(&self, env: Vec<&String>) -> HashMap<String, String> {
+        let variables: HashMap<std::string::String, std::string::String> = env.iter().map(|&e|{
+            let v: Vec<&str> = e.split('=').collect();
+            (v[0].to_string(), v[1].to_string())
+        }).collect();
+        variables
+    }
+
     pub fn new() -> Self {
         let subcmd: clap::Command = clap::Command::new(BCOMMAND)
             .about(BCOMMAND_ABOUT)
@@ -50,10 +151,10 @@ impl BuildCommand {
                     .required(true),
             )
             .arg(
-                clap::Arg::new("task")
+                clap::Arg::new("tasks")
                     .short('t')
-                    .long("task")
-                    .value_name("task")
+                    .long("tasks")
+                    .value_name("tasks")
                     .default_value("all")
                     .value_delimiter(',')
                     .help("The task(s) to execute."),
@@ -71,7 +172,7 @@ impl BuildCommand {
                     .action(clap::ArgAction::Append)
                     .short('v')
                     .long("docker-volume")
-                    .value_name("volume")
+                    .value_name("path:path")
                     .help("Docker volume to mount bind when boot strapping into docker."),
             )
             .arg(
@@ -126,9 +227,9 @@ impl BuildCommand {
                     .long("variant")
                     .value_name("variant")
                     .default_value("dev")
-                    .value_parser(["dev", "manufacturing", "release"])
+                    .value_parser(["dev", "test", "release"])
                     .default_value("dev")
-                    .help("Specify the variant of the build it can be one of release, dev or manufacturing."),
+                    .help("Specify the variant of the build it can be one of release, dev or test."),
             )
             .arg(
                 clap::Arg::new("interactive")
@@ -137,7 +238,7 @@ impl BuildCommand {
                     .value_name("interactive")
                     .default_value("true")
                     .value_parser(["true", "false"])
-                    .help("Determines if a build inside docker should be interactive or not."),
+                    .help("Determines if a build inside docker should be interactive or not can be useful to set to false when running in the CI"),
             )
             .arg(
                 clap::Arg::new("build_id")

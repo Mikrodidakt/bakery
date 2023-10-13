@@ -1,13 +1,14 @@
-use crate::configs::{TType, TaskConfig, Context, task};
-use crate::workspace::{WsArtifactsHandler, WsSettingsHandler, WsBuildData};
+use crate::configs::{TType, TaskConfig, Context};
+use crate::executers::{Recipe, Executer, DockerImage};
+use crate::workspace::{Workspace, WsArtifactsHandler, WsBuildData};
 use crate::error::BError;
 use crate::fs::JsonFileReader;
+use crate::cli::Cli;
 
 use std::path::PathBuf;
-use serde_json::Value;
 use indexmap::IndexMap;
-
-use super::WsBuildConfigHandler;
+use std::collections::HashMap;
+use serde_json::Value;
 
 pub struct WsTaskHandler {
     name: String,
@@ -40,6 +41,7 @@ impl WsTaskHandler {
         config.expand_ctx(build_data.context());
         let task_build_dir: PathBuf = Self::determine_build_dir(&config, build_data);
         let artifacts: Vec<WsArtifactsHandler> = build_data.get_artifacts(data, &task_build_dir)?;
+        
         Ok(WsTaskHandler {
             name: config.name.to_string(),
             config,
@@ -48,6 +50,73 @@ impl WsTaskHandler {
             artifacts_dir: build_data.settings().artifacts_dir(),
             artifacts,
         })
+    }
+
+    fn create_bitbake_configs(&self, workspace: &Workspace, bb_variables: &Vec<String>, force: bool) -> Result<(), BError> {
+        Ok(())
+    }
+
+    fn execute_recipes(&self, cli: &Cli, workspace: &Workspace, env: &HashMap<String, String>) -> Result<(), BError> {
+        for r in self.recipes() {
+            let recipe: Recipe = Recipe::new(r);
+            let executer: Executer = Executer::new(workspace, cli);
+            let mut docker_option: Option<DockerImage> = None;
+
+            if !self.docker().is_empty() {
+                let image: DockerImage = DockerImage::new(self.docker());
+                docker_option = Some(image);
+            }
+
+            executer.execute(&mut recipe.bitbake_cmd(), env, Some(self.build_dir()), docker_option, true)?;
+        }
+        Ok(())
+    }
+
+    fn bb_build_env<'a>(&self, workspace: &Workspace, env_variables: &HashMap<String, String>) -> Result<HashMap<String, String>, BError> {
+        //let task_env = self.env();
+        //let os_env = env::vars();
+        Ok(HashMap::new())
+    }
+
+    fn execute(&self, cli: &Cli, workspace: &Workspace, env: &HashMap<String, String>) -> Result<(), BError> {
+        let executer: Executer = Executer::new(workspace, cli);
+        let mut docker_option: Option<DockerImage> = None;
+        let mut cmd_line: Vec<String> = self.build_cmd().split(' ').map(|c| c.to_string()).collect();
+
+        if !self.docker().is_empty() {
+            let image: DockerImage = DockerImage::new(self.docker());
+            docker_option = Some(image);
+        }
+        
+        executer.execute(&mut cmd_line, env, Some(self.build_dir()), docker_option, true)?;
+        Ok(())
+    }
+
+    pub fn run<'a>(&self, cli: &'a Cli, workspace: &Workspace, bb_variables: &Vec<String>, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+        match self.ttype() {
+            TType::Bitbake => {
+                // if we are running a dry run we should always create the bb configs
+                // when not a dry run it will be determined if it is needed or not to
+                // regenerate the bb configs
+                let force: bool = dry_run;
+                self.create_bitbake_configs(workspace, bb_variables, force)?;
+
+                if dry_run {
+                    cli.info("Running dry run. Skipping build!".to_string());
+                    return Ok(());
+                }
+
+                let env: HashMap<String, String> = self.bb_build_env(workspace, env_variables)?;
+                self.execute_recipes(cli, workspace, &env)?;
+            }
+            TType::NonBitbake => {
+                self.execute(cli, workspace, env_variables)?;
+            }
+            _ => {
+                return Err(BError::ValueError("Invalid task type".to_string()));
+            }
+        }
+        Ok(())
     }
 
     pub fn expand_ctx(&mut self, ctx: &Context) {

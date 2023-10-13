@@ -27,6 +27,21 @@ impl fmt::Display for DockerImage {
     }
 }
 
+impl DockerImage {
+    pub fn new(image_str: &str) -> Self {
+        let mut split: Vec<String> = image_str.split(' ').map(|c| c.to_string()).collect();
+        let registry: String = split[0].clone();
+        split = split[1].split(':').map(|c| c.to_string()).collect();
+        let image: String = split[0].clone();
+        let tag: String = split[1].clone();
+        DockerImage {
+            registry,
+            image,
+            tag,
+        }
+    }
+}
+
 impl<'a> Docker<'a> {
     pub fn inside_docker() -> bool {
         let path: PathBuf = PathBuf::from("/.dockerenv");
@@ -54,15 +69,7 @@ impl<'a> Docker<'a> {
         docker_cmd
     }
 
-    pub fn run_cmd(
-        &self,
-        cmd_line: &mut Vec<String>,
-        env: Vars,
-        _dir: String,
-        cli: &Cli,
-    ) -> Result<(), BError> {
-        let env: HashMap<String, String> = env.map(|(key, value)| (key, value)).collect();
-
+    pub fn run_cmd(&self, cmd_line: &mut Vec<String>, env: &HashMap<String, String>, _dir: String, cli: &Cli,) -> Result<(), BError> {
         cli.check_call(&self.docker_cmd_line(cmd_line, _dir), &env, true)?;
         Ok(())
     }
@@ -71,19 +78,15 @@ impl<'a> Docker<'a> {
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
+    use std::collections::HashMap;
 
     use crate::cli::*;
     use crate::error::BError;
     use crate::executers::{Docker, DockerImage, Executer};
     use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
 
-    fn helper_test_docker(
-        verification_str: &String,
-        test_cmd: &String,
-        test_work_dir: Option<String>,
-        image: &DockerImage,
-        workspace: &Workspace,
-    ) -> Result<(), BError> {
+    fn helper_test_docker(verification_str: &String, test_cmd: &String, test_work_dir: Option<String>,
+        image: &DockerImage, workspace: &Workspace) -> Result<(), BError> {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
@@ -98,16 +101,11 @@ mod tests {
         );
         let docker: Docker = Docker::new(&workspace, image, true);
         let mut cmd: Vec<String> = test_cmd.split(' ').map(|c| c.to_string()).collect();
-        docker.run_cmd(&mut cmd, std::env::vars(), test_work_dir.unwrap(), &cli)
+        docker.run_cmd(&mut cmd, &HashMap::new(), test_work_dir.unwrap(), &cli)
     }
 
-    fn helper_test_executer(
-        verification_str: &String,
-        test_cmd: &String,
-        test_build_dir: Option<String>,
-        docker: Option<Docker>,
-        workspace: &Workspace,
-    ) -> Result<(), BError> {
+    fn helper_test_executer(verification_str: &String, test_cmd: &String, test_build_dir: Option<PathBuf>,
+        image: Option<DockerImage>, workspace: &Workspace,) -> Result<(), BError> {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
@@ -120,8 +118,9 @@ mod tests {
             clap::Command::new("bakery"),
             None,
         );
+        let mut cmd: Vec<String> = test_cmd.split(' ').map(|c| c.to_string()).collect();
         let exec: Executer = Executer::new(workspace, &cli);
-        exec.execute(&test_cmd, std::env::vars(), test_build_dir, docker, true)
+        exec.execute(&mut cmd, &HashMap::new(), test_build_dir, image, true)
     }
 
     #[test]
@@ -205,9 +204,8 @@ mod tests {
                 .expect("Failed to parse build config");
         let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config))
             .expect("Failed to setup workspace");
-        let docker: Docker = Docker::new(&workspace, &docker_image, true);
         let result: Result<(), BError> =
-            helper_test_executer(&verification_str, &test_cmd, None, Some(docker), &workspace);
+            helper_test_executer(&verification_str, &test_cmd, None, Some(docker_image), &workspace);
         match result {
             Err(err) => {
                 assert_eq!("Executer failed", err.to_string());
@@ -220,7 +218,7 @@ mod tests {
     fn test_docker_run() {
         let test_work_dir = String::from("test_work_dir");
         let test_build_dir = String::from("test_build_dir");
-        let test_cmd = format!("cd {} && test", test_build_dir);
+        let test_cmd: String = format!("cd {} && test", test_build_dir);
         let docker_image: DockerImage = DockerImage {
             registry: String::from("test-registry"),
             image: String::from("test-image"),
