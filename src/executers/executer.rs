@@ -53,7 +53,7 @@ impl<'a> Executer<'a> {
 
         match docker_image {
             Some(image) => {
-                let docker: Docker = Docker::new(self.workspace, &image, interactive);
+                let docker: Docker = Docker::new(self.workspace, image, interactive);
                 docker.run_cmd(&mut cmd_line, env, exec_dir, &self.cli)?;
             }
             None => {

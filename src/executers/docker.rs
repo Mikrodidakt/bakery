@@ -10,7 +10,7 @@ use crate::workspace::Workspace;
 
 pub struct Docker<'a> {
     _workspace: &'a Workspace,
-    image: &'a DockerImage,
+    image: DockerImage,
     _interactive: bool,
 }
 
@@ -50,7 +50,7 @@ impl<'a> Docker<'a> {
         path.exists()
     }
 
-    pub fn new(workspace: &'a Workspace, image: &'a DockerImage, interactive: bool) -> Self {
+    pub fn new(workspace: &'a Workspace, image: DockerImage, interactive: bool) -> Self {
         Docker {
             _workspace: workspace,
             image,
@@ -86,7 +86,7 @@ mod tests {
     use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
 
     fn helper_test_docker(verification_str: &String, test_cmd: &String, test_work_dir: Option<String>,
-        image: &DockerImage, workspace: &Workspace) -> Result<(), BError> {
+        image: DockerImage, workspace: &Workspace) -> Result<(), BError> {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
@@ -159,7 +159,7 @@ mod tests {
                 .expect("Failed to parse build config");
         let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config))
             .expect("Failed to setup workspace");
-        let docker: Docker = Docker::new(&workspace, &docker_image, true);
+        let docker: Docker = Docker::new(&workspace, docker_image.clone(), true);
         let cmd: Vec<String> = docker.docker_cmd_line(&mut vec!["cd".to_string(), test_work_dir.clone(), test_cmd.clone()], test_work_dir.clone());
         assert_eq!(cmd, vec!["docker".to_string(), "run".to_string(), format!("{}", docker_image), "cd".to_string(), test_work_dir.clone(), test_cmd])
     }
@@ -256,7 +256,7 @@ mod tests {
             &verification_str,
             &test_cmd,
             Some(test_work_dir),
-            &docker_image,
+            docker_image,
             &workspace,
         );
         match result {

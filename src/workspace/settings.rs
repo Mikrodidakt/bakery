@@ -108,8 +108,8 @@ impl WsSettingsHandler {
         path_buf
     }
 
-    pub fn docker_image(&self) -> &DockerImage {
-        &self.docker
+    pub fn docker_image(&self) -> DockerImage {
+        self.docker.clone()
     }
 
     pub fn docker_args(&self) -> &Vec<String> {
@@ -190,7 +190,7 @@ mod tests {
             work_dir,
             Helper::setup_ws_settings(json_test_str),
         );
-        let docker_image: &DockerImage = settings.docker_image();
+        let docker_image: DockerImage = settings.docker_image();
         assert_eq!(format!("{}", docker_image), "strixos/bakery-workspace:0.68");
     }
 
@@ -210,7 +210,7 @@ mod tests {
             work_dir,
             Helper::setup_ws_settings(json_test_str),
         );
-        let docker_image: &DockerImage = settings.docker_image();
+        let docker_image: DockerImage = settings.docker_image();
         assert_eq!(format!("{}", docker_image), "test-registry/test-image:0.1");
     }
 
