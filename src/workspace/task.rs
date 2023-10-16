@@ -51,14 +51,14 @@ impl WsTaskHandler {
         })
     }
 
-    fn create_bitbake_configs(&self, _workspace: &Workspace, _bb_variables: &Vec<String>, _force: bool) -> Result<(), BError> {
+    fn create_bitbake_configs(&self, _build_data: &WsBuildData, _bb_variables: &Vec<String>, _force: bool) -> Result<(), BError> {
         Ok(())
     }
 
-    fn execute_recipes(&self, cli: &Cli, workspace: &Workspace, env: &HashMap<String, String>, interactive: bool) -> Result<(), BError> {
+    fn execute_recipes(&self, cli: &Cli, build_data: &WsBuildData, env: &HashMap<String, String>, interactive: bool) -> Result<(), BError> {
         for r in self.recipes() {
             let recipe: Recipe = Recipe::new(r);
-            let executer: Executer = Executer::new(workspace, cli);
+            let executer: Executer = Executer::new(build_data, cli);
             let mut docker_option: Option<DockerImage> = None;
 
             if !self.docker().is_empty() {
@@ -71,14 +71,14 @@ impl WsTaskHandler {
         Ok(())
     }
 
-    fn bb_build_env<'a>(&self, _workspace: &Workspace, _env_variables: &HashMap<String, String>) -> Result<HashMap<String, String>, BError> {
+    fn bb_build_env<'a>(&self, build_data: &WsBuildData, _env_variables: &HashMap<String, String>) -> Result<HashMap<String, String>, BError> {
         //let task_env = self.env();
         //let os_env = env::vars();
         Ok(HashMap::new())
     }
 
-    fn execute(&self, cli: &Cli, workspace: &Workspace, env: &HashMap<String, String>, interactive: bool) -> Result<(), BError> {
-        let executer: Executer = Executer::new(workspace, cli);
+    fn execute(&self, cli: &Cli, build_data: &WsBuildData, env: &HashMap<String, String>, interactive: bool) -> Result<(), BError> {
+        let executer: Executer = Executer::new(build_data, cli);
         let mut docker_option: Option<DockerImage> = None;
         let mut cmd_line: Vec<String> = self.build_cmd().split(' ').map(|c| c.to_string()).collect();
 
@@ -91,25 +91,25 @@ impl WsTaskHandler {
         Ok(())
     }
 
-    pub fn run<'a>(&self, cli: &'a Cli, workspace: &Workspace, bb_variables: &Vec<String>, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+    pub fn run<'a>(&self, cli: &'a Cli, build_data: &WsBuildData, bb_variables: &Vec<String>, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
         match self.ttype() {
             TType::Bitbake => {
                 // if we are running a dry run we should always create the bb configs
                 // when not a dry run it will be determined if it is needed or not to
                 // regenerate the bb configs
                 let force: bool = dry_run;
-                self.create_bitbake_configs(workspace, bb_variables, force)?;
+                self.create_bitbake_configs(build_data, bb_variables, force)?;
 
                 if dry_run {
                     cli.info("Running dry run. Skipping build!".to_string());
                     return Ok(());
                 }
 
-                let env: HashMap<String, String> = self.bb_build_env(workspace, env_variables)?;
-                self.execute_recipes(cli, workspace, &env, interactive)?;
+                let env: HashMap<String, String> = self.bb_build_env(build_data, env_variables)?;
+                self.execute_recipes(cli, build_data, &env, interactive)?;
             }
             TType::NonBitbake => {
-                self.execute(cli, workspace, env_variables, interactive)?;
+                self.execute(cli, build_data, env_variables, interactive)?;
             }
             _ => {
                 return Err(BError::ValueError("Invalid task type".to_string()));
@@ -185,6 +185,7 @@ mod tests {
     use std::path::PathBuf;
     use indexmap::{IndexMap, indexmap};
     
+    use crate::cli::BLogger;
     use crate::workspace::{WsTaskHandler, WsSettingsHandler, WsArtifactsHandler, WsBuildData};
     use crate::configs::{TType, AType};
 
@@ -448,5 +449,28 @@ mod tests {
             assert_eq!(f.dest(), PathBuf::from("/workspace/artifacts/file-dest.txt"));
             i += 1;
         });
+    }
+
+    #[test]
+    fn test_ws_task_run() {
+        let variables: IndexMap<String, String> = IndexMap::new();
+        let json_task_str: &str = r#"
+        { 
+            "index": "2",
+            "name": "task-name",
+            "type": "bitbake",
+            "recipes": [
+                "test-image"
+            ]
+        }"#;
+        let default_settings: &str  = r#"
+        {
+            "version": "4"
+        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, default_settings).unwrap();
+        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", variables, &ws_settings).expect("Failed to setup build data");
+        let mut task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
+        //task.run()
     }
 }

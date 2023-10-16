@@ -104,17 +104,17 @@ impl BCommand for BuildCommand {
         if tasks.len() > 1 {
             for t_name in tasks {
                 let task: &WsTaskHandler = workspace.config().task(t_name)?;
-                task.run(cli, workspace, &bb_variables, &env_variables, dry_run, interactive)?;
+                task.run(cli, workspace.config().build_data(), &bb_variables, &env_variables, dry_run, interactive)?;
             }
         } else {
             let task: &String = tasks.get(0).unwrap();
             if task == "all" {
                 for (_t_name, task) in workspace.config().tasks() {
-                    task.run(cli, workspace, &bb_variables, &env_variables, dry_run, interactive)?;
+                    task.run(cli, workspace.config().build_data(), &bb_variables, &env_variables, dry_run, interactive)?;
                 }
             } else {
                 let task: &WsTaskHandler = workspace.config().task(tasks.get(0).unwrap())?;
-                task.run(cli, workspace, &bb_variables, &env_variables, dry_run, interactive)?;
+                task.run(cli, workspace.config().build_data(), &bb_variables, &env_variables, dry_run, interactive)?;
             }
         }
         Ok(())

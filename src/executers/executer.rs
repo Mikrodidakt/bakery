@@ -7,17 +7,17 @@ use indexmap::IndexMap;
 use crate::cli::Cli;
 use crate::error::BError;
 use crate::executers::{Docker, DockerImage};
-use crate::workspace::Workspace;
+use crate::workspace::{Workspace, WsBuildData};
 
 pub struct Executer<'a> {
-    workspace: &'a Workspace,
+    data: &'a WsBuildData,
     cli: &'a Cli,
 }
 
 impl<'a> Executer<'a> {
-    pub fn new(workspace: &'a Workspace, cli: &'a Cli) -> Self {
+    pub fn new(build_data: &'a WsBuildData, cli: &'a Cli) -> Self {
         Executer {
-            workspace: workspace,
+            data: build_data,
             cli: cli,
         }
     }
@@ -41,7 +41,7 @@ impl<'a> Executer<'a> {
                 cmd_line.append(cmd);
             }
             None => {
-                exec_dir = self.workspace.settings().work_dir().to_string_lossy().to_string();
+                exec_dir = self.data.settings().work_dir().to_string_lossy().to_string();
                 cmd_line.append(&mut vec![
                     "cd".to_string(),
                     exec_dir.clone(),
@@ -53,7 +53,7 @@ impl<'a> Executer<'a> {
 
         match docker_image {
             Some(image) => {
-                let docker: Docker = Docker::new(self.workspace, image, interactive);
+                let docker: Docker = Docker::new(image, interactive);
                 docker.run_cmd(&mut cmd_line, env, exec_dir, &self.cli)?;
             }
             None => {
@@ -69,18 +69,19 @@ impl<'a> Executer<'a> {
 mod tests {
     use std::collections::HashMap;
     use std::path::PathBuf;
+    use indexmap::IndexMap;
 
     use crate::cli::*;
     use crate::error::BError;
     use crate::executers::{DockerImage, Executer};
-    use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
+    use crate::workspace::{WsBuildData, WsSettingsHandler};
 
     fn helper_test_executer(
         verification_str: &String,
         test_cmd: String,
         test_build_dir: Option<PathBuf>,
         image: Option<DockerImage>,
-        workspace: &Workspace,
+        build_data: &WsBuildData,
     ) -> Result<(), BError> {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
@@ -94,7 +95,7 @@ mod tests {
             clap::Command::new("bakery"),
             None,
         );
-        let exec: Executer = Executer::new(workspace, &cli);
+        let exec: Executer = Executer::new(build_data, &cli);
         exec.execute(&mut vec![test_cmd], &HashMap::new(), test_build_dir, image, true)
     }
 
@@ -126,17 +127,13 @@ mod tests {
         let mut settings: WsSettingsHandler =
             WsSettingsHandler::from_str(&work_dir, json_ws_settings)
                 .expect("Failed to parse settings.json");
-        let config: WsBuildConfigHandler =
-            WsBuildConfigHandler::from_str(json_build_config, &mut settings)
-                .expect("Failed to parse build config");
-        let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config))
-            .expect("Failed to setup workspace");
+        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &settings).expect("Failed to setup build data");    
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
             test_cmd,
             Some(test_build_dir),
             None,
-            &workspace,
+            &build_data,
         );
         match result {
             Err(err) => {
@@ -173,13 +170,10 @@ mod tests {
         let mut settings: WsSettingsHandler =
             WsSettingsHandler::from_str(&work_dir, json_ws_settings)
                 .expect("Failed to parse settings.json");
-        let config: WsBuildConfigHandler =
-            WsBuildConfigHandler::from_str(json_build_config, &mut settings)
-                .expect("Failed to parse build config");
-        let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config))
-            .expect("Failed to setup workspace");
+        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &settings).expect("Failed to setup build data");    
+        
         let result: Result<(), BError> =
-            helper_test_executer(&verification_str, test_cmd, None, None, &workspace);
+            helper_test_executer(&verification_str, test_cmd, None, None, &build_data);
         match result {
             Err(err) => {
                 assert_eq!("Executer failed", err.to_string());

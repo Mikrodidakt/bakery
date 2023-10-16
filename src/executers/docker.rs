@@ -1,15 +1,12 @@
 use clap::ArgMatches;
 use std::collections::HashMap;
-use std::env::Vars;
 use std::fmt;
 use std::path::{Path, PathBuf};
 
 use crate::cli::Cli;
 use crate::error::BError;
-use crate::workspace::Workspace;
 
-pub struct Docker<'a> {
-    _workspace: &'a Workspace,
+pub struct Docker {
     image: DockerImage,
     _interactive: bool,
 }
@@ -42,7 +39,7 @@ impl DockerImage {
     }
 }
 
-impl<'a> Docker<'a> {
+impl Docker {
     pub fn inside_docker() -> bool {
         let path: PathBuf = PathBuf::from("/.dockerenv");
         // Potentially it would be better to use try_exists
@@ -50,9 +47,8 @@ impl<'a> Docker<'a> {
         path.exists()
     }
 
-    pub fn new(workspace: &'a Workspace, image: DockerImage, interactive: bool) -> Self {
+    pub fn new(image: DockerImage, interactive: bool) -> Self {
         Docker {
-            _workspace: workspace,
             image,
             _interactive: interactive,
         }
@@ -79,14 +75,16 @@ impl<'a> Docker<'a> {
 mod tests {
     use std::path::PathBuf;
     use std::collections::HashMap;
+    use indexmap::IndexMap;
 
     use crate::cli::*;
+    use crate::commands::build;
     use crate::error::BError;
     use crate::executers::{Docker, DockerImage, Executer};
-    use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
+    use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler, WsBuildData};
 
     fn helper_test_docker(verification_str: &String, test_cmd: &String, test_work_dir: Option<String>,
-        image: DockerImage, workspace: &Workspace) -> Result<(), BError> {
+        image: DockerImage) -> Result<(), BError> {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
@@ -99,13 +97,13 @@ mod tests {
             clap::Command::new("bakery"),
             None,
         );
-        let docker: Docker = Docker::new(&workspace, image, true);
+        let docker: Docker = Docker::new(image, true);
         let mut cmd: Vec<String> = test_cmd.split(' ').map(|c| c.to_string()).collect();
         docker.run_cmd(&mut cmd, &HashMap::new(), test_work_dir.unwrap(), &cli)
     }
 
     fn helper_test_executer(verification_str: &String, test_cmd: &String, test_build_dir: Option<PathBuf>,
-        image: Option<DockerImage>, workspace: &Workspace,) -> Result<(), BError> {
+        image: Option<DockerImage>, build_data: &WsBuildData) -> Result<(), BError> {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
@@ -119,7 +117,7 @@ mod tests {
             None,
         );
         let mut cmd: Vec<String> = test_cmd.split(' ').map(|c| c.to_string()).collect();
-        let exec: Executer = Executer::new(workspace, &cli);
+        let exec: Executer = Executer::new(build_data, &cli);
         exec.execute(&mut cmd, &HashMap::new(), test_build_dir, image, true)
     }
 
@@ -155,7 +153,7 @@ mod tests {
                 .expect("Failed to parse build config");
         let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config))
             .expect("Failed to setup workspace");
-        let docker: Docker = Docker::new(&workspace, docker_image.clone(), true);
+        let docker: Docker = Docker::new(docker_image.clone(), true);
         let cmd: Vec<String> = docker.docker_cmd_line(&mut vec!["cd".to_string(), test_work_dir.clone(), test_cmd.clone()], test_work_dir.clone());
         assert_eq!(cmd, vec!["docker".to_string(), "run".to_string(), format!("{}", docker_image), "cd".to_string(), test_work_dir.clone(), test_cmd])
     }
@@ -191,13 +189,9 @@ mod tests {
         let mut settings: WsSettingsHandler =
             WsSettingsHandler::from_str(&work_dir, json_ws_settings)
                 .expect("Failed to parse settings.json");
-        let config: WsBuildConfigHandler =
-            WsBuildConfigHandler::from_str(json_build_config, &mut settings)
-                .expect("Failed to parse build config");
-        let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config))
-            .expect("Failed to setup workspace");
+        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &settings).expect("Failed to setup build data");
         let result: Result<(), BError> =
-            helper_test_executer(&verification_str, &test_cmd, None, Some(docker_image), &workspace);
+            helper_test_executer(&verification_str, &test_cmd, None, Some(docker_image), &build_data);
         match result {
             Err(err) => {
                 assert_eq!("Executer failed", err.to_string());
@@ -235,17 +229,11 @@ mod tests {
         let mut settings: WsSettingsHandler =
             WsSettingsHandler::from_str(&work_dir, json_ws_settings)
                 .expect("Failed to parse settings.json");
-        let config: WsBuildConfigHandler =
-            WsBuildConfigHandler::from_str(json_build_config, &mut settings)
-                .expect("Failed to parse build config");
-        let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config))
-            .expect("Failed to setup workspace");
         let result = helper_test_docker(
             &verification_str,
             &test_cmd,
             Some(test_work_dir),
-            docker_image,
-            &workspace,
+            docker_image
         );
         match result {
             Err(err) => {

@@ -78,7 +78,7 @@ impl Bakery {
             Ok(command) => {
                 if command.is_docker_required() && !Docker::inside_docker() {
                     self.cli.info(format!("Bootstrap bakery into docker"));
-                    let docker: Docker = Docker::new(&workspace, workspace.settings().docker_image(), true);
+                    let docker: Docker = Docker::new(workspace.settings().docker_image(), true);
                     let result: Result<(), BError> = docker.bootstrap_bakery(self.cli.get_args());
                     std::process::exit(0);
                 }

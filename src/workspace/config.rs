@@ -59,6 +59,10 @@ impl WsBuildConfigHandler {
         self.work_dir.clone()
     }
 
+    pub fn build_data(&self) -> &WsBuildData {
+        &self.data
+    }
+
     pub fn artifacts_dir(&self) -> PathBuf {
         self.artifacts_dir.clone()
     }

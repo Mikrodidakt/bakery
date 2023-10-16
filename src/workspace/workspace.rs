@@ -9,6 +9,8 @@ use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
 use crate::configs::BuildConfig;
 use crate::error::BError;
 
+use super::WsBuildData;
+
 pub struct Workspace {
     settings: WsSettingsHandler,
     config: WsBuildConfigHandler,
