@@ -55,22 +55,6 @@ impl WsTaskHandler {
         Ok(())
     }
 
-    fn execute_recipes(&self, cli: &Cli, build_data: &WsBuildData, env: &HashMap<String, String>, interactive: bool) -> Result<(), BError> {
-        for r in self.recipes() {
-            let recipe: Recipe = Recipe::new(r);
-            let executer: Executer = Executer::new(build_data, cli);
-            let mut docker_option: Option<DockerImage> = None;
-
-            if !self.docker().is_empty() {
-                let image: DockerImage = DockerImage::new(self.docker());
-                docker_option = Some(image);
-            }
-
-            executer.execute(&mut recipe.bitbake_cmd(), env, Some(self.build_dir()), docker_option, interactive)?;
-        }
-        Ok(())
-    }
-
     fn bb_build_env<'a>(&self, build_data: &WsBuildData, _env_variables: &HashMap<String, String>) -> Result<HashMap<String, String>, BError> {
         //let task_env = self.env();
         //let os_env = env::vars();
@@ -88,6 +72,22 @@ impl WsTaskHandler {
         }
         
         executer.execute(&mut cmd_line, env, Some(self.build_dir()), docker_option, interactive)?;
+        Ok(())
+    }
+
+    fn execute_recipes(&self, cli: &Cli, build_data: &WsBuildData, env: &HashMap<String, String>, interactive: bool) -> Result<(), BError> {
+        for r in self.recipes() {
+            let recipe: Recipe = Recipe::new(r);
+            let executer: Executer = Executer::new(build_data, cli);
+            let mut docker_option: Option<DockerImage> = None;
+
+            if !self.docker().is_empty() {
+                let image: DockerImage = DockerImage::new(self.docker());
+                docker_option = Some(image);
+            }
+
+            executer.execute(&mut recipe.bitbake_cmd(), env, Some(self.build_dir()), docker_option, interactive)?;
+        }
         Ok(())
     }
 
@@ -182,10 +182,11 @@ impl WsTaskHandler {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::path::PathBuf;
     use indexmap::{IndexMap, indexmap};
     
-    use crate::cli::BLogger;
+    use crate::cli::{BLogger, Cli, MockSystem, BSystem};
     use crate::workspace::{WsTaskHandler, WsSettingsHandler, WsArtifactsHandler, WsBuildData};
     use crate::configs::{TType, AType};
 
@@ -452,7 +453,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ws_task_run() {
+    fn test_ws_task_run_bitbake() {
         let variables: IndexMap<String, String> = IndexMap::new();
         let json_task_str: &str = r#"
         { 
@@ -470,7 +471,65 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, default_settings).unwrap();
         let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", variables, &ws_settings).expect("Failed to setup build data");
-        let mut task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
-        //task.run()
+        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_check_call()
+            .withf(|cmd_line, env, shell| {
+                assert_eq!(cmd_line, &vec!["cd", "/workspace/builds/", "&&", "bitbake", "test-image"]);
+                assert!(env.is_empty());
+                assert!(shell);
+                true
+            })
+            .once()
+            .returning(|_, _, _| Ok(()));
+        let cli: Cli = Cli::new(
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            clap::Command::new("bakery"),
+            None,
+        );
+        task.run(&cli, &build_data, &vec![], &HashMap::new(), false, false).expect("Failed to run task!");
+    }
+
+    #[test]
+    fn test_ws_task_run_docker() {
+        let variables: IndexMap<String, String> = IndexMap::new();
+        let json_task_str: &str = r#"
+        { 
+            "index": "2",
+            "name": "task-name",
+            "type": "bitbake",
+            "docker": "test-registry/test-image:0.1",
+            "recipes": [
+                "test-image"
+            ]
+        }"#;
+        let default_settings: &str  = r#"
+        {
+            "version": "4"
+        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, default_settings).unwrap();
+        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", variables, &ws_settings).expect("Failed to setup build data");
+        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_check_call()
+            .withf(|cmd_line, env, shell| {
+                assert_eq!(cmd_line, &vec!["docker", "run", "test-registry/test-image:0.1", "cd", "/workspace/builds/", "&&", "bitbake", "test-image"]);
+                assert!(env.is_empty());
+                assert!(shell);
+                true
+            })
+            .once()
+            .returning(|_, _, _| Ok(()));
+        let cli: Cli = Cli::new(
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            clap::Command::new("bakery"),
+            None,
+        );
+        task.run(&cli, &build_data, &vec![], &HashMap::new(), false, false).expect("Failed to run task!");
     }
 }

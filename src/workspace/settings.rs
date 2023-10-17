@@ -6,9 +6,8 @@ use std::path::{PathBuf, Path};
 #[derive(Clone)]
 pub struct WsSettingsHandler {
     work_dir: PathBuf,
-    wsSettings: WsSettings,
-    docker: DockerImage,
-    curr_cfg_name: String,
+    ws_settings: WsSettings,
+    docker: DockerImage
 }
 
 impl WsSettingsHandler {
@@ -33,9 +32,8 @@ impl WsSettingsHandler {
         };
         WsSettingsHandler {
             work_dir,
-            wsSettings: settings,
-            docker,
-            curr_cfg_name: "".to_string(),
+            ws_settings: settings,
+            docker
         }
     }
 
@@ -63,48 +61,48 @@ impl WsSettingsHandler {
     }
 
     pub fn config(&self) -> &WsSettings {
-        &self.wsSettings
+        &self.ws_settings
     }
 
     pub fn builds_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
-        path_buf.push(&self.wsSettings.builds_dir);
+        path_buf.push(&self.ws_settings.builds_dir);
         path_buf
     }
 
     pub fn cache_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
-        path_buf.push(&self.wsSettings.cache_dir);
+        path_buf.push(&self.ws_settings.cache_dir);
         path_buf
     }
 
     pub fn artifacts_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
-        path_buf.push(&self.wsSettings.artifacts_dir);
+        path_buf.push(&self.ws_settings.artifacts_dir);
         path_buf
     }
 
     pub fn configs_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
-        path_buf.push(&self.wsSettings.configs_dir);
+        path_buf.push(&self.ws_settings.configs_dir);
         path_buf
     }
 
     pub fn include_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
-        path_buf.push(&self.wsSettings.include_dir);
+        path_buf.push(&self.ws_settings.include_dir);
         path_buf
     }
 
     pub fn scripts_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
-        path_buf.push(&self.wsSettings.scripts_dir);
+        path_buf.push(&self.ws_settings.scripts_dir);
         path_buf
     }
 
     pub fn docker_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
-        path_buf.push(&self.wsSettings.docker_dir);
+        path_buf.push(&self.ws_settings.docker_dir);
         path_buf
     }
 
@@ -113,11 +111,11 @@ impl WsSettingsHandler {
     }
 
     pub fn docker_args(&self) -> &Vec<String> {
-        &self.wsSettings.docker_args
+        &self.ws_settings.docker_args
     }
 
     pub fn supported_builds(&self) -> &Vec<String> {
-        &self.wsSettings.supported
+        &self.ws_settings.supported
     }
 }
 

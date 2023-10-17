@@ -40,6 +40,7 @@ impl Cli {
             cmd.push(' ');
         });
         self.info(String::from(cmd.as_str().trim_end()));
+        println!("run task {}", String::from(cmd.as_str().trim_end()));
         self.system.check_call(cmd_line, env, shell)?;
         Ok(())
     }

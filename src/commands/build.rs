@@ -102,17 +102,21 @@ impl BCommand for BuildCommand {
         workspace.config().extend_ctx(&args_context);
 
         if tasks.len() > 1 {
+            // More then one task was specified on the command line
             for t_name in tasks {
                 let task: &WsTaskHandler = workspace.config().task(t_name)?;
                 task.run(cli, workspace.config().build_data(), &bb_variables, &env_variables, dry_run, interactive)?;
             }
         } else {
+            // One task was specified on the command line or default was used
             let task: &String = tasks.get(0).unwrap();
             if task == "all" {
+                // The alias "all" was specified on the command line or it none was specified and "all" was used
                 for (_t_name, task) in workspace.config().tasks() {
                     task.run(cli, workspace.config().build_data(), &bb_variables, &env_variables, dry_run, interactive)?;
                 }
             } else {
+                // One task was specified on the command line
                 let task: &WsTaskHandler = workspace.config().task(tasks.get(0).unwrap())?;
                 task.run(cli, workspace.config().build_data(), &bb_variables, &env_variables, dry_run, interactive)?;
             }
@@ -266,5 +270,278 @@ impl BuildCommand {
                 require_docker: true,
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::{Path, PathBuf};
+    use tempdir::TempDir;
+
+    use crate::cli::*;
+    use crate::commands::{BCommand, BuildCommand};
+    use crate::error::BError;
+    use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
+
+    fn helper_test_build_subcommand(
+        json_ws_settings: &str,
+        json_build_config: &str,
+        work_dir: &PathBuf,
+        msystem: MockSystem,
+        cmd_line: Vec<&str>,
+    ) -> Result<(), BError> {
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings)?;
+        let config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &settings)?;
+        let workspace: Workspace =
+            Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config))?;
+        let cli: Cli = Cli::new(
+            Box::new(BLogger::new()),
+            Box::new(msystem),
+            clap::Command::new("bakery"),
+            Some(cmd_line),
+        );
+        let cmd: BuildCommand = BuildCommand::new();
+        cmd.execute(&cli, &workspace)
+    }
+
+    #[test]
+    fn test_cmd_build_bitbake() {
+        let json_ws_settings: &str = r#"
+        {
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {},
+            "tasks": {
+                "task-name": { 
+                    "index": "1",
+                    "name": "task-name",
+                    "recipes": [
+                        "test-image"
+                    ]
+                }
+            }
+        }
+        "#;
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let mut closure_work_dir: PathBuf = work_dir.clone();
+        // Since we are calling the task the build dir will be appendended to the work dir
+        // and in the case of the bitbake the default build dir will be used which is builds
+        // defined in the settings plus the name of the product that is built.
+        closure_work_dir.push("builds/default");
+        let mut mocked_system: MockSystem = MockSystem::new();
+        // We need to move the owner ship of the work_dir into the closure
+        mocked_system
+            .expect_check_call()
+            .withf(move |cmd_line, env, shell| {
+                let w: String = closure_work_dir.to_string_lossy().to_string();
+                assert_eq!(cmd_line, &vec!["cd", &w, "&&", "bitbake", "test-image"]);
+                assert!(env.is_empty());
+                assert!(shell);
+                true
+            })
+            .once()
+            .returning(|_, _, _| Ok(()));
+        let _result: Result<(), BError> = helper_test_build_subcommand(
+            json_ws_settings,
+            json_build_config,
+            &work_dir,
+            mocked_system,
+            vec!["bakery", "build", "--config", "default"],
+        );
+    }
+
+    #[test]
+    fn test_cmd_build_non_bitbake() {
+        let json_ws_settings: &str = r#"
+        {
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {},
+            "tasks": {
+                "task-name": { 
+                    "index": "1",
+                    "name": "task-name",
+                    "type": "non-bitbake",
+                    "builddir": "test-dir",
+                    "build": "test.sh",
+                    "clean": "rm -rf test-dir"
+                }
+            }
+        }
+        "#;
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let mut closure_work_dir: PathBuf = work_dir.clone();
+        // Since we are calling the task the build dir will be appendended to the work dir
+        // and in the case of the bitbake the default build dir will be used which is builds
+        // defined in the settings plus the name of the product that is built.
+        closure_work_dir.push("test-dir");
+        let mut mocked_system: MockSystem = MockSystem::new();
+        // We need to move the owner ship of the work_dir into the closure
+        mocked_system
+            .expect_check_call()
+            .withf(move |cmd_line, env, shell| {
+                let w: String = closure_work_dir.to_string_lossy().to_string();
+                assert_eq!(cmd_line, &vec!["cd", &w, "&&", "test.sh"]);
+                assert!(env.is_empty());
+                assert!(shell);
+                true
+            })
+            .once()
+            .returning(|_, _, _| Ok(()));
+        let _result: Result<(), BError> = helper_test_build_subcommand(
+            json_ws_settings,
+            json_build_config,
+            &work_dir,
+            mocked_system,
+            vec!["bakery", "build", "--config", "default"],
+        );
+    }
+
+    #[test]
+    fn test_cmd_build_docker_bitbake() {
+        let json_ws_settings: &str = r#"
+        {
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {},
+            "tasks": {
+                "task-name": { 
+                    "index": "1",
+                    "name": "task-name",
+                    "type": "bitbake",
+                    "docker": "test-registry/test-image:0.1",
+                    "recipes": [
+                        "test-image"
+                    ]
+                }
+            }
+        }
+        "#;
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let mut closure_work_dir: PathBuf = work_dir.clone();
+        // Since we are calling the task the build dir will be appendended to the work dir
+        // and in the case of the bitbake the default build dir will be used which is builds
+        // defined in the settings plus the name of the product that is built.
+        closure_work_dir.push("builds/default");
+        let mut mocked_system: MockSystem = MockSystem::new();
+        // We need to move the owner ship of the work_dir into the closure
+        mocked_system
+            .expect_check_call()
+            .withf(move |cmd_line, env, shell| {
+                let w: String = closure_work_dir.to_string_lossy().to_string();
+                assert_eq!(cmd_line, &vec!["docker", "run", "test-registry/test-image:0.1", "cd", &w, "&&", "bitbake", "test-image"]);
+                assert!(env.is_empty());
+                assert!(shell);
+                true
+            })
+            .once()
+            .returning(|_, _, _| Ok(()));
+        let _result: Result<(), BError> = helper_test_build_subcommand(
+            json_ws_settings,
+            json_build_config,
+            &work_dir,
+            mocked_system,
+            vec!["bakery", "build", "--config", "default"],
+        );
+    }
+
+    #[test]
+    fn test_cmd_build_task() {
+        let json_ws_settings: &str = r#"
+        {
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {},
+            "tasks": {
+                "task-name": { 
+                    "index": "1",
+                    "name": "task-name",
+                    "type": "bitbake",
+                    "recipes": [
+                        "test-image"
+                    ]
+                }
+            }
+        }
+        "#;
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let mut closure_work_dir: PathBuf = work_dir.clone();
+        // Since we are calling the task the build dir will be appendended to the work dir
+        // and in the case of the bitbake the default build dir will be used which is builds
+        // defined in the settings plus the name of the product that is built.
+        closure_work_dir.push("builds/default");
+        let mut mocked_system: MockSystem = MockSystem::new();
+        // We need to move the owner ship of the work_dir into the closure
+        mocked_system
+            .expect_check_call()
+            .withf(move |cmd_line, env, shell| {
+                let w: String = closure_work_dir.to_string_lossy().to_string();
+                assert_eq!(cmd_line, &vec!["cd", &w, "&&", "bitbake", "test-image"]);
+                assert!(env.is_empty());
+                assert!(shell);
+                true
+            })
+            .once()
+            .returning(|_, _, _| Ok(()));
+        let _result: Result<(), BError> = helper_test_build_subcommand(
+            json_ws_settings,
+            json_build_config,
+            &work_dir,
+            mocked_system,
+            vec!["bakery", "build", "--config", "default", "--tasks", "task-name"],
+        );
     }
 }
