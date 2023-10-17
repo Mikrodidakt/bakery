@@ -4,7 +4,7 @@ use clap::{ArgMatches, Arg};
 
 use crate::commands::{CmdHandler, BCommand};
 use crate::error::BError;
-use crate::cli::{Logger, System};
+use crate::cli::{Logger, System, CallParams};
 
 pub struct Cli {
     args: ArgMatches,
@@ -40,8 +40,9 @@ impl Cli {
             cmd.push(' ');
         });
         self.info(String::from(cmd.as_str().trim_end()));
-        println!("run task {}", String::from(cmd.as_str().trim_end()));
-        self.system.check_call(cmd_line, env, shell)?;
+        println!("cmd_line {:?}", cmd_line);
+        self.system.check_call(&CallParams{ cmd_line: cmd_line.to_owned(), env: env.to_owned(), shell })?;
+        //self.system.test(String::from(cmd.as_str().trim_end()))?;
         Ok(())
     }
 

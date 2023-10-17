@@ -186,7 +186,7 @@ mod tests {
     use std::path::PathBuf;
     use indexmap::{IndexMap, indexmap};
     
-    use crate::cli::{BLogger, Cli, MockSystem, BSystem};
+    use crate::cli::{BLogger, Cli, MockSystem, BSystem, CallParams};
     use crate::workspace::{WsTaskHandler, WsSettingsHandler, WsArtifactsHandler, WsBuildData};
     use crate::configs::{TType, AType};
 
@@ -475,14 +475,16 @@ mod tests {
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
-            .withf(|cmd_line, env, shell| {
-                assert_eq!(cmd_line, &vec!["cd", "/workspace/builds/", "&&", "bitbake", "test-image"]);
-                assert!(env.is_empty());
-                assert!(shell);
-                true
-            })
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec!["cd", "/workspace/builds/", "&&", "bitbake", "test-image"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                env: HashMap::new(),
+                shell: true,
+            }))
             .once()
-            .returning(|_, _, _| Ok(()));
+            .returning(|_x| Ok(()));
         let cli: Cli = Cli::new(
             Box::new(BLogger::new()),
             Box::new(mocked_system),
@@ -516,14 +518,70 @@ mod tests {
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
-            .withf(|cmd_line, env, shell| {
-                assert_eq!(cmd_line, &vec!["docker", "run", "test-registry/test-image:0.1", "cd", "/workspace/builds/", "&&", "bitbake", "test-image"]);
-                assert!(env.is_empty());
-                assert!(shell);
-                true
-            })
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec!["docker", "run", "test-registry/test-image:0.1", "cd", "/workspace/builds/", "&&", "bitbake", "test-image"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                env: HashMap::new(),
+                shell: true,
+            }))
             .once()
-            .returning(|_, _, _| Ok(()));
+            .returning(|_x| Ok(()));
+        let cli: Cli = Cli::new(
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            clap::Command::new("bakery"),
+            None,
+        );
+        task.run(&cli, &build_data, &vec![], &HashMap::new(), false, false).expect("Failed to run task!");
+    }
+
+    #[test]
+    fn test_ws_task_run_recipes() {
+        let variables: IndexMap<String, String> = IndexMap::new();
+        let json_task_str: &str = r#"
+        { 
+            "index": "2",
+            "name": "task-name",
+            "recipes": [
+                "image:sdk",
+                "image"
+            ]
+        }"#;
+        let default_settings: &str  = r#"
+        {
+            "version": "4"
+        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, default_settings).unwrap();
+        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", variables, &ws_settings).expect("Failed to setup build data");
+        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec!["cd", "/workspace/builds/", "&&", "bitbake", "image"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                env: HashMap::new(),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec!["cd", "/workspace/builds/", "&&", "bitbake", "image", "-c", "do_populate_sdk"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                env: HashMap::new(),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
         let cli: Cli = Cli::new(
             Box::new(BLogger::new()),
             Box::new(mocked_system),
