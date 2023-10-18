@@ -13,7 +13,6 @@ pub struct WsTaskHandler {
     name: String,
     config: TaskConfig,
     build_dir: PathBuf,
-    work_dir: PathBuf,
     artifacts_dir: PathBuf,
     artifacts: Vec<WsArtifactsHandler>,
 }
@@ -37,6 +36,9 @@ impl WsTaskHandler {
 
     pub fn new(data: &Value, build_data: &WsBuildData) -> Result<Self, BError> {
         let mut config: TaskConfig = TaskConfig::from_value(data)?;
+        // expand the context for the task config data
+        // all the variables encapsulated insode ${} in the task config
+        // will be expanded
         config.expand_ctx(build_data.context());
         let task_build_dir: PathBuf = Self::determine_build_dir(&config, build_data);
         let artifacts: Vec<WsArtifactsHandler> = build_data.get_artifacts(data, &task_build_dir)?;
@@ -44,7 +46,6 @@ impl WsTaskHandler {
         Ok(WsTaskHandler {
             name: config.name.to_string(),
             config,
-            work_dir: build_data.settings().work_dir(),
             build_dir: task_build_dir,
             artifacts_dir: build_data.settings().artifacts_dir(),
             artifacts,
@@ -92,6 +93,16 @@ impl WsTaskHandler {
     }
 
     pub fn run<'a>(&self, cli: &'a Cli, build_data: &WsBuildData, bb_variables: &Vec<String>, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+        if self.disabled() {
+            cli.info(format!("Task '{}' is disabled in build config so execution is skipped", self.name()));
+            return Ok(());
+        }
+
+        if !self.condition() {
+            cli.info(format!("Task condition for task '{}' is not meet so execution is skipped", self.name()));
+            return Ok(()); 
+        }
+
         match self.ttype() {
             TType::Bitbake => {
                 // if we are running a dry run we should always create the bb configs
@@ -101,7 +112,7 @@ impl WsTaskHandler {
                 self.create_bitbake_configs(build_data, bb_variables, force)?;
 
                 if dry_run {
-                    cli.info("Running dry run. Skipping build!".to_string());
+                    cli.info("Dry run. Skipping build!".to_string());
                     return Ok(());
                 }
 

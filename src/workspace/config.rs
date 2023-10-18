@@ -186,7 +186,7 @@ impl WsBuildConfigHandler {
 
     pub fn poky_dir(&self) -> PathBuf {
         // TODO: not sure about this we should not lock the bakery into using poky
-        // we only need this to be able to determine the where to find the OE init file.
+        // we only need this to be able to determine where to find the OE init file.
         // I think the solution is to add a entry in the build config file in the bb-node
         // where you can specify a path for the init file to source. The default could be
         // layers/poky/oe-init-build-env. Potentially we should also add an entry in the

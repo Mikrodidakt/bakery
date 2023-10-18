@@ -15,12 +15,7 @@ pub struct WsBuildData {
 }
 
 impl WsBuildData {
-    pub fn new(
-        product: &str,
-        bitbake_deploy_dir: &str,
-        ctx_variables: IndexMap<String, String>,
-        settings: &WsSettingsHandler,
-    ) -> Result<Self, BError> {
+    pub fn new(product: &str, bitbake_deploy_dir: &str, ctx_variables: IndexMap<String, String>, settings: &WsSettingsHandler,) -> Result<Self, BError> {
         let bb_build_dir: PathBuf = settings.builds_dir().clone().join(PathBuf::from(product));
         let bb_deploy_dir: PathBuf = bb_build_dir.clone().join(PathBuf::from(bitbake_deploy_dir));
         let ctx_default_variables: IndexMap<String, String> = indexmap! {
@@ -55,11 +50,7 @@ impl WsBuildData {
         })
     }
 
-    pub fn get_artifacts(
-        &self,
-        data: &Value,
-        build_dir: &PathBuf,
-    ) -> Result<Vec<WsArtifactsHandler>, BError> {
+    pub fn get_artifacts(&self, data: &Value, build_dir: &PathBuf,) -> Result<Vec<WsArtifactsHandler>, BError> {
         match data.get("artifacts") {
             Some(value) => {
                 if value.is_array() {
@@ -112,11 +103,7 @@ impl WsBuildData {
         Ok(task)
     }
 
-    pub fn get_artifact(
-        &self,
-        data: &Value,
-        build_dir: &PathBuf,
-    ) -> Result<WsArtifactsHandler, BError> {
+    pub fn get_artifact(&self, data: &Value, build_dir: &PathBuf,) -> Result<WsArtifactsHandler, BError> {
         let mut artifact: WsArtifactsHandler = WsArtifactsHandler::new(data, build_dir, &self)?;
         artifact.expand_ctx(self.context());
         Ok(artifact)
