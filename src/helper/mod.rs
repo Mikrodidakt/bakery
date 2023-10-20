@@ -1,11 +1,10 @@
 use rand::rngs::ThreadRng;
 
-use crate::workspace::{WsBuildConfigHandler, WsSettingsHandler, Workspace};
+use crate::workspace::{WsBuildConfigHandler, WsSettingsHandler, Workspace, WsBuildData};
 use crate::error::BError;
-use crate::configs::{WsSettings, BuildConfig, TaskConfig};
+use crate::configs::{WsSettings, TaskConfig};
 use crate::fs::Archiver;
 
-use std::ops::DerefMut;
 use std::path::{PathBuf, Path};
 use std::fs::File;
 use std::io::Write;
@@ -163,6 +162,7 @@ impl Helper {
         settings
     }
 
+    /*
     pub fn setup_build_config(json_test_str: &str) -> BuildConfig {
         let result: Result<BuildConfig, BError> = BuildConfig::from_str(json_test_str);
         match result {
@@ -175,6 +175,7 @@ impl Helper {
             } 
         }
     }
+    */
 
     pub fn setup_ws_config_handler(test_work_dir: &str, json_settings: &str, json_build_config: &str) -> WsBuildConfigHandler {
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
@@ -199,5 +200,29 @@ impl Helper {
         let mut settings: WsSettingsHandler = WsSettingsHandler::new(work_dir.clone(), Self::setup_ws_settings(json_settings)); 
         let config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut settings).expect("Failed to parse build config");
         Workspace::new(Some(work_dir), Some(settings), Some(config)).expect("Failed to setup workspace")
+    }
+
+    pub fn setup_build_data(work_dir: &PathBuf, json_build_config: Option<&str>, json_settings: Option<&str>) -> WsBuildData {
+        let json_default_settings: &str = r#"
+        {
+            "version": "4"
+        }"#;
+        let json_default_build_config = r#"
+        {                                                                                                                   
+            "version": "4"
+        }"#;
+        let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(
+            &work_dir,
+            json_settings.unwrap_or(json_default_settings),
+        )
+        .unwrap_or_else(|err| panic!("Error parsing JSON settings: {}", err));
+    
+        let data: WsBuildData = WsBuildData::from_str(
+            json_build_config.unwrap_or(json_default_build_config),
+            &ws_settings,
+        )
+        .unwrap_or_else(|err| panic!("Error parsing JSON build config: {}", err));
+    
+        data
     }
 }

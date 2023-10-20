@@ -78,6 +78,10 @@ impl Context {
             .into_iter()
             .map(|(key, value)|(key.to_lowercase(), value.clone())));
     }
+
+    pub fn variables(&self) -> &IndexMap<String, String> {
+        &self.variables
+    }
 }
 
 #[cfg(test)]

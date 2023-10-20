@@ -69,12 +69,12 @@ impl<'a> Executer<'a> {
 mod tests {
     use std::collections::HashMap;
     use std::path::PathBuf;
-    use indexmap::IndexMap;
 
     use crate::cli::*;
     use crate::error::BError;
     use crate::executers::{DockerImage, Executer};
-    use crate::workspace::{WsBuildData, WsSettingsHandler};
+    use crate::workspace::WsBuildData;
+    use crate::helper::Helper;
 
     fn helper_test_executer(
         verification_str: &String,
@@ -115,19 +115,7 @@ mod tests {
                 ]
             }
         }"#;
-        let json_build_config: &str = r#"
-        {                                                                                                                   
-            "version": "4",
-            "name": "test-name",
-            "description": "Test Description",
-            "arch": "test-arch",
-            "bb": {}
-        }
-        "#;
-        let mut settings: WsSettingsHandler =
-            WsSettingsHandler::from_str(&work_dir, json_ws_settings)
-                .expect("Failed to parse settings.json");
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &settings).expect("Failed to setup build data");    
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, Some(json_ws_settings));
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
             test_cmd,
@@ -158,20 +146,7 @@ mod tests {
                 ]
             }
         }"#;
-        let json_build_config: &str = r#"
-        {
-            "version": "4",
-            "name": "test-name",
-            "description": "Test Description",
-            "arch": "test-arch",
-            "bb": {}
-        }
-        "#;
-        let mut settings: WsSettingsHandler =
-            WsSettingsHandler::from_str(&work_dir, json_ws_settings)
-                .expect("Failed to parse settings.json");
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &settings).expect("Failed to setup build data");    
-        
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, Some(json_ws_settings));
         let result: Result<(), BError> =
             helper_test_executer(&verification_str, test_cmd, None, None, &build_data);
         match result {

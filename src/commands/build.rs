@@ -99,8 +99,9 @@ impl BCommand for BuildCommand {
 
         args_context.update(&extra_ctx);
         // Update the config context with the context from the args
-        workspace.config().extend_ctx(&args_context);
-
+        //let mut ctx: &Context = workspace.config().build_data().context();
+        //ctx.update(args_context.variables());
+        
         if tasks.len() > 1 {
             // More then one task was specified on the command line
             for t_name in tasks {
@@ -284,13 +285,8 @@ mod tests {
     use crate::error::BError;
     use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
 
-    fn helper_test_build_subcommand(
-        json_ws_settings: &str,
-        json_build_config: &str,
-        work_dir: &PathBuf,
-        msystem: MockSystem,
-        cmd_line: Vec<&str>,
-    ) -> Result<(), BError> {
+    fn helper_test_build_subcommand(json_ws_settings: &str, json_build_config: &str,
+            work_dir: &PathBuf, msystem: MockSystem, cmd_line: Vec<&str>) -> Result<(), BError> {
         let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings)?;
         let config: WsBuildConfigHandler =
             WsBuildConfigHandler::from_str(json_build_config, &settings)?;

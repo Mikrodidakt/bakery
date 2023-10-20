@@ -8,6 +8,36 @@ use crate::cli::Cli;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use serde_json::Value;
+use indexmap::IndexMap;
+
+pub struct WsTasksHandler {
+    tasks: IndexMap<String, WsTaskHandler>,
+}
+
+impl WsTasksHandler {
+    pub fn new(data: &Value, build_data: &WsBuildData) -> Result<Self, BError> {
+        let tasks: IndexMap<String, WsTaskHandler> = build_data.get_tasks(&data)?;
+
+        Ok(WsTasksHandler {
+            tasks,
+        })
+    }
+
+    pub fn task(&self, task: &str) -> Result<&WsTaskHandler, BError> {
+        match self.tasks.get(task) {
+            Some(config) => {
+                return Ok(config);
+            },
+            None => {
+                return Err(BError::ValueError(format!("Task '{}' does not exists in build config", task)));
+            }
+        }
+    }
+
+    pub fn tasks(&self) -> &IndexMap<String, WsTaskHandler> {
+        &self.tasks
+    }
+}
 
 pub struct WsTaskHandler {
     name: String,
@@ -22,7 +52,7 @@ impl WsTaskHandler {
         if config.ttype == TType::Bitbake {
             let task_build_dir: &str = &config.builddir;
             if task_build_dir.is_empty() {
-                return data.bb_build_dir()
+                return data.bitbake().build_dir()
             }
         }
 
@@ -39,7 +69,7 @@ impl WsTaskHandler {
         // expand the context for the task config data
         // all the variables encapsulated insode ${} in the task config
         // will be expanded
-        config.expand_ctx(build_data.context());
+        config.expand_ctx(build_data.context().ctx());
         let task_build_dir: PathBuf = Self::determine_build_dir(&config, build_data);
         let artifacts: Vec<WsArtifactsHandler> = build_data.get_artifacts(data, &task_build_dir)?;
         
@@ -198,11 +228,14 @@ mod tests {
     use indexmap::{IndexMap, indexmap};
     
     use crate::cli::{BLogger, Cli, MockSystem, BSystem, CallParams};
+    use crate::fs::json;
     use crate::workspace::{WsTaskHandler, WsSettingsHandler, WsArtifactsHandler, WsBuildData};
     use crate::configs::{TType, AType};
+    use crate::helper::Helper;
 
     #[test]
     fn test_ws_task_nonbitbake() {
+        let work_dir: PathBuf = PathBuf::from("/workspace");
         let json_task_str: &str = r#"
         { 
             "index": "0",
@@ -215,13 +248,7 @@ mod tests {
             "clean": "clean-cmd",
             "artifacts": []
         }"#;
-        let default_settings: &str  = r#"
-        {
-            "version": "4"
-        }"#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, default_settings).unwrap();
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &ws_settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
         assert_eq!(task.build_dir(), PathBuf::from("/workspace/task/dir"));
         assert!(task.condition());
@@ -234,6 +261,7 @@ mod tests {
 
     #[test]
     fn test_ws_task_bitbake() {
+        let work_dir: PathBuf = PathBuf::from("/workspace");
         let json_task_str: &str = r#"
         { 
             "index": "2",
@@ -243,15 +271,9 @@ mod tests {
                 "test-image"
             ]
         }"#;
-        let default_settings: &str  = r#"
-        {
-            "version": "4"
-        }"#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, default_settings).unwrap();
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &ws_settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
-        assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds"));
+        assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds/NA"));
         assert!(task.condition());
         assert_eq!(task.name(), "task-name");
         assert_eq!(task.ttype(), &TType::Bitbake);
@@ -261,6 +283,7 @@ mod tests {
 
     #[test]
     fn test_ws_task_bb_build_dir() {
+        let work_dir: PathBuf = PathBuf::from("/workspace");
         let json_task_str: &str = r#"
         { 
             "index": "2",
@@ -270,15 +293,9 @@ mod tests {
                 "test-image"
             ]
         }"#;
-        let default_settings: &str  = r#"
-        {
-            "version": "4"
-        }"#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, default_settings).unwrap();
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &ws_settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
-        assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds"));
+        assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds/NA"));
         assert!(task.condition());
         assert_eq!(task.name(), "task-name");
         assert_eq!(task.ttype(), &TType::Bitbake);
@@ -288,10 +305,7 @@ mod tests {
 
     #[test]
     fn test_ws_task_nonbitbake_artifacts() {
-        let default_settings: &str  = r#"
-        {
-            "version": "4"
-        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
         let json_task_str: &str = r#"
         { 
             "index": "2",
@@ -328,9 +342,7 @@ mod tests {
                 }
             ]
         }"#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, default_settings).unwrap();
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &ws_settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
         assert_eq!(task.build_dir(), PathBuf::from("/workspace/task/build/dir"));
         assert!(task.condition());
@@ -361,22 +373,26 @@ mod tests {
 
     #[test]
     fn test_ws_task_expand_ctx() {
-        let variables: IndexMap<String, String> = indexmap! {
-            "ARCHIVE_NAME".to_string() => "test.zip".to_string(),
-            "DIR_NAME".to_string() => "dir-name".to_string(),
-            "FILE_NAME".to_string() => "file2.txt".to_string(),
-            "BITBAKE_IMAGE".to_string() => "test-image".to_string(),
-            "DEST_NAME".to_string() => "file-dest.txt".to_string(),
-            "DEST_FILE_NAME".to_string() => "${DEST_NAME}".to_string(),
-            "MANIFEST_FILE".to_string() => "test-manifest.json".to_string(),
-            "KEY_CONTEXT1".to_string() => "VAR1".to_string(),
-            "KEY_CONTEXT2".to_string() => "VAR2".to_string(),
-            "KEY_CONTEXT3".to_string() => "VAR3".to_string(),
-            "KEY_CONTEXT4".to_string() => "VAR4".to_string()
-        };
-        let default_settings: &str = r#"
-        {
-            "version": "4"
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let json_build_config: &str = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "context": [
+                "ARCHIVE_NAME=test.zip",
+                "DIR_NAME=dir-name",
+                "FILE_NAME=file2.txt",
+                "BITBAKE_IMAGE=test-image",
+                "DEST_NAME=file-dest.txt",
+                "DEST_FILE_NAME=${DEST_NAME}",
+                "MANIFEST_FILE=test-manifest.json",
+                "KEY_CONTEXT1=VAR1",
+                "KEY_CONTEXT2=VAR2",
+                "KEY_CONTEXT3=VAR3",
+                "KEY_CONTEXT4=VAR4"
+            ]
         }"#;
         let json_task_str: &str = r#"
         { 
@@ -429,12 +445,10 @@ mod tests {
                 }
             ]
         }"#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, default_settings).unwrap();
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", variables, &ws_settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let mut task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
-        task.expand_ctx(build_data.context());
-        assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds"));
+        task.expand_ctx(build_data.context().ctx());
+        assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds/test-name"));
         assert!(task.condition());
         assert_eq!(task.name(), "task-name");
         assert_eq!(task.ttype(), &TType::Bitbake);
@@ -446,7 +460,7 @@ mod tests {
         assert!(!artifacts.artifacts().is_empty());
         let archive_artifacts: &Vec<WsArtifactsHandler> = artifacts.artifacts();
         assert_eq!(archive_artifacts.get(0).unwrap().atype(), &AType::File);
-        assert_eq!(archive_artifacts.get(0).unwrap().source(), PathBuf::from("/workspace/builds/file3.txt"));
+        assert_eq!(archive_artifacts.get(0).unwrap().source(), PathBuf::from("/workspace/builds/test-name/file3.txt"));
         assert_eq!(archive_artifacts.get(0).unwrap().dest(), PathBuf::from("/workspace/artifacts/file4.txt"));
         assert_eq!(archive_artifacts.get(1).unwrap().name(), "test-manifest.json");
         assert!(!archive_artifacts.get(1).unwrap().manifest().is_empty());
@@ -457,7 +471,7 @@ mod tests {
         let mut i: usize = 1;
         dir_artifacts.iter().for_each(|f| {
             assert_eq!(f.atype(), &AType::File);
-            assert_eq!(f.source(), PathBuf::from(format!("/workspace/builds/file{}.txt", i)));
+            assert_eq!(f.source(), PathBuf::from(format!("/workspace/builds/test-name/file{}.txt", i)));
             assert_eq!(f.dest(), PathBuf::from("/workspace/artifacts/file-dest.txt"));
             i += 1;
         });
@@ -465,7 +479,7 @@ mod tests {
 
     #[test]
     fn test_ws_task_run_bitbake() {
-        let variables: IndexMap<String, String> = IndexMap::new();
+        let work_dir: PathBuf = PathBuf::from("/workspace");
         let json_task_str: &str = r#"
         { 
             "index": "2",
@@ -475,19 +489,13 @@ mod tests {
                 "test-image"
             ]
         }"#;
-        let default_settings: &str  = r#"
-        {
-            "version": "4"
-        }"#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, default_settings).unwrap();
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", variables, &ws_settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", "/workspace/builds/", "&&", "bitbake", "test-image"]
+                cmd_line: vec!["cd", "/workspace/builds/NA", "&&", "bitbake", "test-image"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -507,7 +515,7 @@ mod tests {
 
     #[test]
     fn test_ws_task_run_docker() {
-        let variables: IndexMap<String, String> = IndexMap::new();
+        let work_dir: PathBuf = PathBuf::from("/workspace");
         let json_task_str: &str = r#"
         { 
             "index": "2",
@@ -518,19 +526,13 @@ mod tests {
                 "test-image"
             ]
         }"#;
-        let default_settings: &str  = r#"
-        {
-            "version": "4"
-        }"#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, default_settings).unwrap();
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", variables, &ws_settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["docker", "run", "test-registry/test-image:0.1", "cd", "/workspace/builds/", "&&", "bitbake", "test-image"]
+                cmd_line: vec!["docker", "run", "test-registry/test-image:0.1", "cd", "/workspace/builds/NA", "&&", "bitbake", "test-image"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -550,7 +552,7 @@ mod tests {
 
     #[test]
     fn test_ws_task_run_recipes() {
-        let variables: IndexMap<String, String> = IndexMap::new();
+        let work_dir: PathBuf = PathBuf::from("/workspace");
         let json_task_str: &str = r#"
         { 
             "index": "2",
@@ -560,19 +562,13 @@ mod tests {
                 "image"
             ]
         }"#;
-        let default_settings: &str  = r#"
-        {
-            "version": "4"
-        }"#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, default_settings).unwrap();
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", variables, &ws_settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", "/workspace/builds/", "&&", "bitbake", "image"]
+                cmd_line: vec!["cd", "/workspace/builds/NA", "&&", "bitbake", "image"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -584,7 +580,7 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", "/workspace/builds/", "&&", "bitbake", "image", "-c", "do_populate_sdk"]
+                cmd_line: vec!["cd", "/workspace/builds/NA", "&&", "bitbake", "image", "-c", "do_populate_sdk"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),

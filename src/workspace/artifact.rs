@@ -21,7 +21,7 @@ impl WsArtifactsHandler {
 
     pub fn new(data: &Value, task_build_dir: &PathBuf, build_data: &WsBuildData) -> Result<Self, BError> {
         let mut config: ArtifactConfig = ArtifactConfig::from_value(data)?;
-        config.expand_ctx(build_data.context());
+        config.expand_ctx(build_data.context().ctx());
         let artifacts: Vec<WsArtifactsHandler> = build_data.get_artifacts(data, task_build_dir)?;
         Ok(WsArtifactsHandler {
             config,
@@ -72,21 +72,17 @@ mod tests {
     use indexmap::{IndexMap, indexmap};
     use crate::workspace::{WsSettingsHandler, WsArtifactsHandler, WsBuildData};
     use crate::configs::AType;
+    use crate::helper::Helper;
 
     #[test]
     fn test_ws_artifacts_file_source() {
-        let json_settings: &str = r#"
-        {
-            "version": "4"
-        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
         let json_artifacts_config: &str = r#"
         {
             "source": "test/file0-1.txt"
         }"#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
-        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
             json_artifacts_config,
             &task_build_dir,
@@ -99,19 +95,14 @@ mod tests {
 
     #[test]
     fn test_ws_artifacts_file_dest() {
-        let json_settings: &str = r#"
-        {
-            "version": "4"
-        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
         let json_artifacts_config: &str = r#"
         {
             "source": "test/file0-1.txt",
             "dest": "test/renamed-file0-1.txt"
         }"#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
-        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
             json_artifacts_config,
             &task_build_dir,
@@ -125,10 +116,8 @@ mod tests {
 
     #[test]
     fn test_artifacts_dir_type() {
-        let json_settings: &str = r#"
-        {
-            "version": "4"
-        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
         let json_artifacts_config: &str = r#"
         {
             "type": "directory",
@@ -140,10 +129,7 @@ mod tests {
             ]
         }
         "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
-        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
             json_artifacts_config,
             &task_build_dir,
@@ -160,10 +146,8 @@ mod tests {
 
     #[test]
     fn test_artifact_archive() {
-        let json_settings: &str = r#"
-        {
-            "version": "4"
-        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
         let json_artifacts_config: &str = r#"
         {
             "type": "archive",
@@ -176,10 +160,7 @@ mod tests {
             ]
         }
         "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
-        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir,None, None);
         let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
             json_artifacts_config,
             &task_build_dir,
@@ -196,10 +177,8 @@ mod tests {
 
     #[test]
     fn test_artifact_manifest() {
-        let json_settings: &str = r#"
-        {
-            "version": "4"
-        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
         let json_artifacts_config: &str = r#"
         {
             "type": "manifest",
@@ -214,10 +193,7 @@ mod tests {
             }
         }
         "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
-        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
             json_artifacts_config,
             &task_build_dir,
@@ -230,10 +206,8 @@ mod tests {
 
     #[test]
     fn test_artifact_composite() {
-        let json_settings: &str = r#"
-        {
-            "version": "4"
-        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
         let json_artifacts_config: &str = r#"
         {
             "type": "archive",
@@ -261,10 +235,7 @@ mod tests {
             ]
         }
         "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
-        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
             json_artifacts_config,
             &task_build_dir,
@@ -291,21 +262,26 @@ mod tests {
 
     #[test]
     fn test_artifact_expand_ctx() {
-        let variables: IndexMap<String, String> = indexmap! {
-            "ARCHIVE_NAME".to_string() => "test.zip".to_string(),
-            "DIR_NAME".to_string() => "dir-name".to_string(),
-            "FILE_NAME".to_string() => "file2.txt".to_string(),
-            "DEST_NAME".to_string() => "file-dest.txt".to_string(),
-            "DEST_FILE_NAME".to_string() => "${DEST_NAME}".to_string(),
-            "MANIFEST_FILE".to_string() => "test-manifest.json".to_string(),
-            "KEY_CONTEXT1".to_string() => "VAR1".to_string(),
-            "KEY_CONTEXT2".to_string() => "VAR2".to_string(),
-            "KEY_CONTEXT3".to_string() => "VAR3".to_string(),
-            "KEY_CONTEXT4".to_string() => "VAR4".to_string()
-        };
-        let json_settings: &str = r#"
-        {
-            "version": "4"
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
+        let json_build_config: &str = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "context": [
+                "ARCHIVE_NAME=test.zip",
+                "DIR_NAME=dir-name",
+                "FILE_NAME=file2.txt",
+                "DEST_NAME=file-dest.txt",
+                "DEST_FILE_NAME=${DEST_NAME}",
+                "MANIFEST_FILE=test-manifest.json",
+                "KEY_CONTEXT1=VAR1",
+                "KEY_CONTEXT2=VAR2",
+                "KEY_CONTEXT3=VAR3",
+                "KEY_CONTEXT4=VAR4"
+            ]
         }"#;
         let json_artifacts_config: &str = r#"
         {
@@ -348,10 +324,7 @@ mod tests {
                 }
             ]
         }"#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
-        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", variables, &settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
             json_artifacts_config,
             &task_build_dir,

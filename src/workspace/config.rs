@@ -1,19 +1,13 @@
-use indexmap::{IndexMap, indexmap};
-use std::path::PathBuf;
+use indexmap::IndexMap;
 use serde_json::Value;
 
-use crate::configs::{Context, BuildConfig, TType};
 use crate::workspace::{WsSettingsHandler, WsBuildData, WsTaskHandler};
 use crate::error::BError;
 use crate::fs::JsonFileReader;
 
 pub struct WsBuildConfigHandler {
     data: WsBuildData,
-    config: BuildConfig,
-    work_dir: PathBuf,
-    build_dir: PathBuf,
-    cache_dir: PathBuf,
-    artifacts_dir: PathBuf,
+    //config: BuildConfig,
     tasks: IndexMap<String, WsTaskHandler>,
 }
 
@@ -24,51 +18,19 @@ impl WsBuildConfigHandler {
     }
 
     pub fn new(data: &Value, settings: &WsSettingsHandler) -> Result<Self, BError> {
-        let mut config: BuildConfig = BuildConfig::from_value(&data)?;
-        // Define the context variables that is only defined in the build config
-        let ctx_variables: IndexMap<String, String> = indexmap! {
-            "MACHINE".to_string() => config.bitbake.machine.to_string(),
-            "ARCH".to_string() => config.arch.to_string(),
-            "DISTRO".to_string() => config.bitbake.distro.to_string(),
-            "VARIANT".to_string() => "".to_string()
-        };
-        let mut ws_build_data: WsBuildData = WsBuildData::new(
-            &config.name,
-            &config.bitbake.deploy_dir,
-            ctx_variables,
-            settings
-        )?;
-        // Update the context with variables defined in the build config
-        ws_build_data.update_context(&config.context);
+        let build_data: WsBuildData = WsBuildData::new(data, settings)?;
         // Expand all context variables in the main build config
-        config.expand_ctx(ws_build_data.context());
-        let tasks: IndexMap<String, WsTaskHandler> = ws_build_data.get_tasks(&data)?;
+        let tasks: IndexMap<String, WsTaskHandler> = build_data.get_tasks(data)?;
 
         Ok(WsBuildConfigHandler {
-            config,
-            data: ws_build_data,
-            work_dir: settings.work_dir().clone(),
-            build_dir: settings.builds_dir().clone(),
-            cache_dir: settings.cache_dir().clone(),
-            artifacts_dir: settings.artifacts_dir().clone(),
+            //config,
+            data: build_data,
             tasks,
         })
     }
 
-    pub fn work_dir(&self) -> PathBuf {
-        self.work_dir.clone()
-    }
-
     pub fn build_data(&self) -> &WsBuildData {
         &self.data
-    }
-
-    pub fn artifacts_dir(&self) -> PathBuf {
-        self.artifacts_dir.clone()
-    }
-
-    pub fn context(&self) -> &Context {
-        self.data.context()
     }
 
     pub fn task(&self, task: &str) -> Result<&WsTaskHandler, BError> {
@@ -81,125 +43,18 @@ impl WsBuildConfigHandler {
             }
         }
     }
-
+    
     pub fn tasks(&self) -> &IndexMap<String, WsTaskHandler> {
         &self.tasks
     }
 
-    pub fn extend_ctx(&self, ctx: &Context) {}
-
     pub fn description(&self) -> &str {
-        &self.config.description
-    }
-
-    pub fn product_name(&self) -> &str {
-        // Currently the product name is the
-        // same as config name but this might not
-        // be the case in the future so therefore
-        // I have added a specific getter
-        self.config_name()
-    }
-
-    pub fn config_name(&self) -> &str {
-        &self.config.name
+        &self.data.product().description()
     }
 
     //pub fn config_enabled(&self) -> bool {
     //    self.config.enabled()
-    //}
-
-    pub fn version(&self) -> &str {
-        &self.config.version
-    }
-
-    pub fn arch(&self) -> &str {
-        &self.config.arch
-    }
-
-    pub fn bb_layers_conf(&self) -> &Vec<String> {
-        &self.config.bitbake.bblayers_conf
-    }
-
-    pub fn bb_local_conf(&self) -> Vec<String> {
-        let mut local_conf: Vec<String> = self.config.bitbake.local_conf.clone();
-        local_conf.push(format!("MACHINE ?= {}", self.bb_machine()));
-        // TODO: we need to handle VARIANT correctly but this is good enough for now
-        local_conf.push(format!("VARIANT ?= {}", "dev".to_string()));
-        // TODO: we should define a method product_name() call that instead
-        local_conf.push(format!("PRODUCT_NAME ?= {}", self.config.name));
-        local_conf.push(format!("DISTRO ?= {}", self.bb_distro()));
-        local_conf.push(format!("SSTATE_DIR ?= {}", self.bb_sstate_dir().to_str().unwrap()));
-        local_conf.push(format!("DL_DIR ?= {}", self.bb_dl_dir().to_str().unwrap()));
-        //local_conf.push(format!("PLATFORM_VERSION ?= {}", self.platform_version()));
-        //local_conf.push(format!("BUILD_NUMBER ?= {}", self.build_number()));
-        //local_conf.push(format!("BUILD_SHA ?= {}", self.build_sha()));
-        //local_conf.push(format!("RELASE_BUILD ?= {}", self.release_build()));
-        //local_conf.push(format!("BUILD_VARIANT ?= {}", self.build_variant()));
-        local_conf
-    }
-
-    pub fn bb_machine(&self) -> &str {
-        &self.config.bitbake.machine
-    }
-
-    //pub fn variant(&self) -> &str {
-    //    self.config.variant()
-    //}
-
-    pub fn bb_distro(&self) -> &str {
-        &self.config.bitbake.distro
-    }
-
-    pub fn bb_build_dir(&self) -> PathBuf {
-        self.data.bb_build_dir()
-    }
-
-    pub fn bb_docker_image(&self) -> String {
-        self.config.bitbake.docker.to_string()
-    }
-
-    pub fn bb_build_config_dir(&self) -> PathBuf {
-        self.bb_build_dir().join("conf".to_string())
-    }
-
-    pub fn bb_local_config(&self) -> PathBuf {
-        self.bb_build_config_dir().join("local.conf".to_string())
-    }
-
-    pub fn bb_layers_config(&self) -> PathBuf {
-        self.bb_build_config_dir().join("bblayers.conf")
-    }
-
-    pub fn bb_deploy_dir(&self) -> PathBuf {
-        self.data.bb_deploy_dir()
-    }    
-
-    pub fn bb_sstate_dir(&self) -> PathBuf {
-        let mut path_buf = self.cache_dir.clone();
-        path_buf.join(&self.config.arch).join("sstate-cache".to_string())
-    }
-
-    pub fn bb_dl_dir(&self) -> PathBuf {
-        let mut path_buf = self.cache_dir.clone();
-        path_buf.join("download".to_string())
-    }        
-
-    pub fn poky_dir(&self) -> PathBuf {
-        // TODO: not sure about this we should not lock the bakery into using poky
-        // we only need this to be able to determine where to find the OE init file.
-        // I think the solution is to add a entry in the build config file in the bb-node
-        // where you can specify a path for the init file to source. The default could be
-        // layers/poky/oe-init-build-env. Potentially we should also add an entry in the
-        // Workspace settings file where you can specify the layers directory
-        let mut path_buf = self.work_dir.clone();
-        path_buf.join("layers".to_string()).join("poky".to_string())
-    }
-
-    pub fn oe_init_file(&self) -> PathBuf {
-        // TODO: we should probably setup an option to configure what OE init script
-        // to source to setup the env.
-        self.poky_dir().join("oe-init-build-env")
-    }   
+    //} 
 }
 
 #[cfg(test)]
@@ -220,43 +75,42 @@ mod tests {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
-            "arch": "test-arch",
-            "bb": {}
+            "arch": "test-arch"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
         let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
-        assert_eq!(ws_config.version(), "4".to_string());
-        assert_eq!(ws_config.arch(), "test-arch".to_string());
-        assert_eq!(ws_config.description(), "Test Description".to_string());
-        assert_eq!(ws_config.config_name(), "test-name".to_string());
-        assert_eq!(ws_config.product_name(), "test-name".to_string());
-        assert_eq!(ws_config.bb_distro(), "".to_string());
-        assert_eq!(ws_config.bb_machine(), "".to_string());
-        assert_eq!(ws_config.bb_build_dir(), PathBuf::from("/workspace/builds/test-name"));
-        assert_eq!(ws_config.bb_build_config_dir(), PathBuf::from("/workspace/builds/test-name/conf"));
-        assert_eq!(ws_config.bb_deploy_dir(), PathBuf::from("/workspace/builds/test-name/tmp/deploy/images"));
-        assert_eq!(ws_config.bb_dl_dir(), PathBuf::from("/workspace/.cache/download"));
-        assert_eq!(ws_config.bb_sstate_dir(), PathBuf::from("/workspace/.cache/test-arch/sstate-cache"));
-        assert_eq!(ws_config.bb_layers_config(), PathBuf::from("/workspace/builds/test-name/conf/bblayers.conf"));
-        assert!(ws_config.bb_layers_conf().is_empty());
-        assert_eq!(ws_config.bb_local_config(), PathBuf::from("/workspace/builds/test-name/conf/local.conf"));
-        assert!(!ws_config.bb_local_conf().is_empty());
+        assert_eq!(ws_config.build_data().version(), "4".to_string());
+        assert_eq!(ws_config.build_data().name(), "test-name".to_string());
+        assert_eq!(ws_config.build_data().product().name(), "test-name".to_string());
+        assert_eq!(ws_config.build_data().product().arch(), "test-arch".to_string());
+        assert_eq!(ws_config.build_data().product().description(), "Test Description".to_string());
+        assert_eq!(ws_config.build_data().bitbake().distro(), "NA".to_string());
+        assert_eq!(ws_config.build_data().bitbake().machine(), "NA".to_string());
+        assert_eq!(ws_config.build_data().bitbake().build_dir(), PathBuf::from("/workspace/builds/test-name"));
+        assert_eq!(ws_config.build_data().bitbake().build_config_dir(), PathBuf::from("/workspace/builds/test-name/conf"));
+        assert_eq!(ws_config.build_data().bitbake().deploy_dir(), PathBuf::from("/workspace/builds/test-name/tmp/deploy/images"));
+        assert_eq!(ws_config.build_data().bitbake().dl_dir(), PathBuf::from("/workspace/.cache/download"));
+        assert_eq!(ws_config.build_data().bitbake().sstate_dir(), PathBuf::from("/workspace/.cache/test-arch/sstate-cache"));
+        assert_eq!(ws_config.build_data().bitbake().bblayers_conf_path(), PathBuf::from("/workspace/builds/test-name/conf/bblayers.conf"));
+        assert!(ws_config.build_data().bitbake().bblayers_conf().is_empty());
+        assert_eq!(ws_config.build_data().bitbake().local_conf_path(), PathBuf::from("/workspace/builds/test-name/conf/local.conf"));
+        assert!(!ws_config.build_data().bitbake().local_conf().is_empty());
         let local_conf: Vec<String> = vec![
-            format!("MACHINE ?= {}", ws_config.bb_machine()),
+            format!("MACHINE ?= {}", ws_config.build_data().bitbake().machine()),
             "VARIANT ?= dev".to_string(),
-            format!("PRODUCT_NAME ?= {}", ws_config.product_name()),
-            format!("DISTRO ?= {}", ws_config.bb_distro()),
-            format!("SSTATE_DIR ?= {}", ws_config.bb_sstate_dir().to_str().unwrap()),
-            format!("DL_DIR ?= {}", ws_config.bb_dl_dir().to_str().unwrap()),
+            format!("PRODUCT_NAME ?= {}", ws_config.build_data().product().name()),
+            format!("DISTRO ?= {}", ws_config.build_data().bitbake().distro()),
+            format!("SSTATE_DIR ?= {}", ws_config.build_data().bitbake().sstate_dir().to_str().unwrap()),
+            format!("DL_DIR ?= {}", ws_config.build_data().bitbake().dl_dir().to_str().unwrap()),
             //format!("PLATFORM_VERSION ?= {}", ws_config.platform_version()),
             //format!("BUILD_NUMBER ?= {}", ws_config.build_number()),
             //format!("BUILD_SHA ?= {}", ws_config.build_sha()),
             //format!("RELASE_BUILD ?= {}", ws_config.release_build()),
             //format!("BUILD_VARIANT ?= {}", ws_config.build_variant()),
         ];
-        assert_eq!(ws_config.bb_local_conf(), local_conf);
-        assert_eq!(ws_config.bb_docker_image(), "".to_string());
+        assert_eq!(ws_config.build_data().bitbake().local_conf(), local_conf);
+        assert_eq!(ws_config.build_data().bitbake().docker_image(), "NA".to_string());
 
     }
 
@@ -284,7 +138,26 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
         let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
-        assert_eq!(ws_config.bb_docker_image(), "test-registry/test-image:0.1");
+        assert_eq!(ws_config.build_data().bitbake().docker_image(), "test-registry/test-image:0.1");
+    }
+
+    #[test]
+    fn test_ws_config_empty_tasks() {
+        let json_settings = r#"
+        {
+            "version": "4"
+        }"#;
+        let json_build_config = r#"
+        {                                                                                                                   
+            "version": "4",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch"
+        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
+        assert!(ws_config.tasks().is_empty());
     }
 
     #[test]
@@ -310,8 +183,6 @@ mod tests {
                 "TASK8_CONDITION=TRUE",
                 "TASK9_CONDITION=true"
             ],
-            "bb": {
-            },
             "tasks": { 
                 "task1": {
                     "index": "1",
@@ -403,8 +274,6 @@ mod tests {
             "context": [
                 "TASK1_BUILD_DIR=task1/build"
             ],
-            "bb": {
-            },
             "tasks": { 
                 "task1": {
                     "index": "1",
@@ -444,8 +313,6 @@ mod tests {
             "context": [
                 "TASK1_BUILD_DIR=task1/build/dir"
             ],
-            "bb": {
-            },
             "tasks": { 
                 "task1": {
                     "index": "0",
@@ -497,7 +364,6 @@ mod tests {
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
-            "bb": {},
             "tasks": { 
                 "task0": {
                     "index": "0",

@@ -6,10 +6,8 @@ use indexmap::IndexMap;
 
 use crate::fs::JsonFileReader;
 use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
-use crate::configs::BuildConfig;
 use crate::error::BError;
-
-use super::WsBuildData;
+use crate::workspace::WsProductData;
 
 pub struct Workspace {
     settings: WsSettingsHandler,
@@ -69,15 +67,14 @@ impl Workspace {
                 // config by supplying a basic build config json
                 // string. This string should be valid and never fail
                 // so we don't care about error because we assume it
-                // will be fine. This should be added as part of one
+                // will be fine. This should be added as part of
                 // the tests.
                 let default_config: &str = r#"
                 {                                                                                                                   
                     "version": "4",
                     "name": "default",
                     "description": "Default build config",
-                    "arch": "NA",
-                    "bb": {}
+                    "arch": "NA"
                 }"#;
                 WsBuildConfigHandler::from_str(default_config, settings).unwrap()
             }
@@ -127,8 +124,8 @@ impl Workspace {
             for f in list_of_files {
                 let config_path: PathBuf = settings.configs_dir().join(f);
                 let config_str: String = JsonFileReader::new(config_path.to_string_lossy().to_string()).read_json()?;
-                let config: BuildConfig = BuildConfig::from_str(&config_str)?;
-                build_configs.insert(config_path, config.description.to_string());
+                let product: WsProductData = WsProductData::from_str(&config_str)?;
+                build_configs.insert(config_path, product.description().to_string());
             }
         }
 

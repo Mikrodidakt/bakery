@@ -75,13 +75,12 @@ impl Docker {
 mod tests {
     use std::path::PathBuf;
     use std::collections::HashMap;
-    use indexmap::IndexMap;
 
     use crate::cli::*;
-    use crate::commands::build;
     use crate::error::BError;
     use crate::executers::{Docker, DockerImage, Executer};
     use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler, WsBuildData};
+    use crate::helper::Helper;
 
     fn helper_test_docker(verification_str: &String, test_cmd: &String, test_work_dir: Option<String>,
         image: DockerImage) -> Result<(), BError> {
@@ -126,33 +125,6 @@ mod tests {
         let test_work_dir: String = String::from("test_work_dir");
         let test_cmd: String = String::from("test_cmd");
         let docker_image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
-        let work_dir: PathBuf = PathBuf::from(&test_work_dir);
-        let json_ws_settings: &str = r#"
-        {
-            "version": "4",
-            "builds": {
-                "supported": [
-                    "default"
-                ]
-            }
-        }"#;
-        let json_build_config: &str = r#"
-        {
-            "version": "4",
-            "name": "test-name",
-            "description": "Test Description",
-            "arch": "test-arch",
-            "bb": {}
-        }
-        "#;
-        let mut settings: WsSettingsHandler =
-            WsSettingsHandler::from_str(&work_dir, json_ws_settings)
-                .expect("Failed to parse settings.json");
-        let config: WsBuildConfigHandler =
-            WsBuildConfigHandler::from_str(json_build_config, &mut settings)
-                .expect("Failed to parse build config");
-        let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config))
-            .expect("Failed to setup workspace");
         let docker: Docker = Docker::new(docker_image.clone(), true);
         let cmd: Vec<String> = docker.docker_cmd_line(&mut vec!["cd".to_string(), test_work_dir.clone(), test_cmd.clone()], test_work_dir.clone());
         assert_eq!(cmd, vec!["docker".to_string(), "run".to_string(), format!("{}", docker_image), "cd".to_string(), test_work_dir.clone(), test_cmd])
@@ -177,19 +149,7 @@ mod tests {
                 ]
             }
         }"#;
-        let json_build_config: &str = r#"
-        {
-            "version": "4",
-            "name": "test-name",
-            "description": "Test Description",
-            "arch": "test-arch",
-            "bb": {}
-        }
-        "#;
-        let mut settings: WsSettingsHandler =
-            WsSettingsHandler::from_str(&work_dir, json_ws_settings)
-                .expect("Failed to parse settings.json");
-        let build_data: WsBuildData = WsBuildData::new("", "tmp/deploy/", IndexMap::new(), &settings).expect("Failed to setup build data");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, Some(json_ws_settings));
         let result: Result<(), BError> =
             helper_test_executer(&verification_str, &test_cmd, None, Some(docker_image), &build_data);
         match result {
@@ -207,28 +167,6 @@ mod tests {
         let test_cmd: String = format!("cd {} && test", test_build_dir);
         let docker_image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
         let verification_str = format!("docker run {} {}", docker_image, test_cmd);
-        let work_dir: PathBuf = PathBuf::from(test_work_dir.clone());
-        let json_ws_settings: &str = r#"
-        {
-            "version": "4",
-            "builds": {
-                "supported": [
-                    "default"
-                ]
-            }
-        }"#;
-        let json_build_config: &str = r#"
-        {
-            "version": "4",
-            "name": "test-name",
-            "description": "Test Description",
-            "arch": "test-arch",
-            "bb": {}
-        }
-        "#;
-        let mut settings: WsSettingsHandler =
-            WsSettingsHandler::from_str(&work_dir, json_ws_settings)
-                .expect("Failed to parse settings.json");
         let result = helper_test_docker(
             &verification_str,
             &test_cmd,
