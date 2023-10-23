@@ -285,7 +285,278 @@ impl WsContextData {
     }
 }
 
+#[derive(Clone, PartialEq, Debug)]
+pub enum TType {
+    Bitbake,
+    NonBitbake,
+}
+
+pub struct WsTaskData {
+    index: String,
+    name: String,
+    ttype: TType, // Optional if not set for the task the default type 'bitbake' is used
+    disabled: String, // Optional if not set for the task the default value 'false' is used
+    build_dir: PathBuf,
+    build: String,
+    docker: String,
+    condition: String,
+    clean: String,
+    recipes: Vec<String>, // The list of recipes will be empty if the type for the task is 'non-bitbake'
+}
+
+impl Config for WsTaskData {
+}
+
+impl WsTaskData {
+    fn determine_build_dir(ttype: TType, task_build_dir: &str, data: &WsBuildData) -> PathBuf {
+        if ttype == TType::Bitbake {
+            if task_build_dir.is_empty() {
+                return data.bitbake().build_dir()
+            }
+        }
+
+        data.settings().work_dir().join(PathBuf::from(task_build_dir))
+    }
+
+    pub fn from_str(json_string: &str, build_data: &WsBuildData) -> Result<Self, BError> {
+        let data: Value = Self::parse(json_string)?;
+        Self::from_value(&data, build_data)
+    }
+
+    pub fn from_value(data: &Value, build_data: &WsBuildData) -> Result<Self, BError> {
+        let index: String = Self::get_str_value("index", &data, None)?;
+        let name: String = Self::get_str_value("name", &data, None)?;
+        let ttype: String = Self::get_str_value("type", &data, Some(String::from("bitbake")))?;
+        let disabled: String = Self::get_str_value("disabled", &data, Some(String::from("false")))?;
+        let mut build_dir: String = Self::get_str_value("builddir", &data, Some(String::from("")))?;
+        let docker: String = Self::get_str_value("docker", data, Some(String::from("")))?;
+        let condition: String = Self::get_str_value("condition", data, Some(String::from("true")))?;
+        let build: String = Self::get_str_value("build", &data, Some(String::from("")))?;
+        let clean: String = Self::get_str_value("clean", &data, Some(String::from("")))?;
+        let recipes: Vec<String> = Self::get_array_value("recipes", &data, Some(vec![]))?;
+
+        let enum_ttype: TType;
+        match ttype.as_str() {
+            "bitbake" => {
+                enum_ttype = TType::Bitbake;
+            },
+            "non-bitbake" => {
+                enum_ttype = TType::NonBitbake;
+            },
+            _ => {
+                return Err(BError::ParseTasksError(format!("Invalid type '{}'", ttype)));
+            },
+        }
+
+        build_dir = build_data.context().ctx().expand_str(&build_dir);
+        let task_build_dir: PathBuf = Self::determine_build_dir(enum_ttype.clone(), &build_dir, build_data);
+
+        // if the task type is bitbake then at least one recipe is required
+        if recipes.is_empty() && ttype == "bitbake" {
+            return Err(BError::ParseTasksError(format!("The 'bitbake' type requires at least one entry in 'recipes'")));
+        }
+
+        Ok(WsTaskData {
+            index,
+            name,
+            ttype: enum_ttype,
+            disabled,
+            docker,
+            condition,
+            build_dir: task_build_dir,
+            build,
+            clean,
+            recipes,
+        })
+    }
+    
+    pub fn expand_ctx(&mut self, ctx: &Context) {
+        self.build_dir = ctx.expand_path(&self.build_dir);
+        self.build = ctx.expand_str(&self.build);
+        self.clean = ctx.expand_str(&self.clean);
+        self.condition = ctx.expand_str(&self.condition);
+        self.recipes.iter_mut().for_each(|r: &mut String| *r = ctx.expand_str(r));
+    }
+
+    pub fn index(&self) -> u32 {
+        1
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn ttype(&self) -> &TType {
+        &self.ttype
+    }
+
+    pub fn disabled(&self) -> bool {
+        if self.disabled == "true" {
+            return true;
+        }
+        return false;
+    }
+
+    pub fn docker_image(&self) -> &str {
+        &self.docker
+    }
+
+    pub fn condition(&self) -> bool {
+        let condition: &str = &self.condition;
+
+        if condition.is_empty() {
+            return true;
+        }
+
+        match condition {
+            "1" | "yes" | "y" | "Y" | "true" | "YES" | "TRUE" | "True" | "Yes" => return true,
+            _ => return false,
+        }
+    }
+
+    pub fn build_dir(&self) -> &PathBuf {
+        &self.build_dir
+    }
+
+    pub fn build_cmd(&self) -> &str {
+        &self.build
+    }
+
+    pub fn clean_cmd(&self) -> &str {
+        &self.clean
+    }
+
+    pub fn recipes(&self) -> &Vec<String> {
+        &self.recipes
+    }
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum AType {
+    File,
+    Directory,
+    Archive,
+    Manifest,
+}
+
+//TODO: we should consider using IndexSet instead of vector to make sure we
+// keep the order from the json file
+pub struct WsArtifactData {
+    pub atype: AType, // Optional if not set for the task the default type 'file' is used
+    pub name: String, // The name can be a name for a directory, archive, file or manifest
+    pub source: PathBuf, // The source is only used if the type is file 
+    pub dest: PathBuf, // The dest is optional
+    pub manifest: String, // The manifest content will be a json string that can be put in a file. The manifest can then be used by the CI to collect information from the build
+}
+
+impl Config for WsArtifactData {
+}
+
+impl WsArtifactData {
+    pub fn from_str(json_string: &str, task_build_dir: &PathBuf, build_data: &WsBuildData) -> Result<Self, BError> {
+        let data: Value = Self::parse(json_string)?;
+        Self::from_value(&data, task_build_dir, build_data)
+    }
+
+    pub fn from_value(data: &Value, task_build_dir: &PathBuf, build_data: &WsBuildData) -> Result<Self, BError> {
+        let ttype: String = Self::get_str_value("type", &data, Some(String::from("file")))?;
+        let name: String = Self::get_str_value("name", &data, Some(String::from("")))?;
+        let source_str: String = Self::get_str_value("source", &data, Some(String::from("")))?;
+        let dest_str: String = Self::get_str_value("dest", &data, Some(String::from("")))?;
+        let manifest: String = Self::get_str_manifest("content", &data, Some(String::from("{}")))?;
+        if ttype != "file" && ttype != "directory" && ttype != "archive" && ttype != "manifest" {
+            return Err(BError::ParseArtifactsError(format!("Invalid type '{}'", ttype)));
+        }
+        if ttype == "file" && source_str.is_empty() {
+            return Err(BError::ParseArtifactsError(format!("The 'file' type requires a 'source'")));
+        }
+        if ttype == "directory" && name.is_empty() {
+            return Err(BError::ParseArtifactsError(format!("The 'directory' type requires a 'name'")));
+        }
+        if ttype == "archive" && name.is_empty() {
+            return Err(BError::ParseArtifactsError(format!("The 'archive' type requires a 'name'")));
+        }
+        if ttype == "manifest" && name.is_empty() {
+            return Err(BError::ParseArtifactsError(format!("The 'manifest' type requires a 'name'")));
+        }
+
+        let enum_ttype: AType;
+        match ttype.as_str() {
+            "file" => {
+                enum_ttype = AType::File;
+            },
+            "directory" => {
+                enum_ttype = AType::Directory;
+            },
+            "archive" => {
+                enum_ttype = AType::Archive;
+            },
+            "manifest" => {
+                enum_ttype = AType::Manifest;
+            },
+            _ => {
+                return Err(BError::ParseArtifactsError(format!("Invalid type '{}'", ttype)));
+            },
+        }
+
+        let source: PathBuf = task_build_dir.clone().join(build_data.context().ctx().expand_str(&source_str));
+        let dest: PathBuf = build_data.settings().artifacts_dir().clone().join(build_data.context().ctx().expand_str(&dest_str));
+
+        Ok(WsArtifactData {
+            name,
+            atype: enum_ttype,
+            source,
+            dest,
+            manifest,
+        })
+    }
+
+    pub fn expand_ctx(&mut self, ctx: &Context) {
+        match self.atype {
+            AType::File => {
+                self.name = ctx.expand_str(&self.name);
+                self.source = ctx.expand_path(&self.source);
+                self.dest = ctx.expand_path(&self.dest);
+            },
+            AType::Directory => {
+                self.name = ctx.expand_str(&self.name);
+            },
+            AType::Archive => {
+                self.name = ctx.expand_str(&self.name);
+            },
+            AType::Manifest => {
+                self.name = ctx.expand_str(&self.name);
+                self.manifest = ctx.expand_str(&self.manifest);
+            },
+            _ => {
+                panic!("Invalid 'artifact' format in build config. Invalid type '{:?}'", self.atype);
+            },
+        }
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn atype(&self) -> &AType {
+        &self.atype
+    }
+
+    pub fn source(&self) -> &PathBuf {
+        &self.source
+    }
+
+    pub fn dest(&self) -> &PathBuf {
+        &self.dest
+    }
+
+    pub fn manifest(&self) -> &str {
+        &self.manifest
+    }
+}
+
 pub struct WsBuildData {
+    data: Value,
     config: WsConfigData,
     product: WsProductData,
     bitbake: WsBitbakeData,
@@ -300,8 +571,8 @@ impl WsBuildData {
         Ok(task)
     }
 
-    fn get_artifact(&self, data: &Value, build_dir: &PathBuf,) -> Result<WsArtifactsHandler, BError> {
-        let mut artifact: WsArtifactsHandler = WsArtifactsHandler::new(data, build_dir, &self)?;
+    fn get_artifact(&self, data: &Value, task_build_dir: &PathBuf) -> Result<WsArtifactsHandler, BError> {
+        let mut artifact: WsArtifactsHandler = WsArtifactsHandler::new(data, task_build_dir, &self)?;
         artifact.expand_ctx(self.context().ctx());
         Ok(artifact)
     }
@@ -353,6 +624,7 @@ impl WsBuildData {
         context.update(&ctx_bitbake_variables);
 
         Ok(WsBuildData {
+            data: data.to_owned(),
             config,
             product,
             bitbake,
@@ -361,7 +633,7 @@ impl WsBuildData {
         })
     }
 
-    pub fn get_artifacts(&self, data: &Value, build_dir: &PathBuf) -> Result<Vec<WsArtifactsHandler>, BError> {
+    pub fn get_artifacts(&self, data: &Value, task_build_dir: &PathBuf) -> Result<Vec<WsArtifactsHandler>, BError> {
         match data.get("artifacts") {
             Some(value) => {
                 if value.is_array() {
@@ -369,7 +641,7 @@ impl WsBuildData {
                         let mut artifacts: Vec<WsArtifactsHandler> = Vec::new();
                         for artifact_data in artifact_vec.iter() {
                             let artifact: WsArtifactsHandler =
-                                self.get_artifact(artifact_data, build_dir)?;
+                                self.get_artifact(artifact_data, task_build_dir)?;
                             artifacts.push(artifact);
                         }
                         return Ok(artifacts);
@@ -441,8 +713,7 @@ mod tests {
 
     use crate::error::BError;
     use crate::fs::JsonFileReader;
-    use crate::configs::AType;
-    use crate::workspace::{WsArtifactsHandler, WsContextData, WsSettingsHandler, WsBuildData, WsConfigData, WsProductData, WsTaskHandler, WsBitbakeData};
+    use crate::workspace::{WsArtifactsHandler, WsContextData, WsSettingsHandler, WsBuildData, WsConfigData, WsProductData, WsTaskHandler, WsBitbakeData, AType};
     use crate::helper::Helper;
 
     #[test]
@@ -735,8 +1006,8 @@ mod tests {
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let json_data: Value = JsonFileReader::parse(json_task_str).expect("Failed to parse json");
         let task: WsTaskHandler = data.get_task(&json_data).expect("Failed to parse task");
-        assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds/test-name"));
-        assert_eq!(task.name(), "task-name");
+        assert_eq!(task.data().build_dir(), &PathBuf::from("/workspace/builds/test-name"));
+        assert_eq!(task.data().name(), "task-name");
     }
 
     #[test]
@@ -764,7 +1035,7 @@ mod tests {
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let json_data: Value = JsonFileReader::parse(json_task_str).expect("Failed to parse json");
         let task: WsTaskHandler = data.get_task(&json_data).expect("Failed to parse task");
-        assert_eq!(task.recipes(), &vec!["test-image"]);
+        assert_eq!(task.data().recipes(), &vec!["test-image"]);
     }
 
     #[test]
@@ -798,7 +1069,7 @@ mod tests {
         let mut i: usize = 1;
         tasks.iter().for_each(|(name, task)| {
             assert_eq!(name, &format!("task{}", i));
-            assert_eq!(task.name(), &format!("task{}", i));
+            assert_eq!(task.data().name(), &format!("task{}", i));
             i += 1;
         });
     }
@@ -851,11 +1122,11 @@ mod tests {
         let data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let json_data: Value =
             JsonFileReader::parse(json_artifact_config).expect("Failed to parse json");
-        let artifact: WsArtifactsHandler = data
+        let artifacts: WsArtifactsHandler = data
             .get_artifact(&json_data, &task_build_dir)
             .expect("Failed to parse artifacts");
-        assert_eq!(artifact.atype(), &AType::Manifest);
-        assert_eq!(artifact.name(), "test-manifest");
+        assert_eq!(artifacts.data().atype(), &AType::Manifest);
+        assert_eq!(artifacts.data().name(), "test-manifest");
     }
 
     #[test]
@@ -890,15 +1161,12 @@ mod tests {
         let artifact: WsArtifactsHandler = data
             .get_artifact(&json_data, &task_build_dir)
             .expect("Failed to parse artifacts");
-        assert_eq!(artifact.atype(), &AType::Manifest);
-        assert_eq!(artifact.name(), "test-manifest");
+        assert_eq!(artifact.data().atype(), &AType::Manifest);
+        assert_eq!(artifact.data().name(), "test-manifest");
     }
 
     #[test]
     fn test_ws_build_data_artifacts() {
-        let ctx_variables: IndexMap<String, String> = indexmap! {
-            "ARCHIVE_NAME".to_string() => "test.zip".to_string(),
-        };
         let json_artifacts_config: &str = r#"
         {
             "artifacts": [
@@ -923,8 +1191,8 @@ mod tests {
         assert!(!artifacts.is_empty());
         let mut i: usize = 1;
         artifacts.iter().for_each(|a| {
-            assert_eq!(a.atype(), &AType::File);
-            assert_eq!(a.source(), PathBuf::from(format!("/workspace/task/dir/file{}.txt", i)));
+            assert_eq!(a.data().atype(), &AType::File);
+            assert_eq!(a.data().source(), &PathBuf::from(format!("/workspace/task/dir/file{}.txt", i)));
             i += 1;
         });
     }

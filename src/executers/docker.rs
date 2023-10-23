@@ -101,7 +101,7 @@ mod tests {
         docker.run_cmd(&mut cmd, &HashMap::new(), test_work_dir.unwrap(), &cli)
     }
 
-    fn helper_test_executer(verification_str: &String, test_cmd: &String, test_build_dir: Option<PathBuf>,
+    fn helper_test_executer(verification_str: &String, test_cmd: &String, test_build_dir: Option<&PathBuf>,
         image: Option<DockerImage>, build_data: &WsBuildData) -> Result<(), BError> {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger

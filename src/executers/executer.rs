@@ -23,7 +23,7 @@ impl<'a> Executer<'a> {
     }
 
     pub fn execute(
-        &self, cmd: &mut Vec<String>, env: &HashMap<String, String>, dir: Option<PathBuf>,
+        &self, cmd: &mut Vec<String>, env: &HashMap<String, String>, dir: Option<&PathBuf>,
         docker_image: Option<DockerImage>, interactive: bool,) -> Result<(), BError> {
         let mut cmd_line: Vec<String> = vec![];
         let exec_dir: String;
@@ -79,7 +79,7 @@ mod tests {
     fn helper_test_executer(
         verification_str: &String,
         test_cmd: String,
-        test_build_dir: Option<PathBuf>,
+        test_build_dir: Option<&PathBuf>,
         image: Option<DockerImage>,
         build_data: &WsBuildData,
     ) -> Result<(), BError> {
@@ -119,7 +119,7 @@ mod tests {
         let result: Result<(), BError> = helper_test_executer(
             &verification_str,
             test_cmd,
-            Some(test_build_dir),
+            Some(&test_build_dir),
             None,
             &build_data,
         );

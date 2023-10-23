@@ -7,7 +7,6 @@ use crate::fs::JsonFileReader;
 
 pub struct WsBuildConfigHandler {
     data: WsBuildData,
-    //config: BuildConfig,
     tasks: IndexMap<String, WsTaskHandler>,
 }
 
@@ -19,11 +18,9 @@ impl WsBuildConfigHandler {
 
     pub fn new(data: &Value, settings: &WsSettingsHandler) -> Result<Self, BError> {
         let build_data: WsBuildData = WsBuildData::new(data, settings)?;
-        // Expand all context variables in the main build config
         let tasks: IndexMap<String, WsTaskHandler> = build_data.get_tasks(data)?;
 
         Ok(WsBuildConfigHandler {
-            //config,
             data: build_data,
             tasks,
         })
@@ -59,7 +56,7 @@ impl WsBuildConfigHandler {
 
 #[cfg(test)]
 mod tests {
-    use std::path::{PathBuf, Path};
+    use std::path::PathBuf;
 
     use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, WsTaskHandler};
     use crate::error::BError;
@@ -247,7 +244,7 @@ mod tests {
             let result: Result<&WsTaskHandler, BError> = ws_config.task(format!("task{}", i).as_str());
             match result {
                 Ok(task) => {
-                    if !task.condition() {
+                    if !task.data().condition() {
                         panic!("Failed to evaluate condition nbr {}", i);
                     }
                 },
@@ -294,8 +291,8 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
         let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
-        assert_eq!(ws_config.task("task1").unwrap().build_dir(), PathBuf::from("/workspace/task1/build/dir"));
-        assert_eq!(ws_config.task("task2").unwrap().build_dir(), PathBuf::from("/workspace/builds/test-name"));
+        assert_eq!(ws_config.task("task1").unwrap().data().build_dir(), &PathBuf::from("/workspace/task1/build/dir"));
+        assert_eq!(ws_config.task("task2").unwrap().data().build_dir(), &PathBuf::from("/workspace/builds/test-name"));
     }
 
     #[test]
@@ -337,8 +334,8 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
         let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
-        assert_eq!(ws_config.task("task1").unwrap().build_dir(), PathBuf::from("/workspace/test/task1/build/dir"));
-        assert_eq!(ws_config.task("task2").unwrap().build_dir(), PathBuf::from("/workspace/builds/test-name"));
+        assert_eq!(ws_config.task("task1").unwrap().data().build_dir(), &PathBuf::from("/workspace/test/task1/build/dir"));
+        assert_eq!(ws_config.task("task2").unwrap().data().build_dir(), &PathBuf::from("/workspace/builds/test-name"));
         {
             let result: Result<&WsTaskHandler, BError> = ws_config.task("task3");
             match result {
@@ -413,11 +410,11 @@ mod tests {
         let mut i: i32 = 0;
         ws_config.tasks().iter().for_each(|(name, task)| {
             assert_eq!(name, &format!("task{}", i));
-            assert_eq!(task.build_dir(), PathBuf::from(format!("/workspace/test/task{}", i)));
-            assert_eq!(task.build_cmd(), &format!("cmd{}", i));
-            assert_eq!(task.clean_cmd(), &format!("clean{}", i));
+            assert_eq!(task.data().build_dir(), &PathBuf::from(format!("/workspace/test/task{}", i)));
+            assert_eq!(task.data().build_cmd(), &format!("cmd{}", i));
+            assert_eq!(task.data().clean_cmd(), &format!("clean{}", i));
             task.artifacts().iter().for_each(|a| {
-                assert_eq!(a.source().as_path(), task.build_dir().join(format!("test/file{}-1.txt", i)));
+                assert_eq!(a.data().source().as_path(), task.data().build_dir().join(format!("test/file{}-1.txt", i)));
             });
             i += 1;
         });

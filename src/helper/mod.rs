@@ -2,7 +2,7 @@ use rand::rngs::ThreadRng;
 
 use crate::workspace::{WsBuildConfigHandler, WsSettingsHandler, Workspace, WsBuildData};
 use crate::error::BError;
-use crate::configs::{WsSettings, TaskConfig};
+use crate::configs::WsSettings;
 use crate::fs::Archiver;
 
 use std::path::{PathBuf, Path};
@@ -134,6 +134,7 @@ impl Helper {
             assert_eq!(expected, archived);
     }
 
+    /*
     pub fn setup_task_config(json_test_str: &str) -> TaskConfig {
         let result: Result<TaskConfig, BError> = TaskConfig::from_str(json_test_str);
         match result {
@@ -146,6 +147,7 @@ impl Helper {
             } 
         }
     }
+    */
 
     pub fn setup_ws_settings(json_test_str: &str) -> WsSettings {
         let result: Result<WsSettings, BError> = WsSettings::from_str(json_test_str);

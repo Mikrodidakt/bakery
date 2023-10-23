@@ -1,83 +1,34 @@
-use crate::configs::{TType, TaskConfig, Context};
+use crate::configs::Context;
 use crate::executers::{Recipe, Executer, DockerImage};
-use crate::workspace::{Workspace, WsArtifactsHandler, WsBuildData};
+use crate::workspace::{WsArtifactsHandler, WsBuildData, WsTaskData, TType};
 use crate::error::BError;
 use crate::fs::JsonFileReader;
 use crate::cli::Cli;
 
-use std::path::PathBuf;
 use std::collections::HashMap;
 use serde_json::Value;
-use indexmap::IndexMap;
-
-pub struct WsTasksHandler {
-    tasks: IndexMap<String, WsTaskHandler>,
-}
-
-impl WsTasksHandler {
-    pub fn new(data: &Value, build_data: &WsBuildData) -> Result<Self, BError> {
-        let tasks: IndexMap<String, WsTaskHandler> = build_data.get_tasks(&data)?;
-
-        Ok(WsTasksHandler {
-            tasks,
-        })
-    }
-
-    pub fn task(&self, task: &str) -> Result<&WsTaskHandler, BError> {
-        match self.tasks.get(task) {
-            Some(config) => {
-                return Ok(config);
-            },
-            None => {
-                return Err(BError::ValueError(format!("Task '{}' does not exists in build config", task)));
-            }
-        }
-    }
-
-    pub fn tasks(&self) -> &IndexMap<String, WsTaskHandler> {
-        &self.tasks
-    }
-}
 
 pub struct WsTaskHandler {
-    name: String,
-    config: TaskConfig,
-    build_dir: PathBuf,
-    artifacts_dir: PathBuf,
+    data: WsTaskData,
     artifacts: Vec<WsArtifactsHandler>,
 }
 
 impl WsTaskHandler {
-    fn determine_build_dir(config: &TaskConfig, data: &WsBuildData) -> PathBuf {
-        if config.ttype == TType::Bitbake {
-            let task_build_dir: &str = &config.builddir;
-            if task_build_dir.is_empty() {
-                return data.bitbake().build_dir()
-            }
-        }
-
-        data.settings().work_dir().join(PathBuf::from(&config.builddir))
-    }
-
     pub fn from_str(json_config: &str, build_data: &WsBuildData) -> Result<Self, BError> {
         let data: Value = JsonFileReader::parse(json_config)?;
         Self::new(&data, build_data)
     }
 
     pub fn new(data: &Value, build_data: &WsBuildData) -> Result<Self, BError> {
-        let mut config: TaskConfig = TaskConfig::from_value(data)?;
+        let mut task_data: WsTaskData = WsTaskData::from_value(data, build_data)?;
         // expand the context for the task config data
         // all the variables encapsulated insode ${} in the task config
         // will be expanded
-        config.expand_ctx(build_data.context().ctx());
-        let task_build_dir: PathBuf = Self::determine_build_dir(&config, build_data);
-        let artifacts: Vec<WsArtifactsHandler> = build_data.get_artifacts(data, &task_build_dir)?;
+        task_data.expand_ctx(build_data.context().ctx());
+        let artifacts: Vec<WsArtifactsHandler> = build_data.get_artifacts(data, task_data.build_dir())?;
         
         Ok(WsTaskHandler {
-            name: config.name.to_string(),
-            config,
-            build_dir: task_build_dir,
-            artifacts_dir: build_data.settings().artifacts_dir(),
+            data: task_data,
             artifacts,
         })
     }
@@ -95,45 +46,45 @@ impl WsTaskHandler {
     fn execute(&self, cli: &Cli, build_data: &WsBuildData, env: &HashMap<String, String>, interactive: bool) -> Result<(), BError> {
         let executer: Executer = Executer::new(build_data, cli);
         let mut docker_option: Option<DockerImage> = None;
-        let mut cmd_line: Vec<String> = self.build_cmd().split(' ').map(|c| c.to_string()).collect();
+        let mut cmd_line: Vec<String> = self.data.build_cmd().split(' ').map(|c| c.to_string()).collect();
 
-        if !self.docker().is_empty() {
-            let image: DockerImage = DockerImage::new(self.docker());
+        if !self.data.docker_image().is_empty() {
+            let image: DockerImage = DockerImage::new(self.data.docker_image());
             docker_option = Some(image);
         }
         
-        executer.execute(&mut cmd_line, env, Some(self.build_dir()), docker_option, interactive)?;
+        executer.execute(&mut cmd_line, env, Some(self.data.build_dir()), docker_option, interactive)?;
         Ok(())
     }
 
     fn execute_recipes(&self, cli: &Cli, build_data: &WsBuildData, env: &HashMap<String, String>, interactive: bool) -> Result<(), BError> {
-        for r in self.recipes() {
+        for r in self.data.recipes() {
             let recipe: Recipe = Recipe::new(r);
             let executer: Executer = Executer::new(build_data, cli);
             let mut docker_option: Option<DockerImage> = None;
 
-            if !self.docker().is_empty() {
-                let image: DockerImage = DockerImage::new(self.docker());
+            if !self.data.docker_image().is_empty() {
+                let image: DockerImage = DockerImage::new(self.data.docker_image());
                 docker_option = Some(image);
             }
 
-            executer.execute(&mut recipe.bitbake_cmd(), env, Some(self.build_dir()), docker_option, interactive)?;
+            executer.execute(&mut recipe.bitbake_cmd(), env, Some(self.data.build_dir()), docker_option, interactive)?;
         }
         Ok(())
     }
 
     pub fn run<'a>(&self, cli: &'a Cli, build_data: &WsBuildData, bb_variables: &Vec<String>, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
-        if self.disabled() {
-            cli.info(format!("Task '{}' is disabled in build config so execution is skipped", self.name()));
+        if self.data.disabled() {
+            cli.info(format!("Task '{}' is disabled in build config so execution is skipped", self.data.name()));
             return Ok(());
         }
 
-        if !self.condition() {
-            cli.info(format!("Task condition for task '{}' is not meet so execution is skipped", self.name()));
+        if !self.data.condition() {
+            cli.info(format!("Task condition for task '{}' is not meet so execution is skipped", self.data.name()));
             return Ok(()); 
         }
 
-        match self.ttype() {
+        match self.data.ttype() {
             TType::Bitbake => {
                 // if we are running a dry run we should always create the bb configs
                 // when not a dry run it will be determined if it is needed or not to
@@ -160,60 +111,11 @@ impl WsTaskHandler {
     }
 
     pub fn expand_ctx(&mut self, ctx: &Context) {
-        self.config.expand_ctx(ctx);
-        self.build_dir = ctx.expand_path(&self.build_dir);
+        self.data.expand_ctx(ctx);
     }
 
-    pub fn build_dir(&self) -> PathBuf {
-        self.build_dir.clone()
-    }
-
-    pub fn artifacts_dir(&self) -> PathBuf {
-        self.artifacts_dir.clone()
-    }
-
-    pub fn ttype(&self) -> &TType {
-        &self.config.ttype
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn build_cmd(&self) -> &str {
-        &self.config.build
-    }
-
-    pub fn clean_cmd(&self) -> &str {
-        &self.config.clean
-    }
-
-    pub fn docker(&self) -> &str {
-        &self.config.docker
-    }
-
-    pub fn disabled(&self) -> bool {
-        if self.config.disabled == "true" {
-            return true;
-        }
-        return false;
-    }
-
-    pub fn recipes(&self) -> &Vec<String> {
-        &self.config.recipes
-    }
-
-    pub fn condition(&self) -> bool {
-        let condition: &str = &self.config.condition;
-
-        if condition.is_empty() {
-            return true;
-        }
-
-        match condition {
-            "1" | "yes" | "y" | "Y" | "true" | "YES" | "TRUE" | "True" | "Yes" => return true,
-            _ => return false,
-        }
+    pub fn data(&self) -> &WsTaskData {
+        &self.data
     }
     
     pub fn artifacts(&self) -> &Vec<WsArtifactsHandler> {
@@ -225,12 +127,9 @@ impl WsTaskHandler {
 mod tests {
     use std::collections::HashMap;
     use std::path::PathBuf;
-    use indexmap::{IndexMap, indexmap};
     
-    use crate::cli::{BLogger, Cli, MockSystem, BSystem, CallParams};
-    use crate::fs::json;
-    use crate::workspace::{WsTaskHandler, WsSettingsHandler, WsArtifactsHandler, WsBuildData};
-    use crate::configs::{TType, AType};
+    use crate::cli::{BLogger, Cli, MockSystem, CallParams};
+    use crate::workspace::{WsTaskHandler, WsArtifactsHandler, WsBuildData, TType, AType};
     use crate::helper::Helper;
 
     #[test]
@@ -250,13 +149,13 @@ mod tests {
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
-        assert_eq!(task.build_dir(), PathBuf::from("/workspace/task/dir"));
-        assert!(task.condition());
-        assert_eq!(task.name(), "task-name");
-        assert_eq!(task.build_cmd(), "build-cmd");
-        assert_eq!(task.clean_cmd(), "clean-cmd");
-        assert_eq!(task.ttype(), &TType::NonBitbake);
-        assert!(!task.disabled());
+        assert_eq!(task.data().build_dir(), &PathBuf::from("/workspace/task/dir"));
+        assert!(task.data().condition());
+        assert_eq!(task.data().name(), "task-name");
+        assert_eq!(task.data().build_cmd(), "build-cmd");
+        assert_eq!(task.data().clean_cmd(), "clean-cmd");
+        assert_eq!(task.data().ttype(), &TType::NonBitbake);
+        assert!(!task.data().disabled());
     }
 
     #[test]
@@ -273,12 +172,12 @@ mod tests {
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
-        assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds/NA"));
-        assert!(task.condition());
-        assert_eq!(task.name(), "task-name");
-        assert_eq!(task.ttype(), &TType::Bitbake);
-        assert_eq!(task.recipes(), &vec!["test-image".to_string()]);
-        assert!(!task.disabled());
+        assert_eq!(task.data().build_dir(), &PathBuf::from("/workspace/builds/NA"));
+        assert!(task.data().condition());
+        assert_eq!(task.data().name(), "task-name");
+        assert_eq!(task.data().ttype(), &TType::Bitbake);
+        assert_eq!(task.data().recipes(), &vec!["test-image".to_string()]);
+        assert!(!task.data().disabled());
     }
 
     #[test]
@@ -295,12 +194,12 @@ mod tests {
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
-        assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds/NA"));
-        assert!(task.condition());
-        assert_eq!(task.name(), "task-name");
-        assert_eq!(task.ttype(), &TType::Bitbake);
-        assert_eq!(task.recipes(), &vec!["test-image".to_string()]);
-        assert!(!task.disabled());
+        assert_eq!(task.data().build_dir(), &PathBuf::from("/workspace/builds/NA"));
+        assert!(task.data().condition());
+        assert_eq!(task.data().name(), "task-name");
+        assert_eq!(task.data().ttype(), &TType::Bitbake);
+        assert_eq!(task.data().recipes(), &vec!["test-image".to_string()]);
+        assert!(!task.data().disabled());
     }
 
     #[test]
@@ -344,29 +243,29 @@ mod tests {
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
-        assert_eq!(task.build_dir(), PathBuf::from("/workspace/task/build/dir"));
-        assert!(task.condition());
-        assert_eq!(task.name(), "task-name");
-        assert_eq!(task.ttype(), &TType::NonBitbake);
-        assert_eq!(task.build_cmd(), "build-cmd");
-        assert_eq!(task.clean_cmd(), "clean-cmd");
-        assert!(!task.disabled());
+        assert_eq!(task.data().build_dir(), &PathBuf::from("/workspace/task/build/dir"));
+        assert!(task.data().condition());
+        assert_eq!(task.data().name(), "task-name");
+        assert_eq!(task.data().ttype(), &TType::NonBitbake);
+        assert_eq!(task.data().build_cmd(), "build-cmd");
+        assert_eq!(task.data().clean_cmd(), "clean-cmd");
+        assert!(!task.data().disabled());
         let artifacts: &WsArtifactsHandler = task.artifacts().first().unwrap();
-        assert_eq!(artifacts.atype(), &AType::Archive);
-        assert_eq!(artifacts.name(), "test.zip");
+        assert_eq!(artifacts.data().atype(), &AType::Archive);
+        assert_eq!(artifacts.data().name(), "test.zip");
         assert!(!artifacts.artifacts().is_empty());
         let archive_artifacts: &Vec<WsArtifactsHandler> = artifacts.artifacts();
-        assert_eq!(archive_artifacts.get(0).unwrap().atype(), &AType::File);
-        assert_eq!(archive_artifacts.get(0).unwrap().source(), PathBuf::from("/workspace/task/build/dir/file3.txt"));
-        assert_eq!(archive_artifacts.get(0).unwrap().dest(), PathBuf::from("/workspace/artifacts/file4.txt"));
-        assert_eq!(archive_artifacts.get(1).unwrap().atype(), &AType::Directory);
-        assert_eq!(archive_artifacts.get(1).unwrap().name(), "dir-name");
+        assert_eq!(archive_artifacts.get(0).unwrap().data().atype(), &AType::File);
+        assert_eq!(archive_artifacts.get(0).unwrap().data().source(), &PathBuf::from("/workspace/task/build/dir/file3.txt"));
+        assert_eq!(archive_artifacts.get(0).unwrap().data().dest(), &PathBuf::from("/workspace/artifacts/file4.txt"));
+        assert_eq!(archive_artifacts.get(1).unwrap().data().atype(), &AType::Directory);
+        assert_eq!(archive_artifacts.get(1).unwrap().data().name(), "dir-name");
         let dir_artifacts: &Vec<WsArtifactsHandler> = archive_artifacts.get(1).unwrap().artifacts();
         let mut i: usize = 1;
         dir_artifacts.iter().for_each(|f| {
-            assert_eq!(f.atype(), &AType::File);
-            assert_eq!(f.source(), PathBuf::from(format!("/workspace/task/build/dir/file{}.txt", i)));
-            assert_eq!(f.dest(), PathBuf::from("/workspace/artifacts/"));
+            assert_eq!(f.data().atype(), &AType::File);
+            assert_eq!(f.data().source(), &PathBuf::from(format!("/workspace/task/build/dir/file{}.txt", i)));
+            assert_eq!(f.data().dest(), &PathBuf::from("/workspace/artifacts/"));
             i += 1;
         });
     }
@@ -448,31 +347,31 @@ mod tests {
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let mut task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
         task.expand_ctx(build_data.context().ctx());
-        assert_eq!(task.build_dir(), PathBuf::from("/workspace/builds/test-name"));
-        assert!(task.condition());
-        assert_eq!(task.name(), "task-name");
-        assert_eq!(task.ttype(), &TType::Bitbake);
-        assert_eq!(task.recipes(), &vec!["test-image".to_string()]);
-        assert!(!task.disabled());
+        assert_eq!(task.data().build_dir(), &PathBuf::from("/workspace/builds/test-name"));
+        assert!(task.data().condition());
+        assert_eq!(task.data().name(), "task-name");
+        assert_eq!(task.data().ttype(), &TType::Bitbake);
+        assert_eq!(task.data().recipes(), &vec!["test-image".to_string()]);
+        assert!(!task.data().disabled());
         let artifacts: &WsArtifactsHandler = task.artifacts().first().unwrap();
-        assert_eq!(artifacts.atype(), &AType::Archive);
-        assert_eq!(artifacts.name(), "test.zip");
+        assert_eq!(artifacts.data().atype(), &AType::Archive);
+        assert_eq!(artifacts.data().name(), "test.zip");
         assert!(!artifacts.artifacts().is_empty());
         let archive_artifacts: &Vec<WsArtifactsHandler> = artifacts.artifacts();
-        assert_eq!(archive_artifacts.get(0).unwrap().atype(), &AType::File);
-        assert_eq!(archive_artifacts.get(0).unwrap().source(), PathBuf::from("/workspace/builds/test-name/file3.txt"));
-        assert_eq!(archive_artifacts.get(0).unwrap().dest(), PathBuf::from("/workspace/artifacts/file4.txt"));
-        assert_eq!(archive_artifacts.get(1).unwrap().name(), "test-manifest.json");
-        assert!(!archive_artifacts.get(1).unwrap().manifest().is_empty());
-        assert_eq!(archive_artifacts.get(1).unwrap().manifest(), "{\"VAR1\":\"value1\",\"VAR2\":\"value2\",\"VAR3\":\"value3\",\"data\":{\"VAR4\":\"value4\"}}");
-        assert_eq!(archive_artifacts.get(2).unwrap().atype(), &AType::Directory);
-        assert_eq!(archive_artifacts.get(2).unwrap().name(), "dir-name");
+        assert_eq!(archive_artifacts.get(0).unwrap().data().atype(), &AType::File);
+        assert_eq!(archive_artifacts.get(0).unwrap().data().source(), &PathBuf::from("/workspace/builds/test-name/file3.txt"));
+        assert_eq!(archive_artifacts.get(0).unwrap().data().dest(), &PathBuf::from("/workspace/artifacts/file4.txt"));
+        assert_eq!(archive_artifacts.get(1).unwrap().data().name(), "test-manifest.json");
+        assert!(!archive_artifacts.get(1).unwrap().data().manifest().is_empty());
+        assert_eq!(archive_artifacts.get(1).unwrap().data().manifest(), "{\"VAR1\":\"value1\",\"VAR2\":\"value2\",\"VAR3\":\"value3\",\"data\":{\"VAR4\":\"value4\"}}");
+        assert_eq!(archive_artifacts.get(2).unwrap().data().atype(), &AType::Directory);
+        assert_eq!(archive_artifacts.get(2).unwrap().data().name(), "dir-name");
         let dir_artifacts: &Vec<WsArtifactsHandler> = archive_artifacts.get(2).unwrap().artifacts();
         let mut i: usize = 1;
         dir_artifacts.iter().for_each(|f| {
-            assert_eq!(f.atype(), &AType::File);
-            assert_eq!(f.source(), PathBuf::from(format!("/workspace/builds/test-name/file{}.txt", i)));
-            assert_eq!(f.dest(), PathBuf::from("/workspace/artifacts/file-dest.txt"));
+            assert_eq!(f.data().atype(), &AType::File);
+            assert_eq!(f.data().source(), &PathBuf::from(format!("/workspace/builds/test-name/file{}.txt", i)));
+            assert_eq!(f.data().dest(), &PathBuf::from("/workspace/artifacts/file-dest.txt"));
             i += 1;
         });
     }

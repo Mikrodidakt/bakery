@@ -48,7 +48,7 @@ impl BCommand for ListCommand {
             // List all tasks for a build config
             if workspace.valid_config(config.as_str()) {
                 workspace.config().tasks().iter().for_each(|(_name, task)| {
-                    cli.stdout(format!("{}", task.name()));
+                    cli.stdout(format!("{}", task.data().name()));
                 });
             } else {
                 return Err(BError::CliError(format!("Unsupported build config '{}'", config)));

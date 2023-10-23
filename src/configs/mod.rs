@@ -1,10 +1,6 @@
-pub mod task;
-pub mod artifact;
 pub mod settings;
 pub mod context;
 
-pub use task::{TaskConfig, TType};
-pub use artifact::{ArtifactConfig, AType};
 pub use settings::WsSettings;
 pub use context::Context;
 
