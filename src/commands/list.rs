@@ -30,7 +30,7 @@ impl BCommand for ListCommand {
         self.cmd.require_docker
     }
 
-    fn execute(&self, cli: &Cli, workspace: &Workspace) -> Result<(), BError> {
+    fn execute(&self, cli: &Cli, workspace: &mut Workspace) -> Result<(), BError> {
         let config: String = self.get_arg_str(cli, "config", BCOMMAND)?;
         if config == "all" { // default value if not specified
             // If no config is specified then we will list all supported build configs
@@ -104,7 +104,7 @@ mod tests {
         let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings)?;
         let config: WsBuildConfigHandler =
             WsBuildConfigHandler::from_str(json_build_config, &settings)?;
-        let workspace: Workspace =
+        let mut workspace: Workspace =
             Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config))?;
         let cli: Cli = Cli::new(
             Box::new(mlogger),
@@ -113,7 +113,7 @@ mod tests {
             Some(cmd_line),
         );
         let cmd: ListCommand = ListCommand::new();
-        cmd.execute(&cli, &workspace)
+        cmd.execute(&cli, &mut workspace)
     }
 
     #[test]

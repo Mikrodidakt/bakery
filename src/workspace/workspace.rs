@@ -8,6 +8,7 @@ use crate::fs::JsonFileReader;
 use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
 use crate::error::BError;
 use crate::workspace::WsProductData;
+use crate::configs::Context;
 
 pub struct Workspace {
     settings: WsSettingsHandler,
@@ -163,6 +164,10 @@ impl Workspace {
     // of build configs supported by the workspace
     pub fn valid_config(&self, config: &str) -> bool {
         self.build_configs().contains_key(&self.settings.configs_dir().join(format!("{}.json", config)))
+    }
+
+    pub fn update_ctx(&mut self, context: &Context) {
+        self.config.update_ctx(context);
     }
 
     /*

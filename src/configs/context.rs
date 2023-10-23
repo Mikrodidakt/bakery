@@ -73,6 +73,10 @@ impl Context {
         }
     }
 
+    pub fn merge(&mut self, context: &Context) {
+        self.update(&context.variables);
+    }
+
     pub fn update(&mut self, variables: &IndexMap<String, String>) {
         self.variables.extend(variables
             .into_iter()

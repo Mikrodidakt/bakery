@@ -4,6 +4,7 @@ use serde_json::Value;
 use crate::workspace::{WsSettingsHandler, WsBuildData, WsTaskHandler};
 use crate::error::BError;
 use crate::fs::JsonFileReader;
+use crate::configs::Context;
 
 pub struct WsBuildConfigHandler {
     data: WsBuildData,
@@ -28,6 +29,10 @@ impl WsBuildConfigHandler {
 
     pub fn build_data(&self) -> &WsBuildData {
         &self.data
+    }
+    
+    pub fn update_ctx(&mut self, context: &Context) {
+        self.data.update_ctx(context);
     }
 
     pub fn task(&self, task: &str) -> Result<&WsTaskHandler, BError> {

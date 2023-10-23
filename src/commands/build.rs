@@ -1,14 +1,11 @@
-use core::arch;
-
 use indexmap::{IndexMap, indexmap};
 use std::collections::HashMap;
-use serde_json::value::Index;
 
 use crate::commands::{BCommand, BBaseCommand};
 use crate::workspace::{Workspace, WsTaskHandler};
 use crate::cli::Cli;
 use crate::error::BError;
-use crate::configs::{Context, context};
+use crate::configs::{Context};
 
 static BCOMMAND: &str = "build";
 static BCOMMAND_ABOUT: &str = "Execute a build either a full build or a task of one of the builds";
@@ -27,7 +24,7 @@ impl BCommand for BuildCommand {
         &self.cmd.sub_cmd
     }
 
-    fn execute(&self, cli: &Cli, workspace: &Workspace) -> Result<(), BError> {
+    fn execute(&self, cli: &Cli, workspace: &mut Workspace) -> Result<(), BError> {
         let config: String = self.get_arg_str(cli, "config", BCOMMAND)?;
         let version: String = self.get_arg_str(cli, "platform_version", BCOMMAND)?;
         let build_id: String = self.get_arg_str(cli, "build_id", BCOMMAND)?;
@@ -80,7 +77,7 @@ impl BCommand for BuildCommand {
         }
         
         let env_variables: HashMap<String, String> = self.setup_env(env);
-        let mut args_context: Context = self.setup_context(ctx);
+        let args_context: IndexMap<String, String> = self.setup_context(ctx);
 
         let mut extra_ctx: IndexMap<String, String> = indexmap! {
             "PLATFORM_VERSION".to_string() => version.clone(),
@@ -96,11 +93,11 @@ impl BCommand for BuildCommand {
         if variant == "release" {
             extra_ctx.insert("BUILD_VARIANT".to_string(), "1".to_string());
         }
-
-        args_context.update(&extra_ctx);
+        
         // Update the config context with the context from the args
-        //let mut ctx: &Context = workspace.config().build_data().context();
-        //ctx.update(args_context.variables());
+        let mut context: Context = Context::new(&args_context);
+        context.update(&extra_ctx);
+        workspace.update_ctx(&context);
         
         if tasks.len() > 1 {
             // More then one task was specified on the command line
@@ -127,16 +124,16 @@ impl BCommand for BuildCommand {
 }
 
 impl BuildCommand {
-    fn setup_context(&self, ctx: Vec<&String>) -> Context {
-        let context: IndexMap<std::string::String, std::string::String> = ctx.iter().map(|&c|{
+    fn setup_context(&self, ctx: Vec<&String>) -> IndexMap<String, String> {
+        let context: IndexMap<String, String> = ctx.iter().map(|&c|{
             let v: Vec<&str> = c.split('=').collect();
             (v[0].to_string(), v[1].to_string())
         }).collect();
-        Context::new(&context)
+        context
     }
 
     fn setup_env(&self, env: Vec<&String>) -> HashMap<String, String> {
-        let variables: HashMap<std::string::String, std::string::String> = env.iter().map(|&e|{
+        let variables: HashMap<String, String> = env.iter().map(|&e|{
             let v: Vec<&str> = e.split('=').collect();
             (v[0].to_string(), v[1].to_string())
         }).collect();
@@ -276,7 +273,7 @@ impl BuildCommand {
 
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
     use tempdir::TempDir;
     use std::collections::HashMap;
 
@@ -290,7 +287,7 @@ mod tests {
         let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings)?;
         let config: WsBuildConfigHandler =
             WsBuildConfigHandler::from_str(json_build_config, &settings)?;
-        let workspace: Workspace =
+        let mut workspace: Workspace =
             Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config))?;
         let cli: Cli = Cli::new(
             Box::new(BLogger::new()),
@@ -299,7 +296,7 @@ mod tests {
             Some(cmd_line),
         );
         let cmd: BuildCommand = BuildCommand::new();
-        cmd.execute(&cli, &workspace)
+        cmd.execute(&cli, &mut workspace)
     }
 
     #[test]

@@ -12,7 +12,7 @@ use crate::workspace::Workspace;
 
 // Bakery SubCommand
 pub trait BCommand {
-    fn execute(&self, cli: &Cli, workspace: &Workspace) -> Result<(), BError> {
+    fn execute(&self, cli: &Cli, workspace: &mut Workspace) -> Result<(), BError> {
         cli.info(format!("Execute command {}", self.cmd_str()));
         Ok(())
     }

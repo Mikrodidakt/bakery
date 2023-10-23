@@ -276,6 +276,10 @@ impl WsContextData {
         self.context.update(variables);
     }
 
+    pub fn update_ctx(&mut self, context: &Context) {
+        self.update(context.variables());
+    }
+
     pub fn get_ctx_path(&self, key: &str) -> PathBuf {
         PathBuf::from(self.get_ctx_value(key))
     }
@@ -694,6 +698,10 @@ impl WsBuildData {
 
     pub fn context(&self) -> &WsContextData {
         &self.context
+    }
+
+    pub fn update_ctx(&mut self, context: &Context) {
+        self.context.update_ctx(context);
     }
 
     pub fn product(&self) -> &WsProductData {

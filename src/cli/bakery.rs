@@ -69,7 +69,7 @@ impl Bakery {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let mut settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_ws_settings).expect("Failed to parse settings.json");
         let config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut settings).expect("Failed to parse build config");
-        let workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config)).expect("Failed to setup workspace");
+        let mut workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config)).expect("Failed to setup workspace");
 
         let cmd_name: &str = self.cli.get_args().subcommand_name().unwrap();
         let cmd: Result<&Box<dyn BCommand>, BError> = self.cli.get_command(cmd_name);
@@ -83,7 +83,7 @@ impl Bakery {
                     std::process::exit(0);
                 }
 
-                let error: Result<(), BError> = command.execute(&self.cli, &workspace);
+                let error: Result<(), BError> = command.execute(&self.cli, &mut workspace);
                 match error {
                     Err(err) => {
                         self.cli.error(format!("{}", err.to_string()));
