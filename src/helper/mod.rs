@@ -10,6 +10,7 @@ use std::path::{PathBuf, Path};
 use std::fs::File;
 use std::io::Write;
 use std::collections::{HashSet, HashMap};
+use serde_json::Value;
 use rand::prelude::*;
 
 pub struct Helper;
@@ -227,5 +228,14 @@ impl Helper {
         .unwrap_or_else(|err| panic!("Error parsing JSON build config: {}", err));
     
         data
+    }
+
+    pub fn parse(json_string: &str) -> Result<Value, BError> {
+        match serde_json::from_str(json_string) {
+            Ok(data) => {
+                Ok(data) 
+            },
+            Err(err) => Err(BError::ParseError(format!("Failed to parse JSON: {}", err))),
+        }
     }
 }

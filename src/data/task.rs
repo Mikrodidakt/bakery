@@ -29,14 +29,14 @@ impl Config for WsTaskData {
 }
 
 impl WsTaskData {
-    fn determine_build_dir(ttype: TType, task_build_dir: &str, data: &WsBuildData) -> PathBuf {
+    fn determine_build_dir(ttype: TType, task_build_dir: &str, bb_build_dir: &PathBuf, work_dir: &PathBuf) -> PathBuf {
         if ttype == TType::Bitbake {
             if task_build_dir.is_empty() {
-                return data.bitbake().build_dir()
+                return bb_build_dir.clone();
             }
         }
 
-        data.settings().work_dir().join(PathBuf::from(task_build_dir))
+        work_dir.join(PathBuf::from(task_build_dir))
     }
 
     pub fn from_str(json_string: &str, build_data: &WsBuildData) -> Result<Self, BError> {
@@ -45,6 +45,14 @@ impl WsTaskData {
     }
 
     pub fn from_value(data: &Value, build_data: &WsBuildData) -> Result<Self, BError> {
+        Self::new(data,
+            &build_data.settings().work_dir(),
+            &build_data.bitbake().build_dir(),
+            build_data.context().ctx()
+        )
+    }
+
+    pub fn new(data: &Value, work_dir: &PathBuf, bb_build_dir: &PathBuf, context: &Context) -> Result<Self, BError> {
         let index: String = Self::get_str_value("index", &data, None)?;
         let name: String = Self::get_str_value("name", &data, None)?;
         let ttype: String = Self::get_str_value("type", &data, Some(String::from("bitbake")))?;
@@ -69,8 +77,8 @@ impl WsTaskData {
             },
         }
 
-        build_dir = build_data.context().ctx().expand_str(&build_dir);
-        let task_build_dir: PathBuf = Self::determine_build_dir(enum_ttype.clone(), &build_dir, build_data);
+        build_dir = context.expand_str(&build_dir);
+        let task_build_dir: PathBuf = Self::determine_build_dir(enum_ttype.clone(), &build_dir, bb_build_dir, work_dir);
 
         // if the task type is bitbake then at least one recipe is required
         if recipes.is_empty() && ttype == "bitbake" {
@@ -157,23 +165,19 @@ impl WsTaskData {
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
+    use serde_json::Value;
+    use indexmap::{IndexMap, indexmap};
 
     use crate::error::BError;
-    use crate::data::WsBuildData;
     use crate::helper::Helper;
     use crate::data::{
         WsTaskData, 
         TType,
     };
+    use crate::configs::Context;
     
     #[test]
     fn test_ws_task_data_nonbitbake() {
-        let json_build_config: &str = r#"
-        {
-            "version": "4",
-            "name": "test-name",
-            "arch": "test-arch"
-        }"#;
         let json_task_config: &str = r#"
         {
             "index": "0",
@@ -185,10 +189,11 @@ mod tests {
             "build": "build-cmd",
             "clean": "clean-cmd"
         }"#;
-
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
-        let task: WsTaskData = WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task data");
+        let bb_build_dir: PathBuf = work_dir.clone().join(String::from("test/builddir"));
+        let context: Context = Context::new(&IndexMap::new());
+        let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
+        let task: WsTaskData = WsTaskData::new(&data, &work_dir, &bb_build_dir, &context).expect("Failed parsing task data");
         assert_eq!(task.index(), 1);
         assert_eq!(task.name(), "task1-name");
         assert_eq!(task.disabled(), false);
@@ -202,12 +207,6 @@ mod tests {
 
     #[test]
     fn test_ws_task_data_bitbake() {
-        let json_build_config: &str = r#"
-        {
-            "version": "4",
-            "name": "test-name",
-            "arch": "test-arch"
-        }"#;
         let json_task_config: &str = r#"
         {
             "index": "0",
@@ -218,8 +217,10 @@ mod tests {
             ]
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
-        let task: WsTaskData = WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task data");
+        let bb_build_dir: PathBuf = work_dir.clone().join(String::from("builds/test-name"));
+        let context: Context = Context::new(&IndexMap::new());
+        let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
+        let task: WsTaskData = WsTaskData::new(&data, &work_dir, &bb_build_dir, &context).expect("Failed parsing task data");
         assert_eq!(task.index(), 1);
         assert_eq!(task.name(), "task1-name");
         assert_eq!(task.disabled(), false);
@@ -234,17 +235,6 @@ mod tests {
 
     #[test]
     fn test_ws_task_data_context() {
-        let json_build_config: &str = r#"
-        {
-            "version": "4",
-            "name": "test-name",
-            "arch": "test-arch",
-            "context": [
-                "TASK_NAME=task1-name",
-                "IMAGE_RECIPE=test-image",
-                "IMAGE_RECIPE_SDK=test-image:sdk"
-            ]
-        }"#;
         let json_task_config: &str = r#"
         {
             "index": "0",
@@ -254,10 +244,17 @@ mod tests {
                 "${IMAGE_RECIPE_SDK}"
             ]
         }"#;
+        let ctx_variables: IndexMap<String, String> = indexmap! {
+            "TASK_NAME".to_string() => "task1-name".to_string(),
+            "IMAGE_RECIPE".to_string() => "test-image".to_string(),
+            "IMAGE_RECIPE_SDK".to_string() => "test-image:sdk".to_string(),
+        };
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
-        let mut task: WsTaskData = WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task data");
-        task.expand_ctx(data.context().ctx());
+        let bb_build_dir: PathBuf = work_dir.clone().join(String::from("builds/test-name"));
+        let context: Context = Context::new(&ctx_variables);
+        let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
+        let mut task: WsTaskData = WsTaskData::new(&data, &work_dir, &bb_build_dir, &context).expect("Failed parsing task data");
+        task.expand_ctx(&context);
         assert_eq!(task.index(), 1);
         assert_eq!(task.name(), "task1-name");
         assert_eq!(task.disabled(), false);
@@ -272,20 +269,16 @@ mod tests {
 
     #[test]
     fn test_ws_task_data_error_no_recipes() {
-        let json_build_config: &str = r#"
-        {
-            "version": "4",
-            "name": "test-name",
-            "arch": "test-arch"
-        }"#;
         let json_task_config: &str = r#"
         {
             "index": "0",
             "name": "task1-name"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
-        let result: Result<WsTaskData, BError> = WsTaskData::from_str(json_task_config, &data);
+        let bb_build_dir: PathBuf = work_dir.clone().join(String::from("test/builddir"));
+        let context: Context = Context::new(&IndexMap::new());
+        let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
+        let result: Result<WsTaskData, BError> = WsTaskData::new(&data, &work_dir, &bb_build_dir, &context);
         match result {
             Ok(_data) => {
                 panic!("We should have recived an error because we have no recipes defined!");
@@ -298,12 +291,6 @@ mod tests {
 
     #[test]
     fn test_ws_task_data_error_invalid_type() {
-        let json_build_config: &str = r#"
-        {
-            "version": "4",
-            "name": "test-name",
-            "arch": "test-arch"
-        }"#;
         let json_task_config: &str = r#"
         {
             "index": "0",
@@ -311,8 +298,10 @@ mod tests {
             "type": "invalid"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
-        let result: Result<WsTaskData, BError> = WsTaskData::from_str(json_task_config, &data);
+        let bb_build_dir: PathBuf = work_dir.clone().join(String::from("test/builddir"));
+        let context: Context = Context::new(&IndexMap::new());
+        let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
+        let result: Result<WsTaskData, BError> = WsTaskData::new(&data, &work_dir, &bb_build_dir, &context);
         match result {
             Ok(_rconfig) => {
                 panic!("We should have recived an error because we have no recipes defined!");
