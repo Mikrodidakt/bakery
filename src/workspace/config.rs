@@ -1,7 +1,11 @@
 use indexmap::IndexMap;
 use serde_json::Value;
 
-use crate::workspace::{WsSettingsHandler, WsBuildData, WsTaskHandler};
+use crate::workspace::{
+    WsSettingsHandler,
+    WsTaskHandler
+};
+use crate::data::WsBuildData;
 use crate::error::BError;
 use crate::fs::JsonFileReader;
 use crate::configs::Context;

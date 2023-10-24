@@ -1,7 +1,11 @@
 use crate::configs::Context;
-use crate::workspace::{WsBuildData, WsArtifactData};
 use crate::error::BError;
 use crate::fs::JsonFileReader;
+use crate::data::{
+    WsArtifactData,
+    WsBuildData,
+    AType
+};
 
 use std::path::PathBuf;
 use serde_json::Value;
@@ -46,8 +50,10 @@ impl WsArtifactsHandler {
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
-    use crate::workspace::{WsArtifactsHandler, WsBuildData, AType};
+    use crate::workspace::WsArtifactsHandler;
+    use crate::data::WsBuildData;
     use crate::helper::Helper;
+    use crate::data::AType;
 
     #[test]
     fn test_ws_artifacts_file_source() {

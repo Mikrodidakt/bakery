@@ -1,6 +1,7 @@
 use rand::rngs::ThreadRng;
 
-use crate::workspace::{WsBuildConfigHandler, WsSettingsHandler, Workspace, WsBuildData};
+use crate::workspace::{WsBuildConfigHandler, WsSettingsHandler, Workspace};
+use crate::data::WsBuildData;
 use crate::error::BError;
 use crate::configs::WsSettings;
 use crate::fs::Archiver;

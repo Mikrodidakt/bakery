@@ -1,9 +1,14 @@
 use crate::configs::Context;
 use crate::executers::{Recipe, Executer, DockerImage};
-use crate::workspace::{WsArtifactsHandler, WsBuildData, WsTaskData, TType};
+use crate::workspace::WsArtifactsHandler;
 use crate::error::BError;
 use crate::fs::JsonFileReader;
 use crate::cli::Cli;
+use crate::data::{
+    WsBuildData,
+    WsTaskData,
+    TType,
+};
 
 use std::collections::HashMap;
 use serde_json::Value;
@@ -129,7 +134,15 @@ mod tests {
     use std::path::PathBuf;
     
     use crate::cli::{BLogger, Cli, MockSystem, CallParams};
-    use crate::workspace::{WsTaskHandler, WsArtifactsHandler, WsBuildData, TType, AType};
+    use crate::workspace::{
+        WsTaskHandler,
+        WsArtifactsHandler,
+    };
+    use crate::data::{
+        TType,
+        AType, 
+        WsBuildData,
+    };
     use crate::helper::Helper;
 
     #[test]

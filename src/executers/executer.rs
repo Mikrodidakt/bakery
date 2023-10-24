@@ -1,13 +1,10 @@
 use std::collections::HashMap;
-use std::env::Vars;
 use std::path::PathBuf;
-
-use indexmap::IndexMap;
 
 use crate::cli::Cli;
 use crate::error::BError;
 use crate::executers::{Docker, DockerImage};
-use crate::workspace::{Workspace, WsBuildData};
+use crate::data::WsBuildData;
 
 pub struct Executer<'a> {
     data: &'a WsBuildData,
@@ -73,7 +70,7 @@ mod tests {
     use crate::cli::*;
     use crate::error::BError;
     use crate::executers::{DockerImage, Executer};
-    use crate::workspace::WsBuildData;
+    use crate::data::WsBuildData;
     use crate::helper::Helper;
 
     fn helper_test_executer(

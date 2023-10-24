@@ -79,7 +79,7 @@ mod tests {
     use crate::cli::*;
     use crate::error::BError;
     use crate::executers::{Docker, DockerImage, Executer};
-    use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler, WsBuildData};
+    use crate::data::WsBuildData;
     use crate::helper::Helper;
 
     fn helper_test_docker(verification_str: &String, test_cmd: &String, test_work_dir: Option<String>,

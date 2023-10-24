@@ -7,7 +7,7 @@ use indexmap::IndexMap;
 use crate::fs::JsonFileReader;
 use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
 use crate::error::BError;
-use crate::workspace::WsProductData;
+use crate::data::WsProductData;
 use crate::configs::Context;
 
 pub struct Workspace {
