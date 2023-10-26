@@ -407,7 +407,7 @@ mod tests {
         local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 1\n");
         local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 2\n");
         local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 3\n");
-        let bblayers_conf_content: String = String::new();
+        let mut bblayers_conf_content: String = String::new();
         let bb_variables: Vec<String> = vec![];
         let force: bool = true;
         let mut mocked_logger: MockLogger = MockLogger::new();
@@ -445,5 +445,66 @@ mod tests {
         let mut validate_local_conf: String = String::from("# AUTO GENERATED\n");
         validate_local_conf.push_str(&local_conf_content);
         assert_eq!(validate_local_conf, contents);
+    }
+
+    #[test]
+    fn test_bitbake_create_confs() {
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let path: &Path = temp_dir.path();
+        //let path: PathBuf = PathBuf::from("/home/mans/Workspace/rust/bakery/test");
+        let bitbake_conf_path: PathBuf = path.join("conf");
+        let local_conf_path: PathBuf = bitbake_conf_path.join("local.conf");
+        let bblayers_conf_path: PathBuf = bitbake_conf_path.join("bblayers.conf");
+        let mut local_conf_content: String = String::new();
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 1\n");
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 2\n");
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 3\n");
+        let mut bblayers_conf_content: String = String::new();
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 1\n");
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 2\n");
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 3\n");
+        let bb_variables: Vec<String> = vec![];
+        let force: bool = true;
+        let mut mocked_logger: MockLogger = MockLogger::new();
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .once()
+            .returning(|_x| ());
+        let cli: Cli = Cli::new(
+            Box::new(mocked_logger),
+            Box::new(BSystem::new()),
+            clap::Command::new("bakery"),
+            None,
+        );
+        let conf: BitbakeConf = BitbakeConf::construct(
+            &bitbake_conf_path,
+            &local_conf_path,
+            &bblayers_conf_path,
+            local_conf_content.clone(),
+            bblayers_conf_content.clone(),
+            force,
+            bb_variables);
+        conf.create_bitbake_configs(&cli).expect("Failed to create conf files");
+        let mut file: File = File::open(&local_conf_path).expect("Failed to open local.conf file!");
+        let mut contents: String = String::new();
+        file.read_to_string(&mut contents)
+            .expect("Failed to read local.conf file!");
+        let mut validate_local_conf: String = String::from("# AUTO GENERATED\n");
+        validate_local_conf.push_str(&local_conf_content);
+        assert_eq!(validate_local_conf, contents);
+        let mut file: File = File::open(&bblayers_conf_path).expect("Failed to open bblayers.conf file!");
+        let mut contents: String = String::new();
+        file.read_to_string(&mut contents)
+            .expect("Failed to read bblayers.conf file!");
+        let mut validate_bblayers_conf: String = String::from("# AUTO GENERATED\n");
+        validate_bblayers_conf.push_str(&bblayers_conf_content);
+        assert_eq!(validate_bblayers_conf, contents);
     }
 }
