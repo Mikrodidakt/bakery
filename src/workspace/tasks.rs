@@ -2,16 +2,20 @@ use crate::configs::Context;
 use crate::executers::{Recipe, Executer, DockerImage};
 use crate::workspace::WsArtifactsHandler;
 use crate::error::BError;
-use crate::fs::JsonFileReader;
+use crate::fs::{JsonFileReader, BitbakeConf};
 use crate::cli::Cli;
 use crate::data::{
     WsBuildData,
     WsTaskData,
+    WsBitbakeData,
     TType,
 };
 
 use std::collections::HashMap;
+use std::io::Read;
+use std::io::Write;
 use serde_json::Value;
+use std::path::PathBuf;
 
 pub struct WsTaskHandler {
     data: WsTaskData,
@@ -38,11 +42,7 @@ impl WsTaskHandler {
         })
     }
 
-    fn create_bitbake_configs(&self, _build_data: &WsBuildData, _bb_variables: &Vec<String>, _force: bool) -> Result<(), BError> {
-        Ok(())
-    }
-
-    fn bb_build_env<'a>(&self, build_data: &WsBuildData, _env_variables: &HashMap<String, String>) -> Result<HashMap<String, String>, BError> {
+    fn bb_build_env(&self, build_data: &WsBuildData, _env_variables: &HashMap<String, String>) -> Result<HashMap<String, String>, BError> {
         //let task_env = self.env();
         //let os_env = env::vars();
         Ok(HashMap::new())
@@ -95,7 +95,8 @@ impl WsTaskHandler {
                 // when not a dry run it will be determined if it is needed or not to
                 // regenerate the bb configs
                 let force: bool = dry_run;
-                self.create_bitbake_configs(build_data, bb_variables, force)?;
+                let _conf: BitbakeConf = BitbakeConf::new(build_data.bitbake(), bb_variables, force);
+                //conf.create_bitbake_configs(cli)?;
 
                 if dry_run {
                     cli.info("Dry run. Skipping build!".to_string());

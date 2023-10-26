@@ -1,10 +1,22 @@
-use rand::rngs::ThreadRng;
-
-use crate::workspace::{WsBuildConfigHandler, WsSettingsHandler, Workspace};
+#[cfg(test)]
+use crate::cli::{
+    BSystem,
+    MockLogger,
+    Cli,
+};
+use crate::workspace::{
+    WsBuildConfigHandler,
+    WsSettingsHandler,
+    Workspace
+};
 use crate::data::WsBuildData;
+
 use crate::error::BError;
 use crate::configs::WsSettings;
-use crate::fs::Archiver;
+use crate::fs::{
+    Archiver,
+    BitbakeConf
+};
 
 use std::path::{PathBuf, Path};
 use std::fs::File;
@@ -15,6 +27,7 @@ use rand::prelude::*;
 
 pub struct Helper;
 
+#[cfg(test)]
 impl Helper {
     pub fn setup_test_ws_default_dirs(work_dir: &Path) {
         std::fs::create_dir_all(work_dir.join("configs")).expect("Failed to create config dir!");

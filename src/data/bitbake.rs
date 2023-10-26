@@ -72,11 +72,29 @@ impl WsBitbakeData {
         // it would make it possible to use context inside the bitbake config files.
     }
 
-    pub fn bblayers_conf(&self) -> &Vec<String> {
-        &self.bblayers_conf
+    pub fn bblayers_conf(&self) -> String {
+        let mut conf_str: String = String::new();
+        for line in self.bblayers_conf.clone() {
+            conf_str.push_str(format!("{}\n", line).as_str());
+        }
+        conf_str
     }
 
-    pub fn local_conf(&self) -> Vec<String> {
+    pub fn local_conf(&self) -> String {
+        let mut conf_str: String = String::new();
+        for line in self.local_conf.clone() {
+            conf_str.push_str(format!("{}\n", line).as_str());
+        }
+        conf_str.push_str(&format!("MACHINE ?= {}\n", self.machine()));
+        // TODO: we need to handle VARIANT correctly but this is good enough for now
+        conf_str.push_str(&format!("VARIANT ?= {}\n", "dev".to_string()));
+        // TODO: we should define a method product_name() call that instead
+        conf_str.push_str(&format!("PRODUCT_NAME ?= {}\n", self.product));
+        conf_str.push_str(&format!("DISTRO ?= {}\n", self.distro));
+        conf_str.push_str(&format!("SSTATE_DIR ?= {}\n", self.sstate_dir().to_str().unwrap()));
+        conf_str.push_str(&format!("DL_DIR ?= {}\n", self.dl_dir().to_str().unwrap()));
+        conf_str
+        /*
         let mut local_conf: Vec<String> = self.local_conf.clone();
         local_conf.push(format!("MACHINE ?= {}", self.machine()));
         // TODO: we need to handle VARIANT correctly but this is good enough for now
@@ -92,6 +110,7 @@ impl WsBitbakeData {
         //local_conf.push(format!("RELASE_BUILD ?= {}", self.release_build()));
         //local_conf.push(format!("BUILD_VARIANT ?= {}", self.build_variant()));
         local_conf
+        */
     }
 
     pub fn machine(&self) -> &str {
@@ -227,23 +246,23 @@ mod tests {
         assert_eq!(data.bblayers_conf_path(), PathBuf::from(String::from("/workspace/builds/test-name/conf/bblayers.conf")));
         assert_eq!(data.local_conf_path(), PathBuf::from(String::from("/workspace/builds/test-name/conf/local.conf")));
         assert!(!data.bblayers_conf().is_empty());
-        assert_eq!(data.bblayers_conf(), &vec![
-            String::from("BB_LAYERS_CONF_TEST_LINE_1"),
-            String::from("BB_LAYERS_CONF_TEST_LINE_2"),
-            String::from("BB_LAYERS_CONF_TEST_LINE_3")
-        ]);
+        let mut conf_str: String = String::new();
+        conf_str.push_str("BB_LAYERS_CONF_TEST_LINE_1\n");
+        conf_str.push_str("BB_LAYERS_CONF_TEST_LINE_2\n");
+        conf_str.push_str("BB_LAYERS_CONF_TEST_LINE_3\n");
+        assert_eq!(data.bblayers_conf(), conf_str);
         assert!(!data.local_conf().is_empty());
-        assert_eq!(data.local_conf(), vec![
-            String::from("BB_LOCAL_CONF_TEST_LINE_1"),
-            String::from("BB_LOCAL_CONF_TEST_LINE_2"),
-            String::from("BB_LOCAL_CONF_TEST_LINE_3"),
-            String::from("MACHINE ?= test-machine"),
-            String::from("VARIANT ?= dev"),
-            String::from("PRODUCT_NAME ?= test-name"),
-            String::from("DISTRO ?= test-distro"),
-            String::from("SSTATE_DIR ?= /workspace/.cache/test-arch/sstate-cache"),
-            String::from("DL_DIR ?= /workspace/.cache/download")
-        ]);
+        let mut conf_str: String = String::new();
+        conf_str.push_str("BB_LOCAL_CONF_TEST_LINE_1\n");
+        conf_str.push_str("BB_LOCAL_CONF_TEST_LINE_2\n");
+        conf_str.push_str("BB_LOCAL_CONF_TEST_LINE_3\n");
+        conf_str.push_str("MACHINE ?= test-machine\n");
+        conf_str.push_str("VARIANT ?= dev\n");
+        conf_str.push_str("PRODUCT_NAME ?= test-name\n");
+        conf_str.push_str("DISTRO ?= test-distro\n");
+        conf_str.push_str("SSTATE_DIR ?= /workspace/.cache/test-arch/sstate-cache\n");
+        conf_str.push_str("DL_DIR ?= /workspace/.cache/download\n");
+        assert_eq!(data.local_conf(), conf_str);
         assert_eq!(data.sstate_dir(), PathBuf::from(String::from("/workspace/.cache/test-arch/sstate-cache")));
         assert_eq!(data.dl_dir(), PathBuf::from(String::from("/workspace/.cache/download")));
         assert_eq!(data.poky_dir(), PathBuf::from(String::from("/workspace/layers/poky")));

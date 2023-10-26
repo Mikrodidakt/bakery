@@ -102,20 +102,14 @@ mod tests {
         assert!(ws_config.build_data().bitbake().bblayers_conf().is_empty());
         assert_eq!(ws_config.build_data().bitbake().local_conf_path(), PathBuf::from("/workspace/builds/test-name/conf/local.conf"));
         assert!(!ws_config.build_data().bitbake().local_conf().is_empty());
-        let local_conf: Vec<String> = vec![
-            format!("MACHINE ?= {}", ws_config.build_data().bitbake().machine()),
-            "VARIANT ?= dev".to_string(),
-            format!("PRODUCT_NAME ?= {}", ws_config.build_data().product().name()),
-            format!("DISTRO ?= {}", ws_config.build_data().bitbake().distro()),
-            format!("SSTATE_DIR ?= {}", ws_config.build_data().bitbake().sstate_dir().to_str().unwrap()),
-            format!("DL_DIR ?= {}", ws_config.build_data().bitbake().dl_dir().to_str().unwrap()),
-            //format!("PLATFORM_VERSION ?= {}", ws_config.platform_version()),
-            //format!("BUILD_NUMBER ?= {}", ws_config.build_number()),
-            //format!("BUILD_SHA ?= {}", ws_config.build_sha()),
-            //format!("RELASE_BUILD ?= {}", ws_config.release_build()),
-            //format!("BUILD_VARIANT ?= {}", ws_config.build_variant()),
-        ];
-        assert_eq!(ws_config.build_data().bitbake().local_conf(), local_conf);
+        let mut conf_str: String = String::new();
+        conf_str.push_str(&format!("MACHINE ?= {}\n", ws_config.build_data().bitbake().machine()));
+        conf_str.push_str("VARIANT ?= dev\n");
+        conf_str.push_str(&format!("PRODUCT_NAME ?= {}\n", ws_config.build_data().product().name()));
+        conf_str.push_str(&format!("DISTRO ?= {}\n", ws_config.build_data().bitbake().distro()));
+        conf_str.push_str(&format!("SSTATE_DIR ?= {}\n", ws_config.build_data().bitbake().sstate_dir().to_str().unwrap()));
+        conf_str.push_str(&format!("DL_DIR ?= {}\n", ws_config.build_data().bitbake().dl_dir().to_str().unwrap()));
+        assert_eq!(ws_config.build_data().bitbake().local_conf(), conf_str);
         assert_eq!(ws_config.build_data().bitbake().docker_image(), "NA".to_string());
 
     }
