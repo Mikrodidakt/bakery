@@ -85,14 +85,14 @@ impl WsBitbakeData {
         for line in self.local_conf.clone() {
             conf_str.push_str(format!("{}\n", line).as_str());
         }
-        conf_str.push_str(&format!("MACHINE ?= {}\n", self.machine()));
+        conf_str.push_str(&format!("MACHINE ?= \"{}\"\n", self.machine()));
         // TODO: we need to handle VARIANT correctly but this is good enough for now
-        conf_str.push_str(&format!("VARIANT ?= {}\n", "dev".to_string()));
+        conf_str.push_str(&format!("VARIANT ?= \"{}\"\n", "dev".to_string()));
         // TODO: we should define a method product_name() call that instead
-        conf_str.push_str(&format!("PRODUCT_NAME ?= {}\n", self.product));
-        conf_str.push_str(&format!("DISTRO ?= {}\n", self.distro));
-        conf_str.push_str(&format!("SSTATE_DIR ?= {}\n", self.sstate_dir().to_str().unwrap()));
-        conf_str.push_str(&format!("DL_DIR ?= {}\n", self.dl_dir().to_str().unwrap()));
+        conf_str.push_str(&format!("PRODUCT_NAME ?= \"{}\"\n", self.product));
+        conf_str.push_str(&format!("DISTRO ?= \"{}\"\n", self.distro));
+        conf_str.push_str(&format!("SSTATE_DIR ?= \"{}\"\n", self.sstate_dir().to_str().unwrap()));
+        conf_str.push_str(&format!("DL_DIR ?= \"{}\"\n", self.dl_dir().to_str().unwrap()));
         conf_str
         /*
         let mut local_conf: Vec<String> = self.local_conf.clone();
@@ -256,12 +256,12 @@ mod tests {
         conf_str.push_str("BB_LOCAL_CONF_TEST_LINE_1\n");
         conf_str.push_str("BB_LOCAL_CONF_TEST_LINE_2\n");
         conf_str.push_str("BB_LOCAL_CONF_TEST_LINE_3\n");
-        conf_str.push_str("MACHINE ?= test-machine\n");
-        conf_str.push_str("VARIANT ?= dev\n");
-        conf_str.push_str("PRODUCT_NAME ?= test-name\n");
-        conf_str.push_str("DISTRO ?= test-distro\n");
-        conf_str.push_str("SSTATE_DIR ?= /workspace/.cache/test-arch/sstate-cache\n");
-        conf_str.push_str("DL_DIR ?= /workspace/.cache/download\n");
+        conf_str.push_str("MACHINE ?= \"test-machine\"\n");
+        conf_str.push_str("VARIANT ?= \"dev\"\n");
+        conf_str.push_str("PRODUCT_NAME ?= \"test-name\"\n");
+        conf_str.push_str("DISTRO ?= \"test-distro\"\n");
+        conf_str.push_str("SSTATE_DIR ?= \"/workspace/.cache/test-arch/sstate-cache\"\n");
+        conf_str.push_str("DL_DIR ?= \"/workspace/.cache/download\"\n");
         assert_eq!(data.local_conf(), conf_str);
         assert_eq!(data.sstate_dir(), PathBuf::from(String::from("/workspace/.cache/test-arch/sstate-cache")));
         assert_eq!(data.dl_dir(), PathBuf::from(String::from("/workspace/.cache/download")));

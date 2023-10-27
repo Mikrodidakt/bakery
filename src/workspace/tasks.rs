@@ -134,8 +134,10 @@ mod tests {
     use std::collections::HashMap;
     use std::path::{Path, PathBuf};
     use tempdir::TempDir;
+    use std::fs::File;
+    use std::io::Read;
     
-    use crate::cli::{BLogger, Cli, MockSystem, CallParams};
+    use crate::cli::{BLogger, MockLogger, Cli, MockSystem, CallParams, BSystem};
     use crate::workspace::{
         WsTaskHandler,
         WsArtifactsHandler,
@@ -146,6 +148,26 @@ mod tests {
         WsBuildData,
     };
     use crate::helper::Helper;
+
+    fn helper_verify_bitbake_conf(local_conf_path: &PathBuf, local_conf_content: &str, bblayers_conf_path: &PathBuf, bblayers_conf_content: &str) {
+        assert!(local_conf_path.exists());
+        assert!(bblayers_conf_path.exists());
+        let mut file: File = File::open(local_conf_path).expect("Failed to open local.conf file!");
+        let mut contents: String = String::new();
+        file.read_to_string(&mut contents)
+            .expect("Failed to read local.conf file!");
+        let mut validate_local_conf: String = String::from("# AUTO GENERATED\n");
+        validate_local_conf.push_str(local_conf_content);
+        assert_eq!(validate_local_conf, contents);
+
+        let mut file: File = File::open(bblayers_conf_path).expect("Failed to open bblayers.conf file!");
+        let mut contents: String = String::new();
+        file.read_to_string(&mut contents)
+            .expect("Failed to read bblayers.conf file!");
+        let mut validate_bblayers_conf: String = String::from("# AUTO GENERATED\n");
+        validate_bblayers_conf.push_str(bblayers_conf_content);
+        assert_eq!(validate_bblayers_conf, contents);
+    }
 
     #[test]
     fn test_ws_task_nonbitbake() {
@@ -519,5 +541,151 @@ mod tests {
             None,
         );
         task.run(&cli, &build_data, &vec![], &HashMap::new(), false, false).expect("Failed to run task!");
+    }
+
+    #[test]
+    fn test_ws_task_bitbake_confs() {
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let path: &Path = temp_dir.path();
+        let work_dir: PathBuf = PathBuf::from(path);
+        let build_dir: PathBuf = work_dir.join("builds/default");
+        let local_conf_path: PathBuf = build_dir.clone().join("conf/local.conf");
+        let bblayers_conf_path: PathBuf = build_dir.clone().join("conf/bblayers.conf");
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {
+                "machine": "raspberrypi3",
+                "variant": "release",
+                "distro": "strix",
+                "bblayersconf": [
+                    "LCONF_VERSION=\"7\"",
+                    "BBPATH=\"${TOPDIR}\"",
+                    "STRIX_WORKDIR := \"${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)) + '/../../..')}\"",
+                    "STRIXOS_LAYER := \"${STRIXWORKDIR}/layers/meta-strix\"",
+                    "GNDIR := \"${@os.path.abspath(os.path.join(os.path.dirname(d.getVar('FILE', True)),'../../../../'))}\"",
+                    "BBFILES ?= \"\"",
+                    "BBLAYERS ?= \" \\",
+                    "   ${STRIXOS_LAYER}/meta-strix-raspberrypi \\",
+                    "   ${STRIX_WORKDIR}/layers/poky/meta \\",
+                    "   ${STRIX_WORKDIR}/layers/poky/meta-poky \\",
+                    "   ${STRIX_WORKDIR}/layers/poky/meta-yocto-bsp \\",
+                    "   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-oe \\",
+                    "   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-networking \\",
+                    "   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-filesystems \\",
+                    "   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-python \\",
+                    "   ${STRIX_WORKDIR}/layers/meta-raspberrypi \""
+                ],
+                "localconf": [
+                    "BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"",
+                    "PARALLEL_MAKE ?= \"-j ${@oe.utils.cpu_count()}\"",
+                    "RM_OLD_IMAGE ?= \"1\"",
+                    "INHERIT += \"rm_work\"",
+                    "CONF_VERSION = \"1\"",
+                    "PACKAGE_CLASSES = \"package_rpm\"",
+                    "SDKMACHINE = \"x86_64\"",
+                    "USER_CLASSES = \"buildstats image-mklibs image-prelink\"",
+                    "PATCHRESOLVE = \"noop\"",
+                    "EXTRA_IMAGE_FEATURES = \"debug-tweaks\"",
+                    "BB_DISKMON_DIRS = \" \\",
+                    "   STOPTASKS,${TMPDIR},1G,100K \\",
+                    "   STOPTASKS,${DL_DIR},1G,100K \\",
+                    "   STOPTASKS,${SSTATE_DIR},1G,100K \\",
+                    "   STOPTASKS,/tmp,100M,100K \\",
+                    "   ABORT,${TMPDIR},100M,1K \\",
+                    "   ABORT,${DL_DIR},100M,1K \\",
+                    "   ABORT,${SSTATE_DIR},100M,1K \\",
+                    "   ABORT,/tmp,10M,1K \""
+                ]
+            }
+        }
+        "#;
+        let json_task_str: &str = r#"
+        { 
+            "index": "2",
+            "name": "task-name",
+            "recipes": [
+                "image"
+            ]
+        }"#;
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
+        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
+        let mut mocked_logger: MockLogger = MockLogger::new();
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq("Dry run. Skipping build!".to_string()))
+            .once()
+            .returning(|_x| ());
+        let cli: Cli = Cli::new(
+            Box::new(mocked_logger),
+            Box::new(BSystem::new()),
+            clap::Command::new("bakery"),
+            None,
+        );
+        task.run(
+            &cli,
+            &build_data,
+            &vec![],
+            &HashMap::new(),
+            true, // Running dry-run should skip the execution and instead only create the bitbake confs
+            false).expect("Failed to run task!");
+        let mut local_conf_content: String = String::from("");
+        local_conf_content.push_str("BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"\n");
+        local_conf_content.push_str("PARALLEL_MAKE ?= \"-j ${@oe.utils.cpu_count()}\"\n");
+        local_conf_content.push_str("RM_OLD_IMAGE ?= \"1\"\n");
+        local_conf_content.push_str("INHERIT += \"rm_work\"\n");
+        local_conf_content.push_str("CONF_VERSION = \"1\"\n");
+        local_conf_content.push_str("PACKAGE_CLASSES = \"package_rpm\"\n");
+        local_conf_content.push_str("SDKMACHINE = \"x86_64\"\n");
+        local_conf_content.push_str("USER_CLASSES = \"buildstats image-mklibs image-prelink\"\n");
+        local_conf_content.push_str("PATCHRESOLVE = \"noop\"\n");
+        local_conf_content.push_str("EXTRA_IMAGE_FEATURES = \"debug-tweaks\"\n");
+        local_conf_content.push_str("BB_DISKMON_DIRS = \" \\\n");
+        local_conf_content.push_str("   STOPTASKS,${TMPDIR},1G,100K \\\n");
+        local_conf_content.push_str("   STOPTASKS,${DL_DIR},1G,100K \\\n");
+        local_conf_content.push_str("   STOPTASKS,${SSTATE_DIR},1G,100K \\\n");
+        local_conf_content.push_str("   STOPTASKS,/tmp,100M,100K \\\n");
+        local_conf_content.push_str("   ABORT,${TMPDIR},100M,1K \\\n");
+        local_conf_content.push_str("   ABORT,${DL_DIR},100M,1K \\\n");
+        local_conf_content.push_str("   ABORT,${SSTATE_DIR},100M,1K \\\n");
+        local_conf_content.push_str("   ABORT,/tmp,10M,1K \"\n");
+        local_conf_content.push_str("MACHINE ?= \"raspberrypi3\"\n");
+        local_conf_content.push_str("VARIANT ?= \"dev\"\n");
+        local_conf_content.push_str("PRODUCT_NAME ?= \"default\"\n");
+        local_conf_content.push_str("DISTRO ?= \"strix\"\n");
+        local_conf_content.push_str(&format!("SSTATE_DIR ?= \"{}/.cache/test-arch/sstate-cache\"\n", work_dir.to_string_lossy().to_string()));
+        local_conf_content.push_str(&format!("DL_DIR ?= \"{}/.cache/download\"\n",work_dir.to_string_lossy().to_string()));
+        let mut bblayers_conf_content: String = String::from("");
+        bblayers_conf_content.push_str("LCONF_VERSION=\"7\"\n");
+        bblayers_conf_content.push_str("BBPATH=\"${TOPDIR}\"\n");
+        bblayers_conf_content.push_str("STRIX_WORKDIR := \"${@os.path.abspath(os.path.dirname(d.getVar('FILE', True)) + '/../../..')}\"\n");
+        bblayers_conf_content.push_str("STRIXOS_LAYER := \"${STRIXWORKDIR}/layers/meta-strix\"\n");
+        bblayers_conf_content.push_str("GNDIR := \"${@os.path.abspath(os.path.join(os.path.dirname(d.getVar('FILE', True)),'../../../../'))}\"\n");
+        bblayers_conf_content.push_str("BBFILES ?= \"\"\n");
+        bblayers_conf_content.push_str("BBLAYERS ?= \" \\\n");
+        bblayers_conf_content.push_str("   ${STRIXOS_LAYER}/meta-strix-raspberrypi \\\n");
+        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/poky/meta \\\n");
+        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/poky/meta-poky \\\n");
+        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/poky/meta-yocto-bsp \\\n");
+        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-oe \\\n");
+        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-networking \\\n");
+        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-filesystems \\\n");
+        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-python \\\n");
+        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/meta-raspberrypi \"\n");
+        helper_verify_bitbake_conf(&local_conf_path, &local_conf_content, &bblayers_conf_path, &bblayers_conf_content);
     }
 }

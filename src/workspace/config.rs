@@ -103,12 +103,12 @@ mod tests {
         assert_eq!(ws_config.build_data().bitbake().local_conf_path(), PathBuf::from("/workspace/builds/test-name/conf/local.conf"));
         assert!(!ws_config.build_data().bitbake().local_conf().is_empty());
         let mut conf_str: String = String::new();
-        conf_str.push_str(&format!("MACHINE ?= {}\n", ws_config.build_data().bitbake().machine()));
-        conf_str.push_str("VARIANT ?= dev\n");
-        conf_str.push_str(&format!("PRODUCT_NAME ?= {}\n", ws_config.build_data().product().name()));
-        conf_str.push_str(&format!("DISTRO ?= {}\n", ws_config.build_data().bitbake().distro()));
-        conf_str.push_str(&format!("SSTATE_DIR ?= {}\n", ws_config.build_data().bitbake().sstate_dir().to_str().unwrap()));
-        conf_str.push_str(&format!("DL_DIR ?= {}\n", ws_config.build_data().bitbake().dl_dir().to_str().unwrap()));
+        conf_str.push_str(&format!("MACHINE ?= \"{}\"\n", ws_config.build_data().bitbake().machine()));
+        conf_str.push_str("VARIANT ?= \"dev\"\n");
+        conf_str.push_str(&format!("PRODUCT_NAME ?= \"{}\"\n", ws_config.build_data().product().name()));
+        conf_str.push_str(&format!("DISTRO ?= \"{}\"\n", ws_config.build_data().bitbake().distro()));
+        conf_str.push_str(&format!("SSTATE_DIR ?= \"{}\"\n", ws_config.build_data().bitbake().sstate_dir().to_str().unwrap()));
+        conf_str.push_str(&format!("DL_DIR ?= \"{}\"\n", ws_config.build_data().bitbake().dl_dir().to_str().unwrap()));
         assert_eq!(ws_config.build_data().bitbake().local_conf(), conf_str);
         assert_eq!(ws_config.build_data().bitbake().docker_image(), "NA".to_string());
 

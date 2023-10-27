@@ -52,6 +52,7 @@ impl BitbakeConf {
             None => {}
         }
 
+        println!("create bb conf file");
         if force {
             let msg: String = format!("Autogenerate {}", file_name);
             println!("{}", msg);
@@ -153,9 +154,9 @@ mod tests {
         let local_conf_path: PathBuf = bitbake_conf_path.join("local.conf");
         let bblayers_conf_path: PathBuf = bitbake_conf_path.join("bblayers.conf");
         let mut local_conf_content: String = String::new();
-        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 1\n");
-        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 2\n");
-        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 3\n");
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"1\"\n");
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"2\"\n");
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"3\"\n");
         let bblayers_conf_content: String = String::new();
         let bb_variables: Vec<String> = vec![];
         let force: bool = false;
@@ -200,9 +201,9 @@ mod tests {
         let bblayers_conf_path: PathBuf = bitbake_conf_path.join("bblayers.conf");
         let local_conf_content: String = String::new();
         let mut bblayers_conf_content: String = String::new();
-        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 1\n");
-        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 2\n");
-        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 3\n");
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= \"1\"\n");
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= \"2\"\n");
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= \"3\"\n");
         let bb_variables: Vec<String> = vec![];
         let force: bool = false;
         let mut mocked_logger: MockLogger = MockLogger::new();
@@ -246,9 +247,9 @@ mod tests {
         let bblayers_conf_path: PathBuf = bitbake_conf_path.join("bblayers.conf");
         let local_conf_content: String = String::new();
         let mut bblayers_conf_content: String = String::new();
-        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 1\n");
-        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 2\n");
-        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 3\n");
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= \"1\"\n");
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= \"2\"\n");
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= \"3\"\n");
         let bb_variables: Vec<String> = vec![];
         let force: bool = false;
         let mut mocked_logger: MockLogger = MockLogger::new();
@@ -297,9 +298,9 @@ mod tests {
         let local_conf_path: PathBuf = bitbake_conf_path.join("local.conf");
         let bblayers_conf_path: PathBuf = bitbake_conf_path.join("bblayers.conf");
         let mut local_conf_content: String = String::new();
-        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 1\n");
-        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 2\n");
-        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 3\n");
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"1\"\n");
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"2\"\n");
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"3\"\n");
         let bblayers_conf_content: String = String::new();
         let bb_variables: Vec<String> = vec![];
         let force: bool = false;
@@ -350,9 +351,9 @@ mod tests {
         let bblayers_conf_path: PathBuf = bitbake_conf_path.join("bblayers.conf");
         let local_conf_content: String = String::new();
         let mut bblayers_conf_content: String = String::new();
-        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 1\n");
-        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 2\n");
-        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 3\n");
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= \"1\"\n");
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= \"2\"\n");
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= \"3\"\n");
         let bb_variables: Vec<String> = vec![];
         let force: bool = true;
         let mut mocked_logger: MockLogger = MockLogger::new();
@@ -401,9 +402,9 @@ mod tests {
         let local_conf_path: PathBuf = bitbake_conf_path.join("local.conf");
         let bblayers_conf_path: PathBuf = bitbake_conf_path.join("bblayers.conf");
         let mut local_conf_content: String = String::new();
-        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 1\n");
-        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 2\n");
-        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 3\n");
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"1\"\n");
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"2\"\n");
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"3\"\n");
         let mut bblayers_conf_content: String = String::new();
         let bb_variables: Vec<String> = vec![];
         let force: bool = true;
@@ -453,13 +454,13 @@ mod tests {
         let local_conf_path: PathBuf = bitbake_conf_path.join("local.conf");
         let bblayers_conf_path: PathBuf = bitbake_conf_path.join("bblayers.conf");
         let mut local_conf_content: String = String::new();
-        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 1\n");
-        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 2\n");
-        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= 3\n");
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"1\"\n");
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"2\"\n");
+        local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"3\"\n");
         let mut bblayers_conf_content: String = String::new();
-        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 1\n");
-        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 2\n");
-        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= 3\n");
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= \"1\"\n");
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= \"2\"\n");
+        bblayers_conf_content.push_str("BBLAYERS_CONF_TEST_LINE ?= \"3\"\n");
         let bb_variables: Vec<String> = vec![];
         let force: bool = true;
         let mut mocked_logger: MockLogger = MockLogger::new();

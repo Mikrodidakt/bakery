@@ -5,7 +5,7 @@ use crate::commands::{BCommand, BBaseCommand};
 use crate::workspace::{Workspace, WsTaskHandler};
 use crate::cli::Cli;
 use crate::error::BError;
-use crate::configs::{Context};
+use crate::configs::Context;
 
 static BCOMMAND: &str = "build";
 static BCOMMAND_ABOUT: &str = "Execute a build either a full build or a task of one of the builds";
@@ -276,6 +276,8 @@ mod tests {
     use std::path::PathBuf;
     use tempdir::TempDir;
     use std::collections::HashMap;
+    use std::fs::File;
+    use std::io::Read;
 
     use crate::cli::*;
     use crate::commands::{BCommand, BuildCommand};
@@ -283,20 +285,126 @@ mod tests {
     use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
 
     fn helper_test_build_subcommand(json_ws_settings: &str, json_build_config: &str,
-            work_dir: &PathBuf, msystem: MockSystem, cmd_line: Vec<&str>) -> Result<(), BError> {
+            work_dir: &PathBuf, logger: Box<dyn Logger>, system: Box<dyn System>, cmd_line: Vec<&str>) -> Result<(), BError> {
         let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings)?;
         let config: WsBuildConfigHandler =
             WsBuildConfigHandler::from_str(json_build_config, &settings)?;
         let mut workspace: Workspace =
             Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config))?;
         let cli: Cli = Cli::new(
-            Box::new(BLogger::new()),
-            Box::new(msystem),
+            logger,
+            system,
             clap::Command::new("bakery"),
             Some(cmd_line),
         );
         let cmd: BuildCommand = BuildCommand::new();
         cmd.execute(&cli, &mut workspace)
+    }
+
+    fn helper_verify_bitbake_conf(local_conf_path: &PathBuf, local_conf_content: &str, bblayers_conf_path: &PathBuf, bblayers_conf_content: &str) {
+        assert!(local_conf_path.exists());
+        assert!(bblayers_conf_path.exists());
+        let mut file: File = File::open(local_conf_path).expect("Failed to open local.conf file!");
+        let mut contents: String = String::new();
+        file.read_to_string(&mut contents)
+            .expect("Failed to read local.conf file!");
+        let mut validate_local_conf: String = String::from("# AUTO GENERATED\n");
+        validate_local_conf.push_str(local_conf_content);
+        assert_eq!(validate_local_conf, contents);
+
+        let mut file: File = File::open(bblayers_conf_path).expect("Failed to open bblayers.conf file!");
+        let mut contents: String = String::new();
+        file.read_to_string(&mut contents)
+            .expect("Failed to read bblayers.conf file!");
+        let mut validate_bblayers_conf: String = String::from("# AUTO GENERATED\n");
+        validate_bblayers_conf.push_str(bblayers_conf_content);
+        assert_eq!(validate_bblayers_conf, contents);
+    }
+
+    fn helper_test_local_conf_args(arg: &str, lines: &str) {
+        let json_ws_settings: &str = r#"
+        {
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {
+                "machine": "raspberrypi3",
+                "variant": "release",
+                "distro": "strix",
+                "bblayersconf": [
+                    "LCONF_VERSION=\"7\"",
+                    "BBPATH=\"${TOPDIR}\""
+                ],
+                "localconf": [
+                    "BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"",
+                    "PARALLEL_MAKE ?= \"-j ${@oe.utils.cpu_count()}\""
+                ]
+            },
+            "tasks": {
+                "image": { 
+                    "index": "1",
+                    "name": "image",
+                    "recipes": [
+                        "image"
+                    ]
+                }
+            }
+        }
+        "#;
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let build_dir: PathBuf = work_dir.join("builds/default");
+        let local_conf_path: PathBuf = build_dir.clone().join("conf/local.conf");
+        let bblayers_conf_path: PathBuf = build_dir.clone().join("conf/bblayers.conf");
+        let mocked_system: MockSystem = MockSystem::new();
+        let mut mocked_logger: MockLogger = MockLogger::new();
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq("Dry run. Skipping build!".to_string()))
+            .once()
+            .returning(|_x| ());
+        let _result: Result<(), BError> = helper_test_build_subcommand(
+            json_ws_settings,
+            json_build_config,
+            &work_dir,
+            Box::new(mocked_logger),
+            Box::new(mocked_system),
+            vec!["bakery", "build", "--config", "default", "--tasks", "image", "--dry-run", arg],
+        );
+        let mut bblayers_conf_content: String = String::from("");
+        bblayers_conf_content.push_str("LCONF_VERSION=\"7\"\n");
+        bblayers_conf_content.push_str("BBPATH=\"${TOPDIR}\"\n");
+        let mut local_conf_content: String = String::from("");
+        local_conf_content.push_str("BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"\n");
+        local_conf_content.push_str("PARALLEL_MAKE ?= \"-j ${@oe.utils.cpu_count()}\"\n");
+        local_conf_content.push_str("MACHINE ?= \"raspberrypi3\"\n");
+        local_conf_content.push_str("VARIANT ?= \"dev\"\n");
+        local_conf_content.push_str("PRODUCT_NAME ?= \"default\"\n");
+        local_conf_content.push_str("DISTRO ?= \"strix\"\n");
+        local_conf_content.push_str(&format!("SSTATE_DIR ?= \"{}/.cache/test-arch/sstate-cache\"\n", work_dir.to_string_lossy().to_string()));
+        local_conf_content.push_str(&format!("DL_DIR ?= \"{}/.cache/download\"\n",work_dir.to_string_lossy().to_string()));
+        local_conf_content.push_str(lines);
+        helper_verify_bitbake_conf(&local_conf_path, &local_conf_content, &bblayers_conf_path, &bblayers_conf_content); 
     }
 
     #[test]
@@ -348,7 +456,8 @@ mod tests {
             json_ws_settings,
             json_build_config,
             &work_dir,
-            mocked_system,
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
             vec!["bakery", "build", "--config", "default"],
         );
     }
@@ -403,7 +512,8 @@ mod tests {
             json_ws_settings,
             json_build_config,
             &work_dir,
-            mocked_system,
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
             vec!["bakery", "build", "--config", "default"],
         );
     }
@@ -459,7 +569,8 @@ mod tests {
             json_ws_settings,
             json_build_config,
             &work_dir,
-            mocked_system,
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
             vec!["bakery", "build", "--config", "default"],
         );
     }
@@ -514,7 +625,8 @@ mod tests {
             json_ws_settings,
             json_build_config,
             &work_dir,
-            mocked_system,
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
             vec!["bakery", "build", "--config", "default", "--tasks", "task-name"],
         );
     }
@@ -594,8 +706,110 @@ mod tests {
             json_ws_settings,
             json_build_config,
             &work_dir,
-            mocked_system,
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
             vec!["bakery", "build", "--config", "default", "--tasks", "image,sdk"],
         );
+    }
+
+    #[test]
+    fn test_cmd_build_dry_run() {
+        let json_ws_settings: &str = r#"
+        {
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {
+                "machine": "raspberrypi3",
+                "variant": "release",
+                "distro": "strix",
+                "bblayersconf": [
+                    "LCONF_VERSION=\"7\"",
+                    "BBPATH=\"${TOPDIR}\""
+                ],
+                "localconf": [
+                    "BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"",
+                    "PARALLEL_MAKE ?= \"-j ${@oe.utils.cpu_count()}\""
+                ]
+            },
+            "tasks": {
+                "image": { 
+                    "index": "1",
+                    "name": "image",
+                    "recipes": [
+                        "image"
+                    ]
+                }
+            }
+        }
+        "#;
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let mocked_system: MockSystem = MockSystem::new();
+        let mut mocked_logger: MockLogger = MockLogger::new();
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq("Dry run. Skipping build!".to_string()))
+            .once()
+            .returning(|_x| ());
+        let _result: Result<(), BError> = helper_test_build_subcommand(
+            json_ws_settings,
+            json_build_config,
+            &work_dir,
+            Box::new(mocked_logger),
+            Box::new(mocked_system),
+            vec!["bakery", "build", "--config", "default", "--tasks", "image", "--dry-run"],
+        );
+    }
+
+    #[test]
+    fn test_cmd_build_build_history() {
+        let mut local_conf_lines: String = String::from("");
+        local_conf_lines.push_str("INHERIT += \"buildhistory\"\n");
+        local_conf_lines.push_str("BUILDHISTORY_COMMIT = \"1\"\n");
+        helper_test_local_conf_args("--build-history", &local_conf_lines);
+    }
+
+    #[test]
+    fn test_cmd_build_tar_balls() {
+        let mut local_conf_lines: String = String::from("");
+        local_conf_lines.push_str("BB_GENERATE_MIRROR_TARBALLS = \"1\"\n");
+        helper_test_local_conf_args("--tar-balls", &local_conf_lines);
+    }
+
+    #[test]
+    fn test_cmd_build_debug_symbols() {
+        let mut local_conf_lines: String = String::from("");
+        local_conf_lines.push_str("IMAGE_GEN_DEBUGFS = \"1\"\n");
+        local_conf_lines.push_str("IMAGE_FSTYPES_DEBUGFS = \"tar.bz2\"\n");
+        helper_test_local_conf_args("--debug-symbols", &local_conf_lines);
+    }
+
+    #[test]
+    fn test_cmd_build_archiver() {
+        let mut local_conf_lines: String = String::from("");
+        local_conf_lines.push_str("INHERIT += \"archiver\"\n");
+        local_conf_lines.push_str("ARCHIVER_MODE[src] = \"original\"\n");
+        helper_test_local_conf_args("--archiver", &local_conf_lines);
     }
 }
