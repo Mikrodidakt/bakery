@@ -95,8 +95,8 @@ impl WsTaskHandler {
                 // when not a dry run it will be determined if it is needed or not to
                 // regenerate the bb configs
                 let force: bool = dry_run;
-                let _conf: BitbakeConf = BitbakeConf::new(build_data.bitbake(), bb_variables, force);
-                //conf.create_bitbake_configs(cli)?;
+                let conf: BitbakeConf = BitbakeConf::new(build_data.bitbake(), bb_variables, force);
+                conf.create_bitbake_configs(cli)?;
 
                 if dry_run {
                     cli.info("Dry run. Skipping build!".to_string());
@@ -132,7 +132,8 @@ impl WsTaskHandler {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
+    use tempdir::TempDir;
     
     use crate::cli::{BLogger, Cli, MockSystem, CallParams};
     use crate::workspace::{
@@ -392,7 +393,10 @@ mod tests {
 
     #[test]
     fn test_ws_task_run_bitbake() {
-        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let path: &Path = temp_dir.path();
+        let work_dir: PathBuf = PathBuf::from(path);
         let json_task_str: &str = r#"
         { 
             "index": "2",
@@ -408,7 +412,7 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", "/workspace/builds/NA", "&&", "bitbake", "test-image"]
+                cmd_line: vec!["cd", &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()), "&&", "bitbake", "test-image"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -428,7 +432,10 @@ mod tests {
 
     #[test]
     fn test_ws_task_run_docker() {
-        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let path: &Path = temp_dir.path();
+        let work_dir: PathBuf = PathBuf::from(path);
         let json_task_str: &str = r#"
         { 
             "index": "2",
@@ -445,7 +452,7 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["docker", "run", "test-registry/test-image:0.1", "cd", "/workspace/builds/NA", "&&", "bitbake", "test-image"]
+                cmd_line: vec!["docker", "run", "test-registry/test-image:0.1", "cd", &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()), "&&", "bitbake", "test-image"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -465,7 +472,10 @@ mod tests {
 
     #[test]
     fn test_ws_task_run_recipes() {
-        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let path: &Path = temp_dir.path();
+        let work_dir: PathBuf = PathBuf::from(path);
         let json_task_str: &str = r#"
         { 
             "index": "2",
@@ -481,7 +491,7 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", "/workspace/builds/NA", "&&", "bitbake", "image"]
+                cmd_line: vec!["cd", &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()), "&&", "bitbake", "image"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -493,7 +503,7 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", "/workspace/builds/NA", "&&", "bitbake", "image", "-c", "do_populate_sdk"]
+                cmd_line: vec!["cd", &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()), "&&", "bitbake", "image", "-c", "do_populate_sdk"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),

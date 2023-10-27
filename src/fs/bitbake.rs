@@ -293,7 +293,6 @@ mod tests {
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let path: &Path = temp_dir.path();
-        //let path: PathBuf = PathBuf::from("/home/mans/Workspace/rust/bakery/test");
         let bitbake_conf_path: PathBuf = path.join("conf");
         let local_conf_path: PathBuf = bitbake_conf_path.join("local.conf");
         let bblayers_conf_path: PathBuf = bitbake_conf_path.join("bblayers.conf");
@@ -346,7 +345,6 @@ mod tests {
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let path: &Path = temp_dir.path();
-        //let path: PathBuf = PathBuf::from("/home/mans/Workspace/rust/bakery/test");
         let bitbake_conf_path: PathBuf = path.join("conf");
         let local_conf_path: PathBuf = bitbake_conf_path.join("local.conf");
         let bblayers_conf_path: PathBuf = bitbake_conf_path.join("bblayers.conf");
@@ -399,7 +397,6 @@ mod tests {
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let path: &Path = temp_dir.path();
-        //let path: PathBuf = PathBuf::from("/home/mans/Workspace/rust/bakery/test");
         let bitbake_conf_path: PathBuf = path.join("conf");
         let local_conf_path: PathBuf = bitbake_conf_path.join("local.conf");
         let bblayers_conf_path: PathBuf = bitbake_conf_path.join("bblayers.conf");
@@ -452,7 +449,6 @@ mod tests {
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let path: &Path = temp_dir.path();
-        //let path: PathBuf = PathBuf::from("/home/mans/Workspace/rust/bakery/test");
         let bitbake_conf_path: PathBuf = path.join("conf");
         let local_conf_path: PathBuf = bitbake_conf_path.join("local.conf");
         let bblayers_conf_path: PathBuf = bitbake_conf_path.join("bblayers.conf");
