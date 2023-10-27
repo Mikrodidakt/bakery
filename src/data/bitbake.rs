@@ -94,23 +94,11 @@ impl WsBitbakeData {
         conf_str.push_str(&format!("SSTATE_DIR ?= \"{}\"\n", self.sstate_dir().to_str().unwrap()));
         conf_str.push_str(&format!("DL_DIR ?= \"{}\"\n", self.dl_dir().to_str().unwrap()));
         conf_str
-        /*
-        let mut local_conf: Vec<String> = self.local_conf.clone();
-        local_conf.push(format!("MACHINE ?= {}", self.machine()));
-        // TODO: we need to handle VARIANT correctly but this is good enough for now
-        local_conf.push(format!("VARIANT ?= {}", "dev".to_string()));
-        // TODO: we should define a method product_name() call that instead
-        local_conf.push(format!("PRODUCT_NAME ?= {}", self.product));
-        local_conf.push(format!("DISTRO ?= {}", self.distro));
-        local_conf.push(format!("SSTATE_DIR ?= {}", self.sstate_dir().to_str().unwrap()));
-        local_conf.push(format!("DL_DIR ?= {}", self.dl_dir().to_str().unwrap()));
         //local_conf.push(format!("PLATFORM_VERSION ?= {}", self.platform_version()));
         //local_conf.push(format!("BUILD_NUMBER ?= {}", self.build_number()));
         //local_conf.push(format!("BUILD_SHA ?= {}", self.build_sha()));
         //local_conf.push(format!("RELASE_BUILD ?= {}", self.release_build()));
         //local_conf.push(format!("BUILD_VARIANT ?= {}", self.build_variant()));
-        local_conf
-        */
     }
 
     pub fn machine(&self) -> &str {

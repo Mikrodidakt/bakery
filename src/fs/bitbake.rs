@@ -52,7 +52,6 @@ impl BitbakeConf {
             None => {}
         }
 
-        println!("create bb conf file");
         if force {
             let msg: String = format!("Autogenerate {}", file_name);
             println!("{}", msg);

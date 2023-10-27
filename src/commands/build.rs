@@ -86,12 +86,26 @@ impl BCommand for BuildCommand {
             "RELEASE_BUILD".to_string() => "0".to_string(),
             "BUILD_VARIANT".to_string() => variant.clone(),
             "PLATFORM_RELEASE".to_string() => format!("{}-{}", version, build_id),
-            "ARCHIVER".to_string() => (archiver as i32).to_string(),
-            "DEBUG_SYMBOLS".to_string() => (debug_symbols as i32).to_string(),
+            //"ARCHIVER".to_string() => (archiver as i32).to_string(),
+            //"DEBUG_SYMBOLS".to_string() => (debug_symbols as i32).to_string(),
         };
 
         if variant == "release" {
-            extra_ctx.insert("BUILD_VARIANT".to_string(), "1".to_string());
+            /*
+            build commands defined in the build config needs to
+            know if it is release build or not running by including
+            the BUILD_VARIANT to the context we can expose this to
+            the build commands. We are keeping RELEASE_BUILD for
+            backwards compatibility but should be replaced with BUILD_VARIANT
+            */
+            extra_ctx.insert("BUILD_VARIANT".to_string(), "release".to_string());
+            extra_ctx.insert("RELEASE_BUILD".to_string(), "1".to_string());
+        }
+
+        // We need to add the extra context variables to the list of bitbake variables
+        // so they can be added to the bitbake local.conf file
+        for (key, value) in extra_ctx.clone() {
+            bb_variables.push(format!("{} ?= \"{}\"", key, value));
         }
         
         // Update the config context with the context from the args
@@ -321,7 +335,9 @@ mod tests {
         assert_eq!(validate_bblayers_conf, contents);
     }
 
-    fn helper_test_local_conf_args(arg: &str, lines: &str) {
+    fn helper_test_local_conf_args(args: &mut Vec<&str>, lines: Option<&str>, bb_variables: Option<&str>) {
+        let mut cmd_line: Vec<&str> = vec!["bakery", "build", "--config", "default", "--tasks", "image", "--dry-run"];
+        cmd_line.append(args);
         let json_ws_settings: &str = r#"
         {
             "version": "4",
@@ -389,7 +405,7 @@ mod tests {
             &work_dir,
             Box::new(mocked_logger),
             Box::new(mocked_system),
-            vec!["bakery", "build", "--config", "default", "--tasks", "image", "--dry-run", arg],
+            cmd_line,
         );
         let mut bblayers_conf_content: String = String::from("");
         bblayers_conf_content.push_str("LCONF_VERSION=\"7\"\n");
@@ -403,7 +419,15 @@ mod tests {
         local_conf_content.push_str("DISTRO ?= \"strix\"\n");
         local_conf_content.push_str(&format!("SSTATE_DIR ?= \"{}/.cache/test-arch/sstate-cache\"\n", work_dir.to_string_lossy().to_string()));
         local_conf_content.push_str(&format!("DL_DIR ?= \"{}/.cache/download\"\n",work_dir.to_string_lossy().to_string()));
-        local_conf_content.push_str(lines);
+        local_conf_content.push_str(lines.unwrap_or(""));
+        let mut default_bb_variables: String = String::from("");
+        default_bb_variables.push_str("PLATFORM_VERSION ?= \"0.0.0\"\n");
+        default_bb_variables.push_str("BUILD_ID ?= \"0\"\n");
+        default_bb_variables.push_str("BUILD_SHA ?= \"dev\"\n");
+        default_bb_variables.push_str("RELEASE_BUILD ?= \"0\"\n");
+        default_bb_variables.push_str("BUILD_VARIANT ?= \"dev\"\n");
+        default_bb_variables.push_str("PLATFORM_RELEASE ?= \"0.0.0-0\"\n");
+        local_conf_content.push_str(bb_variables.unwrap_or(&default_bb_variables));
         helper_verify_bitbake_conf(&local_conf_path, &local_conf_content, &bblayers_conf_path, &bblayers_conf_content); 
     }
 
@@ -783,33 +807,48 @@ mod tests {
     }
 
     #[test]
-    fn test_cmd_build_build_history() {
+    fn test_cmd_build_arg_build_history() {
         let mut local_conf_lines: String = String::from("");
         local_conf_lines.push_str("INHERIT += \"buildhistory\"\n");
         local_conf_lines.push_str("BUILDHISTORY_COMMIT = \"1\"\n");
-        helper_test_local_conf_args("--build-history", &local_conf_lines);
+        helper_test_local_conf_args(&mut vec!["--build-history"], Some(&local_conf_lines), None);
     }
 
     #[test]
-    fn test_cmd_build_tar_balls() {
+    fn test_cmd_build_arg_tar_balls() {
         let mut local_conf_lines: String = String::from("");
         local_conf_lines.push_str("BB_GENERATE_MIRROR_TARBALLS = \"1\"\n");
-        helper_test_local_conf_args("--tar-balls", &local_conf_lines);
+        helper_test_local_conf_args(&mut vec!["--tar-balls"], Some(&local_conf_lines), None);
     }
 
     #[test]
-    fn test_cmd_build_debug_symbols() {
+    fn test_cmd_build_arg_debug_symbols() {
         let mut local_conf_lines: String = String::from("");
         local_conf_lines.push_str("IMAGE_GEN_DEBUGFS = \"1\"\n");
         local_conf_lines.push_str("IMAGE_FSTYPES_DEBUGFS = \"tar.bz2\"\n");
-        helper_test_local_conf_args("--debug-symbols", &local_conf_lines);
+        helper_test_local_conf_args(&mut vec!["--debug-symbols"], Some(&local_conf_lines), None);
     }
 
     #[test]
-    fn test_cmd_build_archiver() {
+    fn test_cmd_build_arg_archiver() {
         let mut local_conf_lines: String = String::from("");
         local_conf_lines.push_str("INHERIT += \"archiver\"\n");
         local_conf_lines.push_str("ARCHIVER_MODE[src] = \"original\"\n");
-        helper_test_local_conf_args("--archiver", &local_conf_lines);
+        helper_test_local_conf_args(&mut vec!["--archiver"], Some(&local_conf_lines), None);
+    }
+
+    #[test]
+    fn test_cmd_build_arg_bitbake_variables() {
+        let mut bb_variables: String = String::from("");
+        bb_variables.push_str("PLATFORM_VERSION ?= \"1.2.3\"\n");
+        bb_variables.push_str("BUILD_ID ?= \"4\"\n");
+        bb_variables.push_str("BUILD_SHA ?= \"abcdefgh\"\n");
+        bb_variables.push_str("RELEASE_BUILD ?= \"1\"\n");
+        bb_variables.push_str("BUILD_VARIANT ?= \"release\"\n");
+        bb_variables.push_str("PLATFORM_RELEASE ?= \"1.2.3-4\"\n");
+        helper_test_local_conf_args(
+            &mut vec!["--platform-version=1.2.3", "--build-id=4", "--build-sha=abcdefgh", "--variant=release"],
+            None,
+            Some(&bb_variables));
     }
 }
