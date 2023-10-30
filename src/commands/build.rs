@@ -112,6 +112,7 @@ impl BCommand for BuildCommand {
         let mut context: Context = Context::new(&args_context);
         context.update(&extra_ctx);
         workspace.update_ctx(&context);
+        workspace.expand_ctx();
         
         if tasks.len() > 1 {
             // More then one task was specified on the command line
@@ -850,5 +851,79 @@ mod tests {
             &mut vec!["--platform-version=1.2.3", "--build-id=4", "--build-sha=abcdefgh", "--variant=release"],
             None,
             Some(&bb_variables));
+    }
+
+    #[test]
+    fn test_cmd_build_arg_variant_test() {
+        let mut bb_variables: String = String::from("");
+        bb_variables.push_str("PLATFORM_VERSION ?= \"0.0.0\"\n");
+        bb_variables.push_str("BUILD_ID ?= \"0\"\n");
+        bb_variables.push_str("BUILD_SHA ?= \"dev\"\n");
+        bb_variables.push_str("RELEASE_BUILD ?= \"0\"\n");
+        bb_variables.push_str("BUILD_VARIANT ?= \"test\"\n");
+        bb_variables.push_str("PLATFORM_RELEASE ?= \"0.0.0-0\"\n");
+        helper_test_local_conf_args(
+            &mut vec!["--variant=test"],
+            None,
+            Some(&bb_variables));
+    }
+
+    #[test]
+    fn test_cmd_build_context() {
+        let json_ws_settings: &str = r#"
+        {
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "context": [
+                "DIR1=dir1",
+                "DIR2=${DIR1}/dir2",
+                "PROJECT=all"
+            ],
+            "tasks": {
+                "task-name": { 
+                    "index": "1",
+                    "name": "task-name",
+                    "type": "non-bitbake",
+                    "builddir": "build/${DIR2}",
+                    "build": "test.sh build ${PROJECT}",
+                    "clean": "test.sh clean ${PROJECT}"
+                }
+            }
+        }"#;
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let build_dir: PathBuf = work_dir.join("build/dir3/dir2");
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "test.sh", "build", "test"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                env: HashMap::new(),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
+        let _result: Result<(), BError> = helper_test_build_subcommand(
+            json_ws_settings,
+            json_build_config,
+            &work_dir,
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            vec!["bakery", "build", "--config", "default", "--tasks", "task-name", "--context", "DIR1=dir3", "--context", "PROJECT=test"],
+        );
     }
 }

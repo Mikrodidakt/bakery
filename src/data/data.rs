@@ -19,15 +19,11 @@ pub struct WsBuildData {
 
 impl WsBuildData {
     fn get_task(&self, data: &Value) -> Result<WsTaskHandler, BError> {
-        let mut task: WsTaskHandler = WsTaskHandler::new(data, &self)?;
-        task.expand_ctx(self.context().ctx());
-        Ok(task)
+        WsTaskHandler::new(data, &self)
     }
 
     fn get_artifact(&self, data: &Value, task_build_dir: &PathBuf) -> Result<WsArtifactsHandler, BError> {
-        let mut artifact: WsArtifactsHandler = WsArtifactsHandler::new(data, task_build_dir, &self)?;
-        artifact.expand_ctx(self.context().ctx());
-        Ok(artifact)
+        WsArtifactsHandler::new(data, task_build_dir, &self)
     }
 
     pub fn from_str(json_config: &str, settings: &WsSettingsHandler) -> Result<Self, BError> {
@@ -48,7 +44,7 @@ impl WsBuildData {
         // The bitbake segment contains all the bitbake related data
         // needed when executing a bitbake task defined in the build
         // config
-        let mut bitbake: WsBitbakeData = WsBitbakeData::from_value(data, settings)?;
+        let bitbake: WsBitbakeData = WsBitbakeData::from_value(data, settings)?;
         // The context segment contains all the context variables used
         // by other parts of the build config
         let mut context: WsContextData = WsContextData::from_value(data)?;
@@ -65,8 +61,6 @@ impl WsBuildData {
             "WORK_DIR".to_string() => settings.work_dir().to_string_lossy().to_string(),
         };
         context.update(&ctx_built_in_variables);
-        // Expand all the context variables in the build config
-        bitbake.expand_ctx(context.ctx());
         // Update the "built-in" bitbake paths in the context variables
         let bb_build_dir: PathBuf = settings.builds_dir().clone().join(PathBuf::from(product.name().to_string()));
         let bb_deploy_dir: PathBuf = bb_build_dir.clone().join(PathBuf::from(bitbake.deploy_dir().clone()));
@@ -151,6 +145,12 @@ impl WsBuildData {
 
     pub fn update_ctx(&mut self, context: &Context) {
         self.context.update_ctx(context);
+    }
+
+    pub fn expand_ctx(&mut self) {
+        //self.config.expand_ctx(self.context.ctx());
+        //self.product.expand_ctx(self.context.ctx());
+        self.bitbake.expand_ctx(self.context.ctx());
     }
 
     pub fn product(&self) -> &WsProductData {
@@ -284,7 +284,8 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let json_data: Value = JsonFileReader::parse(json_task_str).expect("Failed to parse json");
-        let task: WsTaskHandler = data.get_task(&json_data).expect("Failed to parse task");
+        let mut task: WsTaskHandler = data.get_task(&json_data).expect("Failed to parse task");
+        task.expand_ctx(data.context().ctx());
         assert_eq!(task.data().recipes(), &vec!["test-image"]);
     }
 
@@ -408,9 +409,10 @@ mod tests {
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let json_data: Value =
             JsonFileReader::parse(json_artifact_config).expect("Failed to parse json");
-        let artifact: WsArtifactsHandler = data
+        let mut artifact: WsArtifactsHandler = data
             .get_artifact(&json_data, &task_build_dir)
             .expect("Failed to parse artifacts");
+        artifact.expand_ctx(data.context().ctx());
         assert_eq!(artifact.data().atype(), &AType::Manifest);
         assert_eq!(artifact.data().name(), "test-manifest");
     }

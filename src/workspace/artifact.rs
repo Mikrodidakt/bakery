@@ -22,8 +22,7 @@ impl WsArtifactsHandler {
     }
 
     pub fn new(data: &Value, task_build_dir: &PathBuf, build_data: &WsBuildData) -> Result<Self, BError> {
-        let mut artifact_data: WsArtifactData = WsArtifactData::from_value(data, task_build_dir, build_data)?;
-        artifact_data.expand_ctx(build_data.context().ctx());
+        let artifact_data: WsArtifactData = WsArtifactData::from_value(data, task_build_dir, build_data)?;
         let artifacts: Vec<WsArtifactsHandler> = build_data.get_artifacts(data, task_build_dir)?;
         Ok(WsArtifactsHandler {
             data: artifact_data,
@@ -306,11 +305,12 @@ mod tests {
             ]
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
-        let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
+        let mut artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
             json_artifacts_config,
             &task_build_dir,
             &build_data
         ).expect("Failed to parse config");
+        artifacts.expand_ctx(build_data.context().ctx());
         assert_eq!(artifacts.data().atype(), &AType::Archive);
         assert_eq!(artifacts.data().name(), "test.zip");
         assert!(!artifacts.artifacts().is_empty());

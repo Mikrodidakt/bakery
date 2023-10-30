@@ -170,6 +170,10 @@ impl Workspace {
         self.config.update_ctx(context);
     }
 
+    pub fn expand_ctx(&mut self) {
+        self.config.expand_ctx();
+    }
+
     /*
     pub fn collect(&self, build: &str) -> bool {}
 

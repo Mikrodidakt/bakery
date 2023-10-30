@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use crate::configs::Context;
 use crate::error::BError;
-use crate::data::WsBuildData;
+use crate::data::{WsBuildData, config};
 use crate::configs::Config;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -77,7 +77,6 @@ impl WsTaskData {
             },
         }
 
-        build_dir = context.expand_str(&build_dir);
         let task_build_dir: PathBuf = Self::determine_build_dir(enum_ttype.clone(), &build_dir, bb_build_dir, work_dir);
 
         // if the task type is bitbake then at least one recipe is required

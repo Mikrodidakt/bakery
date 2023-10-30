@@ -29,11 +29,7 @@ impl WsTaskHandler {
     }
 
     pub fn new(data: &Value, build_data: &WsBuildData) -> Result<Self, BError> {
-        let mut task_data: WsTaskData = WsTaskData::from_value(data, build_data)?;
-        // expand the context for the task config data
-        // all the variables encapsulated insode ${} in the task config
-        // will be expanded
-        task_data.expand_ctx(build_data.context().ctx());
+        let task_data: WsTaskData = WsTaskData::from_value(data, build_data)?;
         let artifacts: Vec<WsArtifactsHandler> = build_data.get_artifacts(data, task_data.build_dir())?;
         
         Ok(WsTaskHandler {
@@ -118,6 +114,9 @@ impl WsTaskHandler {
 
     pub fn expand_ctx(&mut self, ctx: &Context) {
         self.data.expand_ctx(ctx);
+        for artifact in self.artifacts.iter_mut() {
+            artifact.expand_ctx(ctx);
+        }
     }
 
     pub fn data(&self) -> &WsTaskData {
