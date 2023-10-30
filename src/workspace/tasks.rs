@@ -90,6 +90,7 @@ impl WsTaskHandler {
                 // if we are running a dry run we should always create the bb configs
                 // when not a dry run it will be determined if it is needed or not to
                 // regenerate the bb configs
+
                 let force: bool = dry_run;
                 let conf: BitbakeConf = BitbakeConf::new(build_data.bitbake(), bb_variables, force);
                 conf.create_bitbake_configs(cli)?;

@@ -2,6 +2,7 @@ use indexmap::{IndexMap, indexmap};
 use std::collections::HashMap;
 
 use crate::commands::{BCommand, BBaseCommand};
+use crate::data::WsContextData;
 use crate::workspace::{Workspace, WsTaskHandler};
 use crate::cli::Cli;
 use crate::error::BError;
@@ -109,10 +110,9 @@ impl BCommand for BuildCommand {
         }
         
         // Update the config context with the context from the args
-        let mut context: Context = Context::new(&args_context);
+        let mut context: WsContextData = WsContextData::new(&args_context)?;
         context.update(&extra_ctx);
         workspace.update_ctx(&context);
-        workspace.expand_ctx();
         
         if tasks.len() > 1 {
             // More then one task was specified on the command line
@@ -263,7 +263,7 @@ impl BuildCommand {
                     .long("build-id")
                     .value_name("nbr")
                     .default_value("0")
-                    .help("Build id number can be used if x.y.z is not enough for some reason."),
+                    .help("Build id number can be used if x.y.z is not enough for some reason and will be part of PLATFORM_RELEASE x.y.z-w"),
             )
             .arg(
                 clap::Arg::new("ctx")

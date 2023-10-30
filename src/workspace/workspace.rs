@@ -7,8 +7,7 @@ use indexmap::IndexMap;
 use crate::fs::JsonFileReader;
 use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
 use crate::error::BError;
-use crate::data::WsProductData;
-use crate::configs::Context;
+use crate::data::{WsProductData, WsContextData};
 
 pub struct Workspace {
     settings: WsSettingsHandler,
@@ -166,8 +165,9 @@ impl Workspace {
         self.build_configs().contains_key(&self.settings.configs_dir().join(format!("{}.json", config)))
     }
 
-    pub fn update_ctx(&mut self, context: &Context) {
-        self.config.update_ctx(context);
+    pub fn update_ctx(&mut self, context: &WsContextData) {
+        self.config.update_ctx(context.ctx());
+        self.config.expand_ctx()
     }
 
     pub fn expand_ctx(&mut self) {

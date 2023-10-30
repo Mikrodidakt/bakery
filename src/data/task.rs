@@ -57,7 +57,7 @@ impl WsTaskData {
         let name: String = Self::get_str_value("name", &data, None)?;
         let ttype: String = Self::get_str_value("type", &data, Some(String::from("bitbake")))?;
         let disabled: String = Self::get_str_value("disabled", &data, Some(String::from("false")))?;
-        let mut build_dir: String = Self::get_str_value("builddir", &data, Some(String::from("")))?;
+        let build_dir: String = Self::get_str_value("builddir", &data, Some(String::from("")))?;
         let docker: String = Self::get_str_value("docker", data, Some(String::from("")))?;
         let condition: String = Self::get_str_value("condition", data, Some(String::from("true")))?;
         let build: String = Self::get_str_value("build", &data, Some(String::from("")))?;

@@ -94,11 +94,6 @@ impl WsBitbakeData {
         conf_str.push_str(&format!("SSTATE_DIR ?= \"{}\"\n", self.sstate_dir().to_str().unwrap()));
         conf_str.push_str(&format!("DL_DIR ?= \"{}\"\n", self.dl_dir().to_str().unwrap()));
         conf_str
-        //local_conf.push(format!("PLATFORM_VERSION ?= {}", self.platform_version()));
-        //local_conf.push(format!("BUILD_NUMBER ?= {}", self.build_number()));
-        //local_conf.push(format!("BUILD_SHA ?= {}", self.build_sha()));
-        //local_conf.push(format!("RELASE_BUILD ?= {}", self.release_build()));
-        //local_conf.push(format!("BUILD_VARIANT ?= {}", self.build_variant()));
     }
 
     pub fn machine(&self) -> &str {

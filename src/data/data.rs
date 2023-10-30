@@ -7,6 +7,7 @@ use crate::error::BError;
 use crate::workspace::{WsArtifactsHandler, WsSettingsHandler, WsTaskHandler};
 use crate::fs::JsonFileReader;
 use crate::data::{WsConfigData, WsProductData, WsBitbakeData, WsContextData};
+use crate::data::context;
 
 pub struct WsBuildData {
     data: Value,
@@ -52,21 +53,21 @@ impl WsBuildData {
         // Setup context with "built-in" variables that will always
         // be available
         let ctx_built_in_variables: IndexMap<String, String> = indexmap! {
-            "MACHINE".to_string() => bitbake.machine().to_string(),
-            "ARCH".to_string() => product.arch().to_string(),
-            "DISTRO".to_string() => bitbake.distro().to_string(),
-            "PRODUCT_NAME".to_string() => product.name().to_string(),
-            "ARTIFACTS_DIR".to_string() => settings.artifacts_dir().to_string_lossy().to_string(),
-            "BUILDS_DIR".to_string() => settings.builds_dir().to_string_lossy().to_string(),
-            "WORK_DIR".to_string() => settings.work_dir().to_string_lossy().to_string(),
+            context::CTX_KEY_MACHINE.to_string() => bitbake.machine().to_string(),
+            context::CTX_KEY_ARCH.to_string() => product.arch().to_string(),
+            context::CTX_KEY_DISTRO.to_string() => bitbake.distro().to_string(),
+            context::CTX_KEY_PRODUCT_NAME.to_string() => product.name().to_string(),
+            context::CTX_KEY_ARTIFACTS_DIR.to_string() => settings.artifacts_dir().to_string_lossy().to_string(),
+            context::CTX_KEY_BUILDS_DIR.to_string() => settings.builds_dir().to_string_lossy().to_string(),
+            context::CTX_KEY_WORK_DIR.to_string() => settings.work_dir().to_string_lossy().to_string(),
         };
         context.update(&ctx_built_in_variables);
         // Update the "built-in" bitbake paths in the context variables
         let bb_build_dir: PathBuf = settings.builds_dir().clone().join(PathBuf::from(product.name().to_string()));
         let bb_deploy_dir: PathBuf = bb_build_dir.clone().join(PathBuf::from(bitbake.deploy_dir().clone()));
         let ctx_bitbake_variables: IndexMap<String, String> = indexmap! {
-            "BB_BUILD_DIR".to_string() => bb_build_dir.to_string_lossy().to_string(),
-            "BB_DEPLOY_DIR".to_string() => bb_deploy_dir.to_string_lossy().to_string(),
+            context::CTX_KEY_BB_BUILD_DIR.to_string() => bb_build_dir.to_string_lossy().to_string(),
+            context::CTX_KEY_BB_DEPLOY_DIR.to_string() => bb_deploy_dir.to_string_lossy().to_string(),
         };
         context.update(&ctx_bitbake_variables);
 
