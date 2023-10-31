@@ -1,33 +1,36 @@
 use crate::collector::Collector;
 use crate::cli::Cli;
 use crate::error::BError;
-use crate::data::AType;
+use crate::data::{
+    AType,
+    WsArtifactData,
+};
+use crate::workspace::WsArtifactsHandler;
 
-pub struct ManifestCollector {}
+use std::path::PathBuf;
 
-impl Collector for ManifestCollector {
-    fn collect(&self, cli: &Cli) -> Result<(), BError> {
-        Ok(())
+pub struct ManifestCollector<'a> {
+    artifact: &'a WsArtifactsHandler,
+}
+
+impl<'a> Collector for ManifestCollector<'a> {
+    fn collect(&self, src: &PathBuf, dest: &PathBuf) -> Result<Vec<PathBuf>, BError> {
+        Ok(vec![])
     }
 
-    fn constructable(&self, data: &crate::data::WsArtifactData, children: &Vec<crate::workspace::WsArtifactsHandler>) -> bool {
-        if data.atype() == &AType::Manifest
-            && children.is_empty() {
-            return true;
+    fn verify_attributes(&self) -> Result<(), BError> {
+        if self.artifact.data().name().is_empty()
+            || self.artifact.data().manifest().is_empty() {
+                return Err(BError::ValueError(String::from("Manifest node requires name and manifest content!")));
         }
-        false
-    }
-
-    fn requires(&self, data: &crate::data::WsArtifactData) -> Result<(), BError> {
-        if data.manifest().is_empty() || data.name().is_empty() {
-            return Err(BError::ValueError(String::from("Manifest node requires a manifest attribute and a name attribute!")));
-        } 
         Ok(())
     }
 }
 
-impl ManifestCollector {
-    pub fn new() -> Self {
-        ManifestCollector {}
+impl<'a> ManifestCollector<'a> {
+    pub fn new(artifact: &'a WsArtifactsHandler) -> Self {
+        ManifestCollector {
+            artifact,
+        }
     }
 }

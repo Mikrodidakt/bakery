@@ -15,16 +15,14 @@ use crate::data::WsArtifactData;
 use crate::error::BError;
 use crate::workspace::WsArtifactsHandler;
 
+use std::path::PathBuf;
+
 pub trait Collector {
-    fn collect(&self, cli: &Cli) -> Result<(), BError> {
-        Ok(())
+    fn collect(&self, src: &PathBuf, dest: &PathBuf) -> Result<Vec<PathBuf>, BError> {
+        Ok(vec![])
     }
 
-    fn constructable(&self, data: &WsArtifactData, children: &Vec<WsArtifactsHandler>) -> bool {
-        true
-    }
-
-    fn requires(&self, data: &WsArtifactData) -> Result<(), BError> {
+    fn verify_attributes(&self) -> Result<(), BError> {
         Ok(())
     }
 }

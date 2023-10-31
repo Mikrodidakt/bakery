@@ -113,17 +113,22 @@ impl WsTaskHandler {
         Ok(())
     }
 
-    pub fn collect(&self, cli: &Cli, build_data: &WsBuildData) -> Result<(), BError> {
+    pub fn collect(&self, cli: &Cli, build_data: &WsBuildData) -> Result<Vec<PathBuf>, BError> {
+        let mut collected: Vec<PathBuf> = vec![];
         for artifact in self.artifacts.iter() {
             cli.info(format!("Collecting artifacts for task '{}'", self.data.name()));
-            artifact.collect(cli, self.data.name(), build_data)?;
+            let mut c: Vec<PathBuf> = artifact.collect(self.data.build_dir(), &build_data.settings().artifacts_dir())?;
+            collected.append(&mut c);
+        }
+        for c in collected.iter() {
+            cli.info(c.to_string_lossy().to_string());
         }
         cli.info(
-            format!("All artifacts for task '{}' have been collected at '{}'",
+            format!("All artifacts for task '{}' have been collected to '{}'",
             self.data.name(),
             build_data.settings().artifacts_dir().to_string_lossy().to_string())
         );
-        Ok(())
+        Ok(collected)
     }
 
     pub fn expand_ctx(&mut self, ctx: &Context) {
@@ -303,19 +308,19 @@ mod tests {
         let artifacts: &WsArtifactsHandler = task.artifacts().first().unwrap();
         assert_eq!(artifacts.data().atype(), &AType::Archive);
         assert_eq!(artifacts.data().name(), "test.zip");
-        assert!(!artifacts.artifacts().is_empty());
-        let archive_artifacts: &Vec<WsArtifactsHandler> = artifacts.artifacts();
+        assert!(!artifacts.children().is_empty());
+        let archive_artifacts: &Vec<WsArtifactsHandler> = artifacts.children();
         assert_eq!(archive_artifacts.get(0).unwrap().data().atype(), &AType::File);
-        assert_eq!(archive_artifacts.get(0).unwrap().data().source(), &PathBuf::from("/workspace/task/build/dir/file3.txt"));
-        assert_eq!(archive_artifacts.get(0).unwrap().data().dest(), &PathBuf::from("/workspace/artifacts/file4.txt"));
+        assert_eq!(archive_artifacts.get(0).unwrap().data().source(), "file3.txt");
+        assert_eq!(archive_artifacts.get(0).unwrap().data().dest(), "file4.txt");
         assert_eq!(archive_artifacts.get(1).unwrap().data().atype(), &AType::Directory);
         assert_eq!(archive_artifacts.get(1).unwrap().data().name(), "dir-name");
-        let dir_artifacts: &Vec<WsArtifactsHandler> = archive_artifacts.get(1).unwrap().artifacts();
+        let dir_artifacts: &Vec<WsArtifactsHandler> = archive_artifacts.get(1).unwrap().children();
         let mut i: usize = 1;
         dir_artifacts.iter().for_each(|f| {
             assert_eq!(f.data().atype(), &AType::File);
-            assert_eq!(f.data().source(), &PathBuf::from(format!("/workspace/task/build/dir/file{}.txt", i)));
-            assert_eq!(f.data().dest(), &PathBuf::from("/workspace/artifacts/"));
+            assert_eq!(f.data().source(), &format!("file{}.txt", i));
+            assert_eq!(f.data().dest(), "");
             i += 1;
         });
     }
@@ -406,22 +411,22 @@ mod tests {
         let artifacts: &WsArtifactsHandler = task.artifacts().first().unwrap();
         assert_eq!(artifacts.data().atype(), &AType::Archive);
         assert_eq!(artifacts.data().name(), "test.zip");
-        assert!(!artifacts.artifacts().is_empty());
-        let archive_artifacts: &Vec<WsArtifactsHandler> = artifacts.artifacts();
+        assert!(!artifacts.children().is_empty());
+        let archive_artifacts: &Vec<WsArtifactsHandler> = artifacts.children();
         assert_eq!(archive_artifacts.get(0).unwrap().data().atype(), &AType::File);
-        assert_eq!(archive_artifacts.get(0).unwrap().data().source(), &PathBuf::from("/workspace/builds/test-name/file3.txt"));
-        assert_eq!(archive_artifacts.get(0).unwrap().data().dest(), &PathBuf::from("/workspace/artifacts/file4.txt"));
+        assert_eq!(archive_artifacts.get(0).unwrap().data().source(), "file3.txt");
+        assert_eq!(archive_artifacts.get(0).unwrap().data().dest(), "file4.txt");
         assert_eq!(archive_artifacts.get(1).unwrap().data().name(), "test-manifest.json");
         assert!(!archive_artifacts.get(1).unwrap().data().manifest().is_empty());
         assert_eq!(archive_artifacts.get(1).unwrap().data().manifest(), "{\"VAR1\":\"value1\",\"VAR2\":\"value2\",\"VAR3\":\"value3\",\"data\":{\"VAR4\":\"value4\"}}");
         assert_eq!(archive_artifacts.get(2).unwrap().data().atype(), &AType::Directory);
         assert_eq!(archive_artifacts.get(2).unwrap().data().name(), "dir-name");
-        let dir_artifacts: &Vec<WsArtifactsHandler> = archive_artifacts.get(2).unwrap().artifacts();
+        let dir_artifacts: &Vec<WsArtifactsHandler> = archive_artifacts.get(2).unwrap().children();
         let mut i: usize = 1;
         dir_artifacts.iter().for_each(|f| {
             assert_eq!(f.data().atype(), &AType::File);
-            assert_eq!(f.data().source(), &PathBuf::from(format!("/workspace/builds/test-name/file{}.txt", i)));
-            assert_eq!(f.data().dest(), &PathBuf::from("/workspace/artifacts/file-dest.txt"));
+            assert_eq!(f.data().source(), &format!("file{}.txt", i));
+            assert_eq!(f.data().dest(), "file-dest.txt");
             i += 1;
         });
     }

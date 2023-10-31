@@ -1,33 +1,28 @@
 use crate::collector::Collector;
 use crate::cli::Cli;
-use crate::data::AType;
 use crate::error::BError;
+use crate::data::{
+    AType,
+    WsArtifactData,
+};
+use crate::workspace::WsArtifactsHandler;
 
-pub struct FileCollector {}
+use std::path::PathBuf;
 
-impl Collector for FileCollector {
-    fn collect(&self, cli: &Cli) -> Result<(), BError> {
-        Ok(())
-    }
+pub struct FileCollector<'a> {
+    artifact: &'a WsArtifactsHandler,
+}
 
-    fn constructable(&self, data: &crate::data::WsArtifactData, children: &Vec<crate::workspace::WsArtifactsHandler>) -> bool {
-        if data.atype() == &AType::File
-            && children.is_empty() {
-            return true;
-        }
-        false
-    }
-
-    fn requires(&self, data: &crate::data::WsArtifactData) -> Result<(), BError> {
-        if data.source().to_string_lossy().is_empty() || data.source().to_string_lossy().is_empty() {
-            return Err(BError::ValueError(String::from("File node requires a source attribute and dest attribute!")));
-        } 
-        Ok(())
+impl<'a> Collector for FileCollector<'a> {
+    fn collect(&self, src: &PathBuf, dest: &PathBuf) -> Result<Vec<PathBuf>, BError> {
+        Ok(vec![])
     }
 }
 
-impl FileCollector {
-    pub fn new() -> Self {
-        FileCollector {}
+impl<'a> FileCollector<'a> {
+    pub fn new(artifact: &'a WsArtifactsHandler) -> Self {
+        FileCollector {
+            artifact,
+        }
     }
 }

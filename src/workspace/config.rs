@@ -428,7 +428,7 @@ mod tests {
             assert_eq!(task.data().build_cmd(), &format!("cmd{}", i));
             assert_eq!(task.data().clean_cmd(), &format!("clean{}", i));
             task.artifacts().iter().for_each(|a| {
-                assert_eq!(a.data().source().as_path(), task.data().build_dir().join(format!("test/file{}-1.txt", i)));
+                assert_eq!(a.data().source(), &format!("test/file{}-1.txt", i));
             });
             i += 1;
         });

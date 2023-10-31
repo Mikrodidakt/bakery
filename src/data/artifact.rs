@@ -19,8 +19,8 @@ pub enum AType {
 pub struct WsArtifactData {
     pub atype: AType, // Optional if not set for the task the default type 'file' is used
     pub name: String, // The name can be a name for a directory, archive, file or manifest
-    pub source: PathBuf, // The source is only used if the type is file 
-    pub dest: PathBuf, // The dest is optional
+    pub source: String, // The source is only used if the type is file 
+    pub dest: String, // The dest is optional
     pub manifest: String, // The manifest content will be a json string that can be put in a file. The manifest can then be used by the CI to collect information from the build
 }
 
@@ -44,14 +44,14 @@ impl WsArtifactData {
     pub fn new(data: &Value, task_build_dir: &PathBuf, artifacts_dir: &PathBuf, context: &Context) -> Result<Self, BError> {
         let ttype: String = Self::get_str_value("type", &data, Some(String::from("file")))?;
         let name: String = Self::get_str_value("name", &data, Some(String::from("")))?;
-        let source_str: String = Self::get_str_value("source", &data, Some(String::from("")))?;
-        let dest_str: String = Self::get_str_value("dest", &data, Some(String::from("")))?;
+        let source: String = Self::get_str_value("source", &data, Some(String::from("")))?;
+        let dest: String = Self::get_str_value("dest", &data, Some(String::from("")))?;
         let manifest: String = Self::get_str_manifest("content", &data, Some(String::from("{}")))?;
 
         if ttype != "file" && ttype != "directory" && ttype != "archive" && ttype != "manifest" {
             return Err(BError::ParseArtifactsError(format!("Invalid type '{}'", ttype)));
         }
-        if ttype == "file" && source_str.is_empty() {
+        if ttype == "file" && source.is_empty() {
             return Err(BError::ParseArtifactsError(format!("The 'file' type requires a 'source'")));
         }
         if ttype == "directory" && name.is_empty() {
@@ -83,8 +83,8 @@ impl WsArtifactData {
             },
         }
 
-        let source: PathBuf = task_build_dir.clone().join(PathBuf::from(source_str));
-        let dest: PathBuf = artifacts_dir.clone().join(PathBuf::from(dest_str));
+        //let source: PathBuf = task_build_dir.clone().join(PathBuf::from(source_str));
+        //let dest: PathBuf = artifacts_dir.clone().join(PathBuf::from(dest_str));
 
         Ok(WsArtifactData {
             name,
@@ -99,8 +99,8 @@ impl WsArtifactData {
         match self.atype {
             AType::File => {
                 self.name = ctx.expand_str(&self.name);
-                self.source = ctx.expand_path(&self.source);
-                self.dest = ctx.expand_path(&self.dest);
+                self.source = ctx.expand_str(&self.source);
+                self.dest = ctx.expand_str(&self.dest);
             },
             AType::Directory => {
                 self.name = ctx.expand_str(&self.name);
@@ -126,11 +126,11 @@ impl WsArtifactData {
         &self.atype
     }
 
-    pub fn source(&self) -> &PathBuf {
+    pub fn source(&self) -> &str {
         &self.source
     }
 
-    pub fn dest(&self) -> &PathBuf {
+    pub fn dest(&self) -> &str {
         &self.dest
     }
 
@@ -168,8 +168,8 @@ mod tests {
         let data: WsArtifactData = WsArtifactData::new(&value, &task_build_dir, &artifact_dir, &context).expect("Failed to parse artifact data");
         assert!(data.name().is_empty());
         assert_eq!(data.atype(), &AType::File);
-        assert_eq!(data.source(), &PathBuf::from("/workspace/task/builddir/file1.txt"));
-        assert_eq!(data.dest(), &PathBuf::from("/workspace/artifacts"));
+        assert_eq!(data.source(), "file1.txt");
+        assert_eq!(data.dest(), "");
     }
 
     #[test]
@@ -188,8 +188,8 @@ mod tests {
         let data: WsArtifactData = WsArtifactData::new(&value, &task_build_dir, &artifact_dir, &context).expect("Failed to parse artifact data");
         assert!(data.name.is_empty());
         assert_eq!(data.atype(), &AType::File);
-        assert_eq!(data.source(), &PathBuf::from("/workspace/task/builddir/file1.txt"));
-        assert_eq!(data.dest(), &PathBuf::from("/workspace/artifacts/dest"));
+        assert_eq!(data.source(), "file1.txt");
+        assert_eq!(data.dest(), "dest");
     }
 
     #[test]
@@ -209,8 +209,8 @@ mod tests {
         let data: WsArtifactData = WsArtifactData::new(&value, &task_build_dir, &artifact_dir, &context).expect("Failed to parse artifact data");
         assert!(data.name().is_empty());
         assert_eq!(data.atype(), &AType::File);
-        assert_eq!(data.source(), &PathBuf::from("/workspace/task/builddir/file1.txt"));
-        assert_eq!(data.dest(), &PathBuf::from("/workspace/artifacts/dest"));
+        assert_eq!(data.source(), "file1.txt");
+        assert_eq!(data.dest(), "dest");
     }
 
     #[test]

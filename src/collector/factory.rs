@@ -14,28 +14,23 @@ use std::collections::HashMap;
 pub struct CollectorFactory {}
 
 impl CollectorFactory {
-    fn collectors() -> HashMap<AType, Box<dyn Collector>> {
-        let mut supported_collectors: HashMap<AType, Box<dyn Collector>> = HashMap::new();
-    
-        // Add supported collectors to the HashMap
-        supported_collectors.insert(AType::File, Box::new(FileCollector::new()));
-        supported_collectors.insert(AType::Directory, Box::new(DirectoryCollector::new()));
-        supported_collectors.insert(AType::Manifest, Box::new(ManifestCollector::new()));
-        supported_collectors.insert(AType::Archive, Box::new(ArchiveCollector::new()));
-    
-        // Add more commands as needed
-    
-        supported_collectors
-    }
-
-    pub fn create(data: &WsArtifactData, children: &Vec<WsArtifactsHandler>) -> Result<Box<dyn Collector>, BError> {
-        for (atype, collector) in Self::collectors() {
-            if collector.constructable(data, children) {
-                collector.requires(data)?;
-                return Ok(collector);
+    pub fn create<'a>(artifact: &'a WsArtifactsHandler) -> Result<Box<dyn Collector + 'a>, BError> {
+        let collector: Box<dyn Collector>;
+        match artifact.data().atype() {
+            AType::Archive => {
+                collector = Box::new(ArchiveCollector::new(artifact));
+            },
+            AType::Directory => {
+                collector = Box::new(DirectoryCollector::new(artifact));
+            },
+            AType::File => {
+                collector = Box::new(FileCollector::new(artifact));
+            },
+            AType::Manifest => {
+                collector = Box::new(ManifestCollector::new(artifact));
             }
         }
-
-        Err(BError::CollectorError(String::from("Failed to collect artifacts")))
+        collector.verify_attributes()?;
+        Ok(collector)
     }
 }

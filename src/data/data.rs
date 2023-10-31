@@ -445,7 +445,7 @@ mod tests {
         let mut i: usize = 1;
         artifacts.iter().for_each(|a| {
             assert_eq!(a.data().atype(), &AType::File);
-            assert_eq!(a.data().source(), &PathBuf::from(format!("/workspace/task/dir/file{}.txt", i)));
+            assert_eq!(a.data().source(), &format!("file{}.txt", i));
             i += 1;
         });
     }
