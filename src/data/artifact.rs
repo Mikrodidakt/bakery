@@ -5,9 +5,8 @@ use crate::configs::Context;
 use crate::error::BError;
 use crate::data::WsBuildData;
 use crate::configs::Config;
-use crate::workspace::WsSettingsHandler;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Eq, Hash, PartialEq, Debug)]
 pub enum AType {
     File,
     Directory,
@@ -84,8 +83,8 @@ impl WsArtifactData {
             },
         }
 
-        let source: PathBuf = task_build_dir.clone().join(context.expand_str(&source_str));
-        let dest: PathBuf = artifacts_dir.clone().join(context.expand_str(&dest_str));
+        let source: PathBuf = task_build_dir.clone().join(PathBuf::from(source_str));
+        let dest: PathBuf = artifacts_dir.clone().join(PathBuf::from(dest_str));
 
         Ok(WsArtifactData {
             name,

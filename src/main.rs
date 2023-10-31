@@ -7,6 +7,7 @@ mod configs;
 mod helper;
 mod fs;
 mod data;
+mod collector;
 
 use crate::cli::bakery::Bakery;
 

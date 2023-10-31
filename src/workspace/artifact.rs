@@ -1,6 +1,8 @@
+use crate::collector::{CollectorFactory, Collector};
 use crate::configs::Context;
 use crate::error::BError;
 use crate::fs::JsonFileReader;
+use crate::cli::Cli;
 use crate::data::{
     WsArtifactData,
     WsBuildData,
@@ -12,7 +14,7 @@ use serde_json::Value;
 
 pub struct WsArtifactsHandler {
     data: WsArtifactData,
-    artifacts: Vec<WsArtifactsHandler>,
+    children: Vec<WsArtifactsHandler>,
 }
 
 impl WsArtifactsHandler {
@@ -23,16 +25,26 @@ impl WsArtifactsHandler {
 
     pub fn new(data: &Value, task_build_dir: &PathBuf, build_data: &WsBuildData) -> Result<Self, BError> {
         let artifact_data: WsArtifactData = WsArtifactData::from_value(data, task_build_dir, build_data)?;
-        let artifacts: Vec<WsArtifactsHandler> = build_data.get_artifacts(data, task_build_dir)?;
+        let children: Vec<WsArtifactsHandler> = build_data.get_artifacts(data, task_build_dir)?;
         Ok(WsArtifactsHandler {
             data: artifact_data,
-            artifacts,
+            children,
         })
+    }
+
+    pub fn collect(&self, cli: &Cli, task: &str, build_data: &WsBuildData) -> Result<(), BError> {
+        //for artifact in self.children.iter() {
+            //cli.info(format!("     Collecting artifact {}", artifact.data.name()));
+        let collector: Box<dyn Collector> = CollectorFactory::create(&self.data, &self.children)?;
+        collector.collect(cli)?;
+            //artifact.collect(cli, task, build_data)?;
+        //}
+        Ok(())
     }
 
     pub fn expand_ctx(&mut self, ctx: &Context) {
         self.data.expand_ctx(ctx);
-        self.artifacts.iter_mut().for_each(|artifact| {
+        self.children.iter_mut().for_each(|artifact| {
             artifact.expand_ctx(ctx);
         });
     }
@@ -42,7 +54,7 @@ impl WsArtifactsHandler {
     }
 
     pub fn artifacts(&self) -> &Vec<WsArtifactsHandler> {
-        &self.artifacts
+        &self.children
     }
 }
 

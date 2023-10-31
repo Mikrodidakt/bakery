@@ -30,6 +30,8 @@ pub enum BError {
   CmdError(String),
   #[error("{0}")]
   CtxKeyError(String),
+  #[error("{0}")]
+  CollectorError(String),
 }
 
 impl std::convert::From<serde_json::Error> for BError {

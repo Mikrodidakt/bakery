@@ -113,6 +113,19 @@ impl WsTaskHandler {
         Ok(())
     }
 
+    pub fn collect(&self, cli: &Cli, build_data: &WsBuildData) -> Result<(), BError> {
+        for artifact in self.artifacts.iter() {
+            cli.info(format!("Collecting artifacts for task '{}'", self.data.name()));
+            artifact.collect(cli, self.data.name(), build_data)?;
+        }
+        cli.info(
+            format!("All artifacts for task '{}' have been collected at '{}'",
+            self.data.name(),
+            build_data.settings().artifacts_dir().to_string_lossy().to_string())
+        );
+        Ok(())
+    }
+
     pub fn expand_ctx(&mut self, ctx: &Context) {
         self.data.expand_ctx(ctx);
         for artifact in self.artifacts.iter_mut() {
