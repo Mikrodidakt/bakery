@@ -39,6 +39,14 @@ impl<'a> Collector for FileCollector<'a> {
 
         Ok(files)
     }
+
+    fn verify_attributes(&self) -> Result<(), BError> {
+        if self.artifact.data().source().is_empty() {
+            return Err(BError::ValueError(String::from("File node requires source attribute!")));
+        }
+
+        Ok(())
+    }
 }
 
 impl<'a> FileCollector<'a> {
