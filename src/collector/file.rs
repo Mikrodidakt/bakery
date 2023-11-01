@@ -88,12 +88,15 @@ impl<'a> FileCollector<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
     use crate::workspace::WsArtifactsHandler;
     use crate::data::WsBuildData;
     use crate::helper::Helper;
     use crate::collector::{FileCollector, Collector};
+    use crate::configs::Context;
+    
     use tempdir::TempDir;
+    use std::path::PathBuf;
+    use indexmap::{indexmap, IndexMap};
 
     #[test]
     fn test_ws_artifacts_file_source() {
@@ -253,5 +256,45 @@ mod tests {
         assert!(artifacts_dir.clone().join("dest/dir2/file3.txt").exists());
         assert!(artifacts_dir.clone().join("dest/dir3/file4.txt").exists());
         assert!(artifacts_dir.clone().join("dest/dir4/dir5/file5.txt").exists());
+    }
+
+    #[test]
+    fn test_ws_artifacts_context() {
+        let src_file_name: &str = "src/dir1/dir2/src-file.txt";
+        let dest_file_name: &str = "dest/dir3/dest-file.txt";
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = PathBuf::from(temp_dir.path());
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
+        let files: Vec<PathBuf> = vec![
+            task_build_dir.clone().join(src_file_name)
+        ];
+        let json_artifacts_config: &str = r#"
+        {
+            "source": "src/${DIR1}/${DIR2}/${SRC_FILE}",
+            "dest": "dest/${DIR3}/${DEST_FILE}"
+        }"#;
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
+        let mut artifacts: WsArtifactsHandler = Helper::setup_collector_test_ws(
+            &work_dir,
+            &task_build_dir,
+            &files,
+            &build_data,
+            json_artifacts_config);
+        let variables: IndexMap<String, String> = indexmap! {
+                "DIR1".to_string() => "dir1".to_string(),
+                "DIR2".to_string() => "dir2".to_string(),
+                "DIR3".to_string() => "dir3".to_string(),
+                "DEST_FILE".to_string() => "dest-file.txt".to_string(),
+                "SRC_FILE".to_string() => "src-file.txt".to_string(),
+        };
+        let context: Context = Context::new(&variables);
+        artifacts.expand_ctx(&context);
+        let collector: FileCollector = FileCollector::new(&artifacts);
+        let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
+        assert_eq!(collected, vec![
+            task_build_dir.join(src_file_name)
+        ]);
+        assert!(build_data.settings().artifacts_dir().clone().join(dest_file_name).exists());
     }
 }

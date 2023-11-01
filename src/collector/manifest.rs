@@ -42,14 +42,17 @@ impl<'a> ManifestCollector<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use crate::configs::Context;
     use crate::workspace::WsArtifactsHandler;
     use crate::data::WsBuildData;
     use crate::helper::Helper;
     use crate::collector::{ManifestCollector, Collector};
+
     use tempdir::TempDir;
     use std::fs::File;
     use std::io::{self, Read};
+    use std::path::PathBuf;
+    use indexmap::{indexmap, IndexMap};
 
     #[test]
     fn test_ws_artifacts_manifest() {
@@ -91,5 +94,55 @@ mod tests {
         file.read_to_string(&mut contents)
             .expect("Failed to read manifest file!");
         assert_eq!(artifacts.data().manifest(), contents);
+    }
+
+    #[test]
+    fn test_ws_artifacts_manifest_context() {
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = PathBuf::from(temp_dir.path());
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
+        let files: Vec<PathBuf> = vec![];
+        let json_artifacts_config: &str = r#"
+        {
+            "type": "manifest",
+            "name": "${MANIFEST_FILE}",
+            "content": {
+                "test1": "${TEST_VALUE1}",
+                "test2": "value2",
+                "test3": "${TEST_VALUE3}",
+                "data": {
+                    "test4": "value4",
+                    "test5": "value5",
+                    "test6": "${TEST_VALUE6}"
+                }
+            }
+        }"#;
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
+        let mut artifacts: WsArtifactsHandler = Helper::setup_collector_test_ws(
+            &work_dir,
+            &task_build_dir,
+            &files,
+            &build_data,
+            json_artifacts_config);
+        let variables: IndexMap<String, String> = indexmap! {
+                "MANIFEST_FILE".to_string() => "ctxmanifest.json".to_string(),
+                "TEST_VALUE1".to_string() => "var1".to_string(),
+                "TEST_VALUE3".to_string() => "var2".to_string(),
+                "TEST_VALUE6".to_string() => "var3".to_string(),
+        };
+        let context: Context = Context::new(&variables);
+        artifacts.expand_ctx(&context);
+        let collector: ManifestCollector = ManifestCollector::new(&artifacts);
+        let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
+        let manifest_file: PathBuf = build_data.settings().artifacts_dir().clone().join("ctxmanifest.json");
+        assert_eq!(collected, vec![manifest_file.clone()]);
+        assert!(manifest_file.exists());
+        let mut file: File = File::open(&manifest_file).expect("Failed to open manifest file!");
+        let mut contents: String = String::new();
+        file.read_to_string(&mut contents)
+            .expect("Failed to read manifest file!");
+        let json_manifest_content: &str = r#"{"data":{"test4":"value4","test5":"value5","test6":"var3"},"test1":"var1","test2":"value2","test3":"var2"}"#;
+        assert_eq!(json_manifest_content, contents);
     }
 }
