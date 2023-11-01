@@ -283,7 +283,7 @@ mod tests {
             PathBuf::from(work_dir.clone().join("dir3/file4.txt")),
         ];
 
-        Helper::create_archive_test_files(&files);
+        Helper::create_test_files(&files);
 
         let archiver: Archiver = Archiver::new(&archiver_path).expect("Failed to setup archiver!");
         archiver
@@ -315,7 +315,7 @@ mod tests {
             PathBuf::from(work_dir.clone().join("dir1/file4.txt")),
         ];
 
-        Helper::create_archive_test_files(&files);
+        Helper::create_test_files(&files);
 
         let archiver: Archiver = Archiver::new(&archiver_path).expect("Failed to setup archiver!");
         archiver
@@ -347,7 +347,7 @@ mod tests {
             PathBuf::from(work_dir.clone().join("dir1/file4.txt")),
         ];
 
-        Helper::create_archive_test_files(&files);
+        Helper::create_test_files(&files);
 
         let archiver: Archiver = Archiver::new(&archiver_path).expect("Failed to setup archiver!");
         archiver

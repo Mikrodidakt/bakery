@@ -57,3 +57,15 @@ impl std::convert::From<ZipError> for BError {
         BError::ArchiverError(err.to_string())
     }
 }
+
+impl std::convert::From<glob::PatternError> for BError {
+    fn from(err: glob::PatternError) -> Self {
+        BError::CollectorError(err.to_string())
+    }
+}
+
+impl std::convert::From<glob::GlobError> for BError {
+    fn from(err: glob::GlobError) -> Self {
+        BError::CollectorError(err.to_string())
+    }
+}

@@ -32,14 +32,6 @@ impl WsArtifactsHandler {
         })
     }
 
-    pub fn collect(&self, src: &PathBuf, dest: &PathBuf) -> Result<Vec<PathBuf>, BError> {
-        //for artifact in self.children.iter() {
-            //cli.info(format!("     Collecting artifact {}", artifact.data.name()));
-        let collector: Box<dyn Collector> = CollectorFactory::create(&self)?;
-        let collected: Vec<PathBuf> = collector.collect(src, dest)?;
-        Ok(collected)
-    }
-
     pub fn expand_ctx(&mut self, ctx: &Context) {
         self.data.expand_ctx(ctx);
         self.children.iter_mut().for_each(|artifact| {

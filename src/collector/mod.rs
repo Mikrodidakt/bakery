@@ -10,10 +10,7 @@ pub use directory::DirectoryCollector;
 pub use manifest::ManifestCollector;
 pub use archive::ArchiveCollector;
 
-use crate::cli::Cli;
-use crate::data::WsArtifactData;
 use crate::error::BError;
-use crate::workspace::WsArtifactsHandler;
 
 use std::path::PathBuf;
 

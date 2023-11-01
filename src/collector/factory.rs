@@ -8,13 +8,14 @@ use crate::collector::{
 use crate::data::{WsArtifactData, AType};
 use crate::workspace::WsArtifactsHandler;
 use crate::error::BError;
+use crate::cli::Cli;
 
 use std::collections::HashMap;
 
 pub struct CollectorFactory {}
 
 impl CollectorFactory {
-    pub fn create<'a>(artifact: &'a WsArtifactsHandler) -> Result<Box<dyn Collector + 'a>, BError> {
+    pub fn create<'a>(artifact: &'a WsArtifactsHandler, cli: &'a Cli) -> Result<Box<dyn Collector + 'a>, BError> {
         let collector: Box<dyn Collector>;
         match artifact.data().atype() {
             AType::Archive => {

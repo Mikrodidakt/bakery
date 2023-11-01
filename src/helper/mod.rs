@@ -7,6 +7,7 @@ use crate::cli::{
 use crate::workspace::{
     WsBuildConfigHandler,
     WsSettingsHandler,
+    WsArtifactsHandler,
     Workspace
 };
 use crate::data::WsBuildData;
@@ -57,10 +58,11 @@ impl Helper {
         });
     }
 
-    pub fn create_archive_test_files(files: &Vec<PathBuf>) {
+    pub fn create_test_files(files: &Vec<PathBuf>) {
         let mut rng: ThreadRng = rand::thread_rng();
 
         files.iter().for_each(|f| {
+            //println!("Creating test file: {}", f.display());
             if let Some(parent_dir) = f.parent() {
                 std::fs::create_dir_all(parent_dir).expect("Failed to create parent dir");
             }
@@ -82,7 +84,7 @@ impl Helper {
                     Self::list_files_in_dir(&path, files, strip)?;
                 } else {
                     // Add the file path to the list
-                    println!("path: {}", path.display());
+                    //println!("path: {}", path.display());
                     let p: PathBuf = path.strip_prefix(strip.as_os_str())
                         .expect("Failed to strip prefix")
                         .to_path_buf();
@@ -124,7 +126,7 @@ impl Helper {
             let file: File = File::open(archive.path())?;
             let mut zip: zip::ZipArchive<_> = zip::ZipArchive::new(file).expect("Failed to setup zip archive");
             for i in 0..zip.len() {
-                let mut file: zip::read::ZipFile<'_> = zip.by_index(i).expect("Failed to read content from archive");
+                let file: zip::read::ZipFile<'_> = zip.by_index(i).expect("Failed to read content from archive");
                 archived_files.push(PathBuf::from(file.name()));
             }
         }
@@ -250,5 +252,20 @@ impl Helper {
             },
             Err(err) => Err(BError::ParseError(format!("Failed to parse JSON: {}", err))),
         }
+    }
+
+    pub fn setup_collector_test_ws(
+            work_dir: &PathBuf,
+            task_build_dir: &PathBuf,
+            files: &Vec<PathBuf>,
+            build_data: &WsBuildData,
+            json_artifacts_config: &str) -> WsArtifactsHandler {
+        Helper::create_test_files(files);
+        let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
+            json_artifacts_config,
+            &task_build_dir,
+            build_data
+        ).expect("Failed to parse config");
+        artifacts
     }
 }
