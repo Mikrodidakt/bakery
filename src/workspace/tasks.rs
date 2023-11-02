@@ -121,7 +121,7 @@ impl WsTaskHandler {
         let mut collected: Vec<PathBuf> = vec![];
         for artifact in self.artifacts.iter() {
             cli.info(format!("Collecting artifacts for task '{}'", self.data.name()));
-            let collector: Box<dyn Collector> = CollectorFactory::create(artifact, cli)?;
+            let collector: Box<dyn Collector> = CollectorFactory::create(artifact, Some(cli))?;
             let mut c: Vec<PathBuf> = collector.collect(self.data.build_dir(), &build_data.settings().artifacts_dir())?;
             collected.append(&mut c);
         }

@@ -11,6 +11,7 @@ use std::path::{PathBuf, Path};
 
 pub struct FileCollector<'a> {
     artifact: &'a WsArtifactsHandler,
+    cli: Option<&'a Cli>,
 }
 
 impl<'a> Collector for FileCollector<'a> {
@@ -32,7 +33,7 @@ impl<'a> Collector for FileCollector<'a> {
                 return Err(BError::IOError(format!("File {} dose not exists", f.to_string_lossy().to_string())));
             }
 
-            println!("Copy file {} => {}", f.to_string_lossy().to_string(), dest_file.to_string_lossy().to_string());
+            self.info(self.cli, format!("Copy file {} => {}", f.to_string_lossy().to_string(), dest_file.to_string_lossy().to_string()));
             std::fs::create_dir_all(dest_file.parent().unwrap())?;
             std::fs::copy(f, &dest_file)?;
         }
@@ -79,9 +80,10 @@ impl<'a> FileCollector<'a> {
         Ok(files)
     }
 
-    pub fn new(artifact: &'a WsArtifactsHandler) -> Self {
+    pub fn new(artifact: &'a WsArtifactsHandler, cli: Option<&'a Cli>) -> Self {
         FileCollector {
             artifact,
+            cli,
         }
     }
 }
@@ -99,7 +101,7 @@ mod tests {
     use indexmap::{indexmap, IndexMap};
 
     #[test]
-    fn test_ws_artifacts_file_source() {
+    fn test_file_collector_source() {
         let src_file_name: &str = "file.txt";
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
@@ -119,14 +121,14 @@ mod tests {
             &files,
             &build_data,
             json_artifacts_config);
-        let collector: FileCollector = FileCollector::new(&artifacts);
+        let collector: FileCollector = FileCollector::new(&artifacts, None);
         let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         assert_eq!(collected, vec![task_build_dir.join(src_file_name)]);
         assert!(build_data.settings().artifacts_dir().clone().join(src_file_name).exists());
     }
 
     #[test]
-    fn test_ws_artifacts_file_dest() {
+    fn test_file_collector_file_dest() {
         let src_file_name: &str = "src.txt";
         let dest_file_name: &str = "dest.txt";
         let temp_dir: TempDir =
@@ -148,14 +150,14 @@ mod tests {
             &files,
             &build_data,
             json_artifacts_config);
-        let collector: FileCollector = FileCollector::new(&artifacts);
+        let collector: FileCollector = FileCollector::new(&artifacts, None);
         let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         assert_eq!(collected, vec![task_build_dir.join(src_file_name)]);
         assert!(build_data.settings().artifacts_dir().clone().join(dest_file_name).exists());
     }
 
     #[test]
-    fn test_ws_artifacts_dest_dir() {
+    fn test_file_collector_dest_dir() {
         let src_file_name: &str = "src.txt";
         let dest_file_name: &str = "dest/file.txt";
         let temp_dir: TempDir =
@@ -177,7 +179,7 @@ mod tests {
             &files,
             &build_data,
             json_artifacts_config);
-        let collector: FileCollector = FileCollector::new(&artifacts);
+        let collector: FileCollector = FileCollector::new(&artifacts, None);
         let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         assert_eq!(collected, vec![
             task_build_dir.join(src_file_name)
@@ -186,7 +188,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ws_artifacts_src_dir() {
+    fn test_file_collector_src_dir() {
         let src_file_name: &str = "src/src-file.txt";
         let dest_file_name: &str = "dest/dest-file.txt";
         let temp_dir: TempDir =
@@ -208,7 +210,7 @@ mod tests {
             &files,
             &build_data,
             json_artifacts_config);
-        let collector: FileCollector = FileCollector::new(&artifacts);
+        let collector: FileCollector = FileCollector::new(&artifacts, None);
         let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         assert_eq!(collected, vec![
             task_build_dir.join(src_file_name)
@@ -217,7 +219,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ws_artifacts_src_glob() {
+    fn test_file_collector_src_glob() {
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = PathBuf::from(temp_dir.path());
@@ -241,7 +243,7 @@ mod tests {
             &files,
             &build_data,
             json_artifacts_config);
-        let collector: FileCollector = FileCollector::new(&artifacts);
+        let collector: FileCollector = FileCollector::new(&artifacts, None);
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
         let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
         assert_eq!(&collected, &vec![
@@ -259,7 +261,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ws_artifacts_context() {
+    fn test_file_collector_context() {
         let src_file_name: &str = "src/dir1/dir2/src-file.txt";
         let dest_file_name: &str = "dest/dir3/dest-file.txt";
         let temp_dir: TempDir =
@@ -290,7 +292,7 @@ mod tests {
         };
         let context: Context = Context::new(&variables);
         artifacts.expand_ctx(&context);
-        let collector: FileCollector = FileCollector::new(&artifacts);
+        let collector: FileCollector = FileCollector::new(&artifacts, None);
         let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         assert_eq!(collected, vec![
             task_build_dir.join(src_file_name)

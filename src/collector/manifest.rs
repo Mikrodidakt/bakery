@@ -12,13 +12,17 @@ use std::path::PathBuf;
 
 pub struct ManifestCollector<'a> {
     artifact: &'a WsArtifactsHandler,
+    cli: Option<&'a Cli>,
 }
 
 impl<'a> Collector for ManifestCollector<'a> {
     fn collect(&self, _src: &PathBuf, dest: &PathBuf) -> Result<Vec<PathBuf>, BError> {
-        let manifest_path: PathBuf = dest.join(PathBuf::from(self.artifact.data().name()));
+        let manifest_file: &str = self.artifact.data().name();
+        let manifest_path: PathBuf = dest.join(PathBuf::from(manifest_file));
         let manifest: Manifest = Manifest::new(&manifest_path)?;
+        self.info(self.cli, format!("Creating manifest file '{}'", manifest_file));
         manifest.write(self.artifact.data().manifest())?;
+        self.info(self.cli, format!("Manifest file '{}' available at {}", manifest_file, manifest_path.display()));
 
         Ok(vec![manifest_path])
     }
@@ -33,9 +37,10 @@ impl<'a> Collector for ManifestCollector<'a> {
 }
 
 impl<'a> ManifestCollector<'a> {
-    pub fn new(artifact: &'a WsArtifactsHandler) -> Self {
+    pub fn new(artifact: &'a WsArtifactsHandler, cli: Option<&'a Cli>) -> Self {
         ManifestCollector {
             artifact,
+            cli,
         }
     }
 }
@@ -55,7 +60,7 @@ mod tests {
     use indexmap::{indexmap, IndexMap};
 
     #[test]
-    fn test_ws_artifacts_manifest() {
+    fn test_manifest_collector_content() {
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = PathBuf::from(temp_dir.path());
@@ -84,7 +89,7 @@ mod tests {
             &files,
             &build_data,
             json_artifacts_config);
-        let collector: ManifestCollector = ManifestCollector::new(&artifacts);
+        let collector: ManifestCollector = ManifestCollector::new(&artifacts, None);
         let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         let manifest_file: PathBuf = build_data.settings().artifacts_dir().clone().join("manifest.json");
         assert_eq!(collected, vec![manifest_file.clone()]);
@@ -97,7 +102,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ws_artifacts_manifest_context() {
+    fn test_manifest_collector_context() {
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = PathBuf::from(temp_dir.path());
@@ -133,7 +138,7 @@ mod tests {
         };
         let context: Context = Context::new(&variables);
         artifacts.expand_ctx(&context);
-        let collector: ManifestCollector = ManifestCollector::new(&artifacts);
+        let collector: ManifestCollector = ManifestCollector::new(&artifacts, None);
         let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         let manifest_file: PathBuf = build_data.settings().artifacts_dir().clone().join("ctxmanifest.json");
         assert_eq!(collected, vec![manifest_file.clone()]);

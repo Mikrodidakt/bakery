@@ -15,20 +15,20 @@ use std::collections::HashMap;
 pub struct CollectorFactory {}
 
 impl CollectorFactory {
-    pub fn create<'a>(artifact: &'a WsArtifactsHandler, cli: &'a Cli) -> Result<Box<dyn Collector + 'a>, BError> {
+    pub fn create<'a>(artifact: &'a WsArtifactsHandler, cli: Option<&'a Cli>) -> Result<Box<dyn Collector + 'a>, BError> {
         let collector: Box<dyn Collector>;
         match artifact.data().atype() {
             AType::Archive => {
                 collector = Box::new(ArchiveCollector::new(artifact));
             },
             AType::Directory => {
-                collector = Box::new(DirectoryCollector::new(artifact));
+                collector = Box::new(DirectoryCollector::new(artifact, cli));
             },
             AType::File => {
-                collector = Box::new(FileCollector::new(artifact));
+                collector = Box::new(FileCollector::new(artifact, cli));
             },
             AType::Manifest => {
-                collector = Box::new(ManifestCollector::new(artifact));
+                collector = Box::new(ManifestCollector::new(artifact, cli));
             }
         }
         collector.verify_attributes()?;
