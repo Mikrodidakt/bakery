@@ -115,25 +115,32 @@ impl WsTaskHandler {
                 return Err(BError::ValueError("Invalid task type".to_string()));
             }
         }
+        self.collect(cli, build_data)?;
         Ok(())
     }
 
     pub fn collect(&self, cli: &Cli, build_data: &WsBuildData) -> Result<Vec<Collected>, BError> {
         let mut collected: Vec<Collected> = vec![];
-        for artifact in self.artifacts.iter() {
-            cli.info(format!("Collecting artifacts for task '{}'", self.data.name()));
-            let collector: Box<dyn Collector> = CollectorFactory::create(artifact, Some(cli))?;
-            let mut c: Vec<Collected> = collector.collect(self.data.build_dir(), &build_data.settings().artifacts_dir())?;
-            collected.append(&mut c);
-        }
-        /*for c in collected.iter() {
-            cli.info(c.to_string_lossy().to_string());
-        }*/
-        cli.info(
+        if !self.artifacts.is_empty() {
+            for artifact in self.artifacts.iter() {
+                cli.info(format!("Collecting artifacts for task '{}'", self.data.name()));
+                let collector: Box<dyn Collector> = CollectorFactory::create(artifact, Some(cli))?;
+                let mut c: Vec<Collected> = collector.collect(self.data.build_dir(), &build_data.settings().artifacts_dir())?;
+                collected.append(&mut c);
+            }
+            /*for c in collected.iter() {
+                cli.info(c.to_string_lossy().to_string());
+            }*/
+            cli.info(
             format!("All artifacts for task '{}' have been collected to '{}'",
-            self.data.name(),
-            build_data.settings().artifacts_dir().to_string_lossy().to_string())
-        );
+                self.data.name(),
+                build_data.settings().artifacts_dir().to_string_lossy().to_string())
+            );
+        } else {
+            cli.info(
+                format!("No artifacts to collect for task '{}'",
+                    self.data.name())); 
+        }
         Ok(collected)
     }
 

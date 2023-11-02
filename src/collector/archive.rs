@@ -78,7 +78,7 @@ mod tests {
     use indexmap::{indexmap, IndexMap};
 
     #[test]
-    fn test_archive_collector_dir() {
+    fn test_archive_collector_files() {
         let archive_name: &str = "archive.zip";
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
@@ -99,6 +99,63 @@ mod tests {
                 {
                     "source": "file2.txt",
                     "dest": "dest/dest-file.txt"
+                }
+            ]
+        }"#;
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
+        let artifacts: WsArtifactsHandler = Helper::setup_collector_test_ws(
+            &work_dir,
+            &task_build_dir,
+            &files,
+            &build_data,
+            json_artifacts_config);
+        let collector: ArchiveCollector = ArchiveCollector::new(&artifacts, None);
+        let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
+        let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
+        assert_eq!(collected, vec![
+            Collected { src: PathBuf::from(""), dest: artifacts_dir.clone().join(archive_name) }
+        ]);
+        for c in collected.iter() {
+            assert!(c.dest.exists());
+        }
+    }
+
+    #[test]
+    fn test_archive_collector_nested() {
+        let archive_name: &str = "archive.zip";
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = PathBuf::from(temp_dir.path());
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
+        let files: Vec<PathBuf> = vec![
+            task_build_dir.clone().join("file1.txt"),
+            task_build_dir.clone().join("file2.txt"),
+        ];
+        let json_artifacts_config: &str = r#"
+        {
+            "type": "archive",
+            "name": "archive.zip",
+            "artifacts": [
+                {
+                    "source": "file1.txt"
+                },
+                {
+                    "source": "file2.txt",
+                    "dest": "dest/dest-file.txt"
+                },
+                {
+                    "type": "manifest",
+                    "name": "manifest.json",
+                    "content": {
+                        "test1": "value1",
+                        "test2": "value2",
+                        "test3": "value3",
+                        "data": {
+                            "test4": "value4",
+                            "test5": "value5",
+                            "test6": "value6"
+                        }
+                    } 
                 }
             ]
         }"#;

@@ -107,7 +107,7 @@ mod tests {
     }
 
     #[test]
-    fn test_directory_collector_children() {
+    fn test_directory_collector_nested() {
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = PathBuf::from(temp_dir.path());
