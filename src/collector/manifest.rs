@@ -1,4 +1,7 @@
-use crate::collector::Collector;
+use crate::collector::{
+    Collector,
+    Collected,
+};
 use crate::cli::Cli;
 use crate::error::BError;
 use crate::data::{
@@ -16,15 +19,16 @@ pub struct ManifestCollector<'a> {
 }
 
 impl<'a> Collector for ManifestCollector<'a> {
-    fn collect(&self, _src: &PathBuf, dest: &PathBuf) -> Result<Vec<PathBuf>, BError> {
+    fn collect(&self, _src: &PathBuf, dest: &PathBuf) -> Result<Vec<Collected>, BError> {
         let manifest_file: &str = self.artifact.data().name();
         let manifest_path: PathBuf = dest.join(PathBuf::from(manifest_file));
         let manifest: Manifest = Manifest::new(&manifest_path)?;
+        
         self.info(self.cli, format!("Creating manifest file '{}'", manifest_file));
         manifest.write(self.artifact.data().manifest())?;
         self.info(self.cli, format!("Manifest file '{}' available at {}", manifest_file, manifest_path.display()));
 
-        Ok(vec![manifest_path])
+        Ok(vec![Collected { src: PathBuf::from(""), dest: manifest_path }])
     }
 
     fn verify_attributes(&self) -> Result<(), BError> {
@@ -51,8 +55,11 @@ mod tests {
     use crate::workspace::WsArtifactsHandler;
     use crate::data::WsBuildData;
     use crate::helper::Helper;
-    use crate::collector::{ManifestCollector, Collector};
-
+    use crate::collector::{
+        ManifestCollector,
+        Collector,
+        Collected,
+    };
     use tempdir::TempDir;
     use std::fs::File;
     use std::io::{self, Read};
@@ -90,9 +97,9 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: ManifestCollector = ManifestCollector::new(&artifacts, None);
-        let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
+        let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         let manifest_file: PathBuf = build_data.settings().artifacts_dir().clone().join("manifest.json");
-        assert_eq!(collected, vec![manifest_file.clone()]);
+        assert_eq!(collected, vec![Collected { src: PathBuf::from(""), dest: manifest_file.clone() }]);
         assert!(manifest_file.exists());
         let mut file: File = File::open(&manifest_file).expect("Failed to open manifest file!");
         let mut contents: String = String::new();
@@ -139,9 +146,9 @@ mod tests {
         let context: Context = Context::new(&variables);
         artifacts.expand_ctx(&context);
         let collector: ManifestCollector = ManifestCollector::new(&artifacts, None);
-        let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
+        let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         let manifest_file: PathBuf = build_data.settings().artifacts_dir().clone().join("ctxmanifest.json");
-        assert_eq!(collected, vec![manifest_file.clone()]);
+        assert_eq!(collected, vec![Collected { src: PathBuf::from(""), dest: manifest_file.clone() }]);
         assert!(manifest_file.exists());
         let mut file: File = File::open(&manifest_file).expect("Failed to open manifest file!");
         let mut contents: String = String::new();

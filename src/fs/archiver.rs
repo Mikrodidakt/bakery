@@ -47,8 +47,7 @@ impl Archiver {
                         // If the last is zip we will automatically assume all other suffixes are
                         // just part of the archive name for example archive.name.zip
                         extensions = vec!["zip".to_string()];
-                    } else if suffixes.get(suffixes.len() - 2).cloned() == Some(String::from("tar"))
-                    {
+                    } else if suffixes.get(suffixes.len() - 2).cloned() == Some(String::from("tar")) {
                         // We take the length of the suffixes array minuz 2 because we assume there will be at
                         // most two suffixes when the archive is tar. We read out the archive suffixe and the
                         // compression suffixe and store them in the suffixe vector.
@@ -115,7 +114,7 @@ impl Archiver {
             // mode == Mode::Append;
         }
 
-        let mut archive_file: File = File::create(&self.path)?;
+        let archive_file: File = File::create(&self.path)?;
 
         if self.extension() == "tar" {
             if mode == Mode::Append {}
@@ -154,6 +153,8 @@ impl Archiver {
             let options: FileOptions = zip::write::FileOptions::default().unix_permissions(0o755);
 
             for path in files {
+                //println!("{}", path.display());
+                //println!("{}", work_dir.display());
                 let striped_path: PathBuf = path
                     .strip_prefix(work_dir.as_os_str())?
                     .to_path_buf();

@@ -13,6 +13,7 @@ use crate::data::{
 use crate::collector::{
     CollectorFactory,
     Collector,
+    Collected,
 };
 
 use std::collections::HashMap;
@@ -117,17 +118,17 @@ impl WsTaskHandler {
         Ok(())
     }
 
-    pub fn collect(&self, cli: &Cli, build_data: &WsBuildData) -> Result<Vec<PathBuf>, BError> {
-        let mut collected: Vec<PathBuf> = vec![];
+    pub fn collect(&self, cli: &Cli, build_data: &WsBuildData) -> Result<Vec<Collected>, BError> {
+        let mut collected: Vec<Collected> = vec![];
         for artifact in self.artifacts.iter() {
             cli.info(format!("Collecting artifacts for task '{}'", self.data.name()));
             let collector: Box<dyn Collector> = CollectorFactory::create(artifact, Some(cli))?;
-            let mut c: Vec<PathBuf> = collector.collect(self.data.build_dir(), &build_data.settings().artifacts_dir())?;
+            let mut c: Vec<Collected> = collector.collect(self.data.build_dir(), &build_data.settings().artifacts_dir())?;
             collected.append(&mut c);
         }
-        for c in collected.iter() {
+        /*for c in collected.iter() {
             cli.info(c.to_string_lossy().to_string());
-        }
+        }*/
         cli.info(
             format!("All artifacts for task '{}' have been collected to '{}'",
             self.data.name(),

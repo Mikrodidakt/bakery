@@ -1,4 +1,7 @@
-use crate::collector::Collector;
+use crate::collector::{
+    Collector,
+    Collected,
+};
 use crate::cli::Cli;
 use crate::error::BError;
 use crate::data::{
@@ -15,30 +18,33 @@ pub struct FileCollector<'a> {
 }
 
 impl<'a> Collector for FileCollector<'a> {
-    fn collect(&self, src: &PathBuf, dest: &PathBuf) -> Result<Vec<PathBuf>, BError> {
+    fn collect(&self, src: &PathBuf, dest: &PathBuf) -> Result<Vec<Collected>, BError> {
+        let dest_str: &str = self.artifact.data().dest();
         let src_path: PathBuf = src.join(PathBuf::from(self.artifact.data().source()));
-        let dest_path: PathBuf = dest.join(PathBuf::from(self.artifact.data().dest()));
+        let dest_path: PathBuf = dest.join(PathBuf::from(dest_str));
         let files: Vec<PathBuf> = self.list_files(&src_path)?;
         let base_dir: &Path = src_path.parent().unwrap();
-        
+        let mut collected: Vec<Collected> = vec![];
+
         for f in files.iter() {
             let mut dest_file: PathBuf = dest_path.clone();
-            if !dest_file.file_name().unwrap_or_default().is_empty() {
+            if self.is_dir(&dest_path, dest_str) {
                 let src_prefix: &Path = f.strip_prefix(base_dir)?;
                 //println!("Prefix: {}", src_prefix.display());
                 dest_file = dest_file.join(PathBuf::from(src_prefix));
             }
 
             if !f.exists() {
-                return Err(BError::IOError(format!("File {} dose not exists", f.to_string_lossy().to_string())));
+                return Err(BError::IOError(format!("File {} dose not exists", f.display())));
             }
 
-            self.info(self.cli, format!("Copy file {} => {}", f.to_string_lossy().to_string(), dest_file.to_string_lossy().to_string()));
+            self.info(self.cli, format!("Copy file {} => {}", f.display(), dest_file.display()));
             std::fs::create_dir_all(dest_file.parent().unwrap())?;
             std::fs::copy(f, &dest_file)?;
+            collected.push(Collected { src: f.clone(), dest: dest_file.clone() });
         }
 
-        Ok(files)
+        Ok(collected)
     }
 
     fn verify_attributes(&self) -> Result<(), BError> {
@@ -51,6 +57,24 @@ impl<'a> Collector for FileCollector<'a> {
 }
 
 impl<'a> FileCollector<'a> {
+    fn is_dir(&self, dest_path: &PathBuf, dest_str: &str) -> bool {
+        let file_name = dest_path.file_name();
+        
+        if dest_str.is_empty() {
+            return true;
+        }
+
+        if file_name == None {
+            return true;
+        }
+
+        if dest_path.extension() != None {
+            return false;
+        }
+
+        return true;
+    }
+
     fn list_files(&self, glob_pattern_path: &PathBuf) -> Result<Vec<PathBuf>, BError> {
         let mut files: Vec<PathBuf> = vec![];
         match glob_pattern_path.to_str() {
@@ -93,7 +117,7 @@ mod tests {
     use crate::workspace::WsArtifactsHandler;
     use crate::data::WsBuildData;
     use crate::helper::Helper;
-    use crate::collector::{FileCollector, Collector};
+    use crate::collector::{FileCollector, Collector, Collected};
     use crate::configs::Context;
     
     use tempdir::TempDir;
@@ -122,9 +146,12 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: FileCollector = FileCollector::new(&artifacts, None);
-        let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
-        assert_eq!(collected, vec![task_build_dir.join(src_file_name)]);
-        assert!(build_data.settings().artifacts_dir().clone().join(src_file_name).exists());
+        let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
+        let dest: PathBuf = build_data.settings().artifacts_dir().clone().join(src_file_name);
+        assert_eq!(collected, vec![
+            Collected { src: task_build_dir.join(src_file_name), dest: dest.clone() }
+        ]);
+        assert!(dest.exists());
     }
 
     #[test]
@@ -151,9 +178,12 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: FileCollector = FileCollector::new(&artifacts, None);
-        let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
-        assert_eq!(collected, vec![task_build_dir.join(src_file_name)]);
-        assert!(build_data.settings().artifacts_dir().clone().join(dest_file_name).exists());
+        let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
+        let dest: PathBuf = build_data.settings().artifacts_dir().clone().join(dest_file_name);
+        assert_eq!(collected, vec![
+            Collected { src: task_build_dir.join(src_file_name), dest: dest.clone() }
+        ]);
+        assert!(dest.exists());
     }
 
     #[test]
@@ -180,11 +210,12 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: FileCollector = FileCollector::new(&artifacts, None);
-        let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
+        let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
+        let dest: PathBuf = build_data.settings().artifacts_dir().clone().join(dest_file_name);
         assert_eq!(collected, vec![
-            task_build_dir.join(src_file_name)
+            Collected { src: task_build_dir.join(src_file_name), dest: dest.clone() },
         ]);
-        assert!(build_data.settings().artifacts_dir().clone().join(dest_file_name).exists());
+        assert!(dest.exists());
     }
 
     #[test]
@@ -211,11 +242,12 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: FileCollector = FileCollector::new(&artifacts, None);
-        let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
+        let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
+        let dest: PathBuf = build_data.settings().artifacts_dir().clone().join(dest_file_name);
         assert_eq!(collected, vec![
-            task_build_dir.join(src_file_name)
+            Collected { src: task_build_dir.join(src_file_name), dest: dest.clone() },
         ]);
-        assert!(build_data.settings().artifacts_dir().clone().join(dest_file_name).exists());
+        assert!(dest.exists());
     }
 
     #[test]
@@ -245,19 +277,17 @@ mod tests {
             json_artifacts_config);
         let collector: FileCollector = FileCollector::new(&artifacts, None);
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
-        let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
+        let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
         assert_eq!(&collected, &vec![
-            task_build_dir.clone().join("src/sub/dir1/file2.txt"),
-            task_build_dir.clone().join("src/sub/dir2/file3.txt"),
-            task_build_dir.clone().join("src/sub/dir3/file4.txt"),
-            task_build_dir.clone().join("src/sub/dir4/dir5/file5.txt"),
-            task_build_dir.clone().join("src/sub/file1.txt"),
+            Collected { src: task_build_dir.clone().join("src/sub/dir1/file2.txt"), dest: artifacts_dir.clone().join("dest/dir1/file2.txt") },
+            Collected { src: task_build_dir.clone().join("src/sub/dir2/file3.txt"), dest: artifacts_dir.clone().join("dest/dir2/file3.txt") },
+            Collected { src: task_build_dir.clone().join("src/sub/dir3/file4.txt"), dest: artifacts_dir.clone().join("dest/dir3/file4.txt") },
+            Collected { src: task_build_dir.clone().join("src/sub/dir4/dir5/file5.txt"), dest: artifacts_dir.clone().join("dest/dir4/dir5/file5.txt") },
+            Collected { src: task_build_dir.clone().join("src/sub/file1.txt"), dest: artifacts_dir.clone().join("dest/file1.txt") },
         ]);
-        assert!(artifacts_dir.clone().join("dest/file1.txt").exists());
-        assert!(artifacts_dir.clone().join("dest/dir1/file2.txt").exists());
-        assert!(artifacts_dir.clone().join("dest/dir2/file3.txt").exists());
-        assert!(artifacts_dir.clone().join("dest/dir3/file4.txt").exists());
-        assert!(artifacts_dir.clone().join("dest/dir4/dir5/file5.txt").exists());
+        for c in collected.iter() {
+            assert!(c.dest.exists());
+        }
     }
 
     #[test]
@@ -293,10 +323,11 @@ mod tests {
         let context: Context = Context::new(&variables);
         artifacts.expand_ctx(&context);
         let collector: FileCollector = FileCollector::new(&artifacts, None);
-        let collected: Vec<PathBuf> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
+        let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
+        let dest: PathBuf = build_data.settings().artifacts_dir().clone().join(dest_file_name);
         assert_eq!(collected, vec![
-            task_build_dir.join(src_file_name)
+            Collected { src: task_build_dir.join(src_file_name), dest: dest.clone() },
         ]);
-        assert!(build_data.settings().artifacts_dir().clone().join(dest_file_name).exists());
+        assert!(dest.exists());
     }
 }

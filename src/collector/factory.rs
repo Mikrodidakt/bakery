@@ -19,7 +19,7 @@ impl CollectorFactory {
         let collector: Box<dyn Collector>;
         match artifact.data().atype() {
             AType::Archive => {
-                collector = Box::new(ArchiveCollector::new(artifact));
+                collector = Box::new(ArchiveCollector::new(artifact, cli));
             },
             AType::Directory => {
                 collector = Box::new(DirectoryCollector::new(artifact, cli));

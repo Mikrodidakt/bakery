@@ -15,8 +15,14 @@ use crate::cli::Cli;
 
 use std::path::PathBuf;
 
+#[derive(PartialEq, Debug)]
+pub struct Collected {
+    pub src: PathBuf,
+    pub dest: PathBuf,
+}
+
 pub trait Collector {
-    fn collect(&self, src: &PathBuf, dest: &PathBuf) -> Result<Vec<PathBuf>, BError> {
+    fn collect(&self, src: &PathBuf, dest: &PathBuf) -> Result<Vec<Collected>, BError> {
         Ok(vec![])
     }
 
