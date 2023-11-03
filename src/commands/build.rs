@@ -560,13 +560,14 @@ mod tests {
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
-            "bb": {},
+            "bb": {
+                "docker": "test-registry/test-image:0.1"
+            },
             "tasks": {
                 "task-name": { 
                     "index": "1",
                     "name": "task-name",
                     "type": "bitbake",
-                    "docker": "test-registry/test-image:0.1",
                     "recipes": [
                         "test-image"
                     ]

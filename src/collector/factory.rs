@@ -5,12 +5,10 @@ use crate::collector::{
     ManifestCollector,
     ArchiveCollector,
 };
-use crate::data::{WsArtifactData, AType};
+use crate::data::AType;
 use crate::workspace::WsArtifactsHandler;
 use crate::error::BError;
 use crate::cli::Cli;
-
-use std::collections::HashMap;
 
 pub struct CollectorFactory {}
 

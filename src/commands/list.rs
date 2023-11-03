@@ -5,7 +5,7 @@ use clap::ArgMatches;
 
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
-use crate::executers::{Docker, DockerImage, Executer};
+use crate::executers::{Docker, DockerImage};
 use crate::workspace::Workspace;
 
 //use clap::{ArgMatches, value_parser};

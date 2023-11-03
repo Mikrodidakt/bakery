@@ -1,14 +1,22 @@
 pub mod docker;
-pub mod executer;
 pub mod recipe;
-//pub mod task;
+pub mod factory;
+pub mod bitbake;
+pub mod nonbitbake;
 
 pub use docker::Docker;
 pub use docker::DockerImage;
-pub use executer::Executer;
 pub use recipe::Recipe;
-//pub use task::{
-//    TaskExecuter,
-//    NonBitbakeTask,
-//    BitbakeTask,
-//};
+pub use factory::ExecuterFactory;
+pub use bitbake::BitbakeExecuter;
+pub use nonbitbake::NonBitbakeExecuter;
+
+use crate::error::BError;
+
+use std::collections::HashMap;
+
+pub trait TaskExecuter {
+    fn exec(&self, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+        Ok(())
+    }
+}

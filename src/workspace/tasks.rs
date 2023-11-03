@@ -1,14 +1,15 @@
 use crate::configs::Context;
-use crate::executers::{Recipe, Executer, DockerImage};
+use crate::executers::{
+    TaskExecuter,
+    ExecuterFactory,
+};
 use crate::workspace::WsArtifactsHandler;
 use crate::error::BError;
-use crate::fs::{JsonFileReader, BitbakeConf};
+use crate::fs::JsonFileReader;
 use crate::cli::Cli;
 use crate::data::{
     WsBuildData,
     WsTaskData,
-    WsBitbakeData,
-    TType,
 };
 use crate::collector::{
     CollectorFactory,
@@ -17,10 +18,7 @@ use crate::collector::{
 };
 
 use std::collections::HashMap;
-use std::io::Read;
-use std::io::Write;
 use serde_json::Value;
-use std::path::PathBuf;
 
 pub struct WsTaskHandler {
     data: WsTaskData,
@@ -43,42 +41,6 @@ impl WsTaskHandler {
         })
     }
 
-    fn bb_build_env(&self, build_data: &WsBuildData, _env_variables: &HashMap<String, String>) -> Result<HashMap<String, String>, BError> {
-        //let task_env = self.env();
-        //let os_env = env::vars();
-        Ok(HashMap::new())
-    }
-
-    fn execute(&self, cli: &Cli, build_data: &WsBuildData, env: &HashMap<String, String>, interactive: bool) -> Result<(), BError> {
-        let executer: Executer = Executer::new(build_data, cli);
-        let mut docker_option: Option<DockerImage> = None;
-        let mut cmd_line: Vec<String> = self.data.build_cmd().split(' ').map(|c| c.to_string()).collect();
-
-        if !self.data.docker_image().is_empty() {
-            let image: DockerImage = DockerImage::new(self.data.docker_image());
-            docker_option = Some(image);
-        }
-        
-        executer.execute(&mut cmd_line, env, Some(self.data.build_dir()), docker_option, interactive)?;
-        Ok(())
-    }
-
-    fn execute_recipes(&self, cli: &Cli, build_data: &WsBuildData, env: &HashMap<String, String>, interactive: bool) -> Result<(), BError> {
-        for r in self.data.recipes() {
-            let recipe: Recipe = Recipe::new(r);
-            let executer: Executer = Executer::new(build_data, cli);
-            let mut docker_option: Option<DockerImage> = None;
-
-            if !self.data.docker_image().is_empty() {
-                let image: DockerImage = DockerImage::new(self.data.docker_image());
-                docker_option = Some(image);
-            }
-
-            executer.execute(&mut recipe.bitbake_cmd(), env, Some(self.data.build_dir()), docker_option, interactive)?;
-        }
-        Ok(())
-    }
-
     pub fn run<'a>(&self, cli: &'a Cli, build_data: &WsBuildData, bb_variables: &Vec<String>, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
         if self.data.disabled() {
             cli.info(format!("Task '{}' is disabled in build config so execution is skipped", self.data.name()));
@@ -90,32 +52,9 @@ impl WsTaskHandler {
             return Ok(()); 
         }
 
-        match self.data.ttype() {
-            TType::Bitbake => {
-                // if we are running a dry run we should always create the bb configs
-                // when not a dry run it will be determined if it is needed or not to
-                // regenerate the bb configs
-
-                let force: bool = dry_run;
-                let conf: BitbakeConf = BitbakeConf::new(build_data.bitbake(), bb_variables, force);
-                conf.create_bitbake_configs(cli)?;
-
-                if dry_run {
-                    cli.info("Dry run. Skipping build!".to_string());
-                    return Ok(());
-                }
-
-                let env: HashMap<String, String> = self.bb_build_env(build_data, env_variables)?;
-                self.execute_recipes(cli, build_data, &env, interactive)?;
-            }
-            TType::NonBitbake => {
-                self.execute(cli, build_data, env_variables, interactive)?;
-            }
-            _ => {
-                return Err(BError::ValueError("Invalid task type".to_string()));
-            }
-        }
-        self.collect(cli, build_data)?;
+        let executer: Box<dyn TaskExecuter> = ExecuterFactory::create(&self.data, build_data, bb_variables, cli);
+        executer.exec(env_variables, dry_run, interactive)?;
+        //self.collect(cli, build_data)?;
         Ok(())
     }
 

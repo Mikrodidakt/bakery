@@ -73,14 +73,11 @@ impl Docker {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
     use std::collections::HashMap;
 
     use crate::cli::*;
     use crate::error::BError;
-    use crate::executers::{Docker, DockerImage, Executer};
-    use crate::data::WsBuildData;
-    use crate::helper::Helper;
+    use crate::executers::{Docker, DockerImage};
 
     fn helper_test_docker(verification_str: &String, test_cmd: &String, test_work_dir: Option<String>,
         image: DockerImage) -> Result<(), BError> {
@@ -101,25 +98,6 @@ mod tests {
         docker.run_cmd(&mut cmd, &HashMap::new(), test_work_dir.unwrap(), &cli)
     }
 
-    fn helper_test_executer(verification_str: &String, test_cmd: &String, test_build_dir: Option<&PathBuf>,
-        image: Option<DockerImage>, build_data: &WsBuildData) -> Result<(), BError> {
-        let mut mocked_logger: MockLogger = MockLogger::new();
-        mocked_logger
-            .expect_info()
-            .with(mockall::predicate::eq(verification_str.clone()))
-            .once()
-            .returning(|_x| ());
-        let cli: Cli = Cli::new(
-            Box::new(mocked_logger),
-            Box::new(BSystem::new()),
-            clap::Command::new("bakery"),
-            None,
-        );
-        let mut cmd: Vec<String> = test_cmd.split(' ').map(|c| c.to_string()).collect();
-        let exec: Executer = Executer::new(build_data, &cli);
-        exec.execute(&mut cmd, &HashMap::new(), test_build_dir, image, true)
-    }
-
     #[test]
     fn test_executer_docker_cmd_line() {
         let test_work_dir: String = String::from("test_work_dir");
@@ -128,36 +106,6 @@ mod tests {
         let docker: Docker = Docker::new(docker_image.clone(), true);
         let cmd: Vec<String> = docker.docker_cmd_line(&mut vec!["cd".to_string(), test_work_dir.clone(), test_cmd.clone()], test_work_dir.clone());
         assert_eq!(cmd, vec!["docker".to_string(), "run".to_string(), format!("{}", docker_image), "cd".to_string(), test_work_dir.clone(), test_cmd])
-    }
-
-    #[test]
-    fn test_executer_docker() {
-        let test_work_dir: String = String::from("test_work_dir");
-        let test_cmd: String = String::from("test_cmd");
-        let docker_image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
-        let verification_str = format!(
-            "docker run {} cd {} && {}",
-            docker_image, test_work_dir, test_cmd
-        );
-        let work_dir: PathBuf = PathBuf::from(&test_work_dir);
-        let json_ws_settings: &str = r#"
-        {
-            "version": "4",
-            "builds": {
-                "supported": [
-                    "default"
-                ]
-            }
-        }"#;
-        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, Some(json_ws_settings));
-        let result: Result<(), BError> =
-            helper_test_executer(&verification_str, &test_cmd, None, Some(docker_image), &build_data);
-        match result {
-            Err(err) => {
-                assert_eq!("Executer failed", err.to_string());
-            }
-            Ok(()) => {}
-        }
     }
 
     #[test]
