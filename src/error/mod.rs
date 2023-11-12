@@ -69,3 +69,9 @@ impl std::convert::From<glob::GlobError> for BError {
         BError::CollectorError(err.to_string())
     }
 }
+
+impl std::convert::From<std::str::Utf8Error> for BError {
+    fn from(err: std::str::Utf8Error) -> Self {
+        BError::ValueError(err.to_string())
+    }
+}
