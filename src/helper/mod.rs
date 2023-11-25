@@ -23,6 +23,7 @@ use std::path::{PathBuf, Path};
 use std::fs::File;
 use std::io::Write;
 use std::collections::{HashSet, HashMap};
+use indexmap::IndexMap;
 use serde_json::Value;
 use rand::prelude::*;
 
@@ -50,7 +51,7 @@ impl Helper {
         std::fs::create_dir_all(ws_settings.cache_dir()).expect("Failed to create cache dir!");
     }
 
-    pub fn setup_test_build_configs_files(configs: HashMap<PathBuf, String>) {
+    pub fn setup_test_build_configs_files(configs: &IndexMap<PathBuf, String>) {
         configs.iter().for_each(|(path, data)| {
             println!("Creating test build config file: {}", path.display());
             let mut file = File::create(path).expect("Failed to create build config");

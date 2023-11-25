@@ -117,8 +117,7 @@ impl Workspace {
             list_of_files.get(0).unwrap() == &"default.json".to_string() {
             // This means that we have a default build config which is the absolut
             // minimum of a build config and will only be used if a command
-            // is used where a build config is not specified. This can occure when
-            // bakery is bootstraped into docker and when running some basic tests
+            // is used where a build config is not specified.
             build_configs.insert(PathBuf::from(settings.configs_dir().join("default.json")), config.description().to_string());
         } else {
             for f in list_of_files {
@@ -190,7 +189,7 @@ impl Workspace {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use indexmap::IndexMap;
     use std::path::{PathBuf, Path};
     use tempdir::TempDir;
 
@@ -226,7 +225,7 @@ mod tests {
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let test_work_dir: &Path = temp_dir.path();
-        let mut configs: HashMap<PathBuf, String> = HashMap::new();
+        let mut configs: IndexMap<PathBuf, String> = IndexMap::new();
         let config1_str: &str = r#"
         {                                                                                                                   
             "version": "4",
@@ -248,19 +247,23 @@ mod tests {
         configs.insert(config1_path, config1_str.to_string());
         configs.insert(config2_path, config2_str.to_string());
         Helper::setup_test_ws_default_dirs(test_work_dir);
-        Helper::setup_test_build_configs_files(configs);
+        Helper::setup_test_build_configs_files(&configs);
         let ws: Workspace = Workspace::new(
             Some(PathBuf::from(test_work_dir)),
             None, 
             None).expect("Failed to setup workspace");
         assert!(!ws.build_configs().is_empty());
-        let mut i: usize = 1;
         ws.build_configs().iter().for_each(|(config, description)| {
+            // We cannot garanty the order
             println!("{}", config.display());
             println!("{}", description.to_string());
-            assert_eq!(config.as_path(), test_work_dir.join(format!("configs/test-name{}.json", i)));
-            assert_eq!(description.to_string(), format!("Test{} Description", i));
-            i += 1;
+            if config.file_name().unwrap() == "test-name1.json" {
+                assert_eq!(config.as_path(), test_work_dir.join("configs/test-name1.json"));
+                assert_eq!(description.to_string(), "Test1 Description");
+            } else {
+                assert_eq!(config.as_path(), test_work_dir.join("configs/test-name2.json"));
+                assert_eq!(description.to_string(), "Test2 Description");
+            }
         });
     }
 
@@ -303,7 +306,7 @@ mod tests {
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let test_work_dir: &Path = temp_dir.path();
-        let mut configs: HashMap<PathBuf, String> = HashMap::new();
+        let mut configs: IndexMap<PathBuf, String> = IndexMap::new();
         let config_str: &str = r#"
         {                                                                                                                   
             "version": "4",
@@ -315,7 +318,7 @@ mod tests {
         let config_path: PathBuf = PathBuf::from(format!("{}/configs/test-name.json", PathBuf::from(test_work_dir).display()));
         configs.insert(config_path, config_str.to_string());
         Helper::setup_test_ws_default_dirs(test_work_dir);
-        Helper::setup_test_build_configs_files(configs);
+        Helper::setup_test_build_configs_files(&configs);
         let ws: Workspace = Workspace::new(
             Some(PathBuf::from(test_work_dir)),
             None, 
