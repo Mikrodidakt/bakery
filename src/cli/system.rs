@@ -40,7 +40,9 @@ impl BSystem {
 impl System for BSystem {
     fn check_call(&self, params: &CallParams) -> Result<(), BError> {
         // Set up environment variables
-        let mut child: std::process::Child = std::process::Command::new("sh")
+        // TODO: we should consider how to handle different shells for now we
+        // will stick to bash since that is what OE/Yocto requires
+        let mut child: std::process::Child = std::process::Command::new("/bin/bash")
             .arg("-c")
             .args(&params.cmd_line)
             .stdout(std::process::Stdio::piped())
@@ -77,12 +79,13 @@ impl System for BSystem {
             return Err(BError::CliError(format!("Init env file {} dose not exists", init_file.to_string_lossy().to_string())));
         }
 
-        let command: &str = &format!("source {} {} > /dev/null; env",
+        let command: &str = &format!(". {} {} > /dev/null; env",
             init_file.to_string_lossy().to_string(),
             build_dir.to_string_lossy().to_string());
 
         // Execute the command
-        let output: std::process::Output = std::process::Command::new("sh")
+        // TODO: we should consider how to handle different shells
+        let output: std::process::Output = std::process::Command::new("/bin/dash")
             .arg("-c")
             .arg(command)
             .output()?;
@@ -124,12 +127,10 @@ mod tests {
         let build_dir: PathBuf = work_dir.clone().join("build");
         let test_file_path: PathBuf = work_dir.clone().join("init_env");
         let mut test_file: File = File::create(&test_file_path).expect("Failed to create init env test file");
-        let env: &str = r#"
-        #!/bin/sh
+        let env: &str = r#"#!/bin/sh
         export ENV1=value1
         export ENV2=value2
-        export ENV3=/test/path/test 
-        "#;
+        export ENV3=/test/path/test"#;
         test_file.write_all(env.as_bytes()).expect("Failed to write init env test file");
         let system: BSystem = BSystem::new();
         let envs: HashMap<String, String> = system.init_env_file(&test_file_path, &build_dir).expect("Failed to process init env test file");
