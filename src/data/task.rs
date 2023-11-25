@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use crate::configs::Context;
 use crate::error::BError;
-use crate::data::{WsBuildData, config};
+use crate::data::WsBuildData;
 use crate::configs::Config;
 
 #[derive(Clone, PartialEq, Debug)]

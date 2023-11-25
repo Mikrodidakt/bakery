@@ -1,11 +1,5 @@
-//use std::path::PathBuf;
-use std::env;
-
-use clap::ArgMatches;
-
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
-use crate::executers::{Docker, DockerImage};
 use crate::workspace::Workspace;
 
 //use clap::{ArgMatches, value_parser};
@@ -83,7 +77,7 @@ impl ListCommand {
 
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
     use tempdir::TempDir;
 
     use crate::cli::*;

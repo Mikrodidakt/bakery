@@ -71,11 +71,9 @@ mod tests {
         Collector,
         Collected,
     };
-    use crate::configs::Context;
     
     use tempdir::TempDir;
     use std::path::PathBuf;
-    use indexmap::{indexmap, IndexMap};
 
     #[test]
     fn test_archive_collector_files() {

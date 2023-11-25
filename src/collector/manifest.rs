@@ -4,10 +4,6 @@ use crate::collector::{
 };
 use crate::cli::Cli;
 use crate::error::BError;
-use crate::data::{
-    AType,
-    WsArtifactData,
-};
 use crate::workspace::WsArtifactsHandler;
 use crate::fs::Manifest;
 
@@ -62,7 +58,7 @@ mod tests {
     };
     use tempdir::TempDir;
     use std::fs::File;
-    use std::io::{self, Read};
+    use std::io::Read;
     use std::path::PathBuf;
     use indexmap::{indexmap, IndexMap};
 

@@ -4,10 +4,6 @@ use crate::collector::{
 };
 use crate::cli::Cli;
 use crate::error::BError;
-use crate::data::{
-    AType,
-    WsArtifactData,
-};
 use crate::workspace::WsArtifactsHandler;
 
 use std::path::{PathBuf, Path};

@@ -170,7 +170,7 @@ impl Workspace {
         self.config.expand_ctx()
     }
 
-    pub fn expand_ctx(&mut self) {
+    pub fn _expand_ctx(&mut self) {
         self.config.expand_ctx();
     }
 

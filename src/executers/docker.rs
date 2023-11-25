@@ -1,7 +1,7 @@
 use clap::ArgMatches;
 use std::collections::HashMap;
 use std::fmt;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::cli::Cli;
 use crate::error::BError;
@@ -54,7 +54,7 @@ impl Docker {
         }
     }
 
-    pub fn bootstrap_bakery(&self, args: &ArgMatches) -> Result<(), BError> {
+    pub fn bootstrap_bakery(&self, _args: &ArgMatches) -> Result<(), BError> {
         Ok(())
     }
 

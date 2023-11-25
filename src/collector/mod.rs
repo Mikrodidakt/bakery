@@ -22,7 +22,7 @@ pub struct Collected {
 }
 
 pub trait Collector {
-    fn collect(&self, src: &PathBuf, dest: &PathBuf) -> Result<Vec<Collected>, BError> {
+    fn collect(&self, _src: &PathBuf, _dest: &PathBuf) -> Result<Vec<Collected>, BError> {
         Ok(vec![])
     }
 

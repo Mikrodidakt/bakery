@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use clap::{ArgMatches, Arg};
+use clap::ArgMatches;
 
 use crate::commands::{CmdHandler, BCommand};
 use crate::error::BError;
@@ -58,7 +58,7 @@ impl Cli {
     //    self.cmd_handler.build_cli(cmd.clone()).get_matches()
     //}
 
-    pub fn get_logger(&self) -> &Box<dyn Logger> {
+    pub fn _get_logger(&self) -> &Box<dyn Logger> {
         &self.logger
     }
 
@@ -66,7 +66,7 @@ impl Cli {
         (*self.logger).info(message);
     }
 
-    pub fn warn(&self, message: String) {
+    pub fn _warn(&self, message: String) {
         (*self.logger).warn(message);
     }
 

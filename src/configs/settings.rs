@@ -45,7 +45,7 @@ use crate::error::BError;
 // Not the ideal solution we should see if it is possible to
 // read them from the Cargo.toml and then incorporate them
 // into the binary and read them out in runtime.
-pub const BAKERY_DOCKER_ARGS: [&str; 2] = ["--rm=true", "-t"];                                                                          
+pub const _BAKERY_DOCKER_ARGS: [&str; 2] = ["--rm=true", "-t"];                                                                          
 pub const BAKERY_DOCKER_IMAGE: &str = "bakery-workspace";                                                                           
 pub const BAKERY_DOCKER_TAG: &str = "0.68";                                                                                      
 pub const BAKERY_DOCKER_REGISTRY: &str = "strixos";

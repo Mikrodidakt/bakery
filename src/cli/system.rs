@@ -2,7 +2,6 @@ use crate::error::BError;
 use mockall::*;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::process::ChildStdout;
 use std::str;
 use std::io::BufRead;
 
@@ -154,7 +153,7 @@ mod tests {
         let system: BSystem = BSystem::new();
         let result: Result<HashMap<String, String>, BError> = system.init_env_file(&test_file_path, &build_dir);
         match result {
-            Ok(env) => {
+            Ok(_env) => {
                 panic!("Was expecting an error!");
             },
             Err(e) => {

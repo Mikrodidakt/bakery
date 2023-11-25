@@ -1,7 +1,6 @@
-use std::{fmt, path::StripPrefixError};
+use std::path::StripPrefixError;
 
 use thiserror::Error;
-use serde_json::Error;
 use zip::result::ZipError;
 
 #[derive(Error, Debug)]

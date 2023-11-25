@@ -6,7 +6,6 @@ use crate::data::WsContextData;
 use crate::workspace::{Workspace, WsTaskHandler};
 use crate::cli::Cli;
 use crate::error::BError;
-use crate::configs::Context;
 
 static BCOMMAND: &str = "build";
 static BCOMMAND_ABOUT: &str = "Execute a build either a full build or a task of one of the builds";
@@ -38,7 +37,7 @@ impl BCommand for BuildCommand {
         let interactive_str: String = self.get_arg_str(cli, "interactive", BCOMMAND)?;
         let ctx: Vec<&String> = self.get_arg_many(cli, "ctx", BCOMMAND)?;
         let env: Vec<&String> = self.get_arg_many(cli, "env", BCOMMAND)?;
-        let volumes: Vec<&String> = self.get_arg_many(cli, "volume", BCOMMAND)?;
+        let _volumes: Vec<&String> = self.get_arg_many(cli, "volume", BCOMMAND)?;
         let tasks: Vec<&String> = self.get_arg_many(cli, "tasks", BCOMMAND)?;
         let variant: String = self.get_arg_str(cli, "variant", BCOMMAND)?;
         let mut bb_variables: Vec<String> = Vec::new();

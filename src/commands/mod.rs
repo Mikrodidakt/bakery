@@ -12,7 +12,7 @@ use crate::workspace::Workspace;
 
 // Bakery SubCommand
 pub trait BCommand {
-    fn execute(&self, cli: &Cli, workspace: &mut Workspace) -> Result<(), BError> {
+    fn execute(&self, cli: &Cli, _workspace: &mut Workspace) -> Result<(), BError> {
         cli.info(format!("Execute command {}", self.cmd_str()));
         Ok(())
     }
@@ -81,7 +81,6 @@ pub fn get_supported_cmds() -> HashMap<&'static str, Box<dyn BCommand>> {
 }
 
 pub use build::BuildCommand;
-use clap::ArgMatches;
 pub use clean::CleanCommand;
 pub use list::ListCommand;
 pub use handler::CmdHandler;

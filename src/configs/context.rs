@@ -1,6 +1,6 @@
 use indexmap::IndexMap;
 use regex::Regex;
-use std::path::{PathBuf, Path};
+use std::path::PathBuf;
 
 pub struct Context {
     regexp: Regex,
@@ -91,7 +91,7 @@ impl Context {
 #[cfg(test)]
 mod tests {
     use indexmap::{IndexMap, indexmap};
-    use std::path::{PathBuf, Path};
+    use std::path::PathBuf;
 
     use crate::configs::Context;
 

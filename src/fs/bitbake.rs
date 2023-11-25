@@ -404,7 +404,7 @@ mod tests {
         local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"1\"\n");
         local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"2\"\n");
         local_conf_content.push_str("LOCAL_CONF_TEST_LINE ?= \"3\"\n");
-        let mut bblayers_conf_content: String = String::new();
+        let bblayers_conf_content: String = String::new();
         let bb_variables: Vec<String> = vec![];
         let force: bool = true;
         let mut mocked_logger: MockLogger = MockLogger::new();
