@@ -1,3 +1,4 @@
+use indexmap::IndexMap;
 use serde_json::Value;
 use std::path::PathBuf;
 
@@ -23,6 +24,7 @@ pub struct WsTaskData {
     condition: String,
     clean: String,
     recipes: Vec<String>, // The list of recipes will be empty if the type for the task is 'non-bitbake'
+    env: IndexMap<String, String>,
 }
 
 impl Config for WsTaskData {
@@ -62,6 +64,7 @@ impl WsTaskData {
         let condition: String = Self::get_str_value("condition", data, Some(String::from("true")))?;
         let build: String = Self::get_str_value("build", &data, Some(String::from("")))?;
         let clean: String = Self::get_str_value("clean", &data, Some(String::from("")))?;
+        let env: IndexMap<String, String> = Self::get_hashmap_value("env", &data)?;
         let recipes: Vec<String> = Self::get_array_value("recipes", &data, Some(vec![]))?;
 
         let enum_ttype: TType;
@@ -95,6 +98,7 @@ impl WsTaskData {
             build,
             clean,
             recipes,
+            env,
         })
     }
     
@@ -105,6 +109,7 @@ impl WsTaskData {
         self.clean = ctx.expand_str(&self.clean);
         self.condition = ctx.expand_str(&self.condition);
         self.recipes.iter_mut().for_each(|r: &mut String| *r = ctx.expand_str(r));
+        self.env.iter_mut().for_each(|(_key, value)| *value = ctx.expand_str(value));
     }
 
     pub fn index(&self) -> u32 {
@@ -158,6 +163,10 @@ impl WsTaskData {
 
     pub fn recipes(&self) -> &Vec<String> {
         &self.recipes
+    }
+
+    pub fn env(&self) -> &IndexMap<String, String> {
+        &self.env
     }
 }
 
@@ -309,5 +318,69 @@ mod tests {
                 assert_eq!(e.to_string(), String::from("Invalid 'task' node in build config. Invalid type 'invalid'"));
             }
         }
+    }
+
+    #[test]
+    fn test_ws_task_env() {
+        let json_task_config: &str = r#"
+        {
+            "index": "0",
+            "name": "task1-name",
+            "type": "non-bitbake",
+            "builddir": "test/builddir",
+            "env": [
+                "KEY1=VALUE1",
+                "KEY2=VALUE2",
+                "KEY3=VALUE3"
+            ],
+            "build": "build-cmd",
+            "clean": "clean-cmd"
+        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let bb_build_dir: PathBuf = work_dir.clone().join(String::from("test/builddir"));
+        let context: Context = Context::new(&IndexMap::new());
+        let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
+        let task: WsTaskData = WsTaskData::new(&data, &work_dir, &bb_build_dir, &context).expect("Failed parsing task data");
+        let task_env: &IndexMap<String, String> = task.env();
+        let mut i: usize = 1;
+        task_env.iter().for_each(|(key, value)| {
+            assert_eq!(key, &format!("KEY{}", i));
+            assert_eq!(value, &format!("VALUE{}", i));
+            i += 1;
+        });
+    }
+
+    #[test]
+    fn test_ws_task_env_context() {
+        let json_task_config: &str = r#"
+        {
+            "index": "0",
+            "name": "task1-name",
+            "type": "non-bitbake",
+            "builddir": "test/builddir",
+            "env": [
+                "KEY1=${CTX_VALUE1}",
+                "KEY2=${CTX_VALUE2}",
+                "KEY3=VALUE3"
+            ],
+            "build": "build-cmd",
+            "clean": "clean-cmd"
+        }"#;
+        let ctx_variables: IndexMap<String, String> = indexmap! {
+            "CTX_VALUE1".to_string() => "ctx-value1".to_string(),
+            "CTX_VALUE2".to_string() => "${CTX_VALUE3}-value2".to_string(),
+            "CTX_VALUE3".to_string() => "ctx".to_string(),
+        };
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let bb_build_dir: PathBuf = work_dir.clone().join(String::from("builds/test-name"));
+        let context: Context = Context::new(&ctx_variables);
+        let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
+        let mut task: WsTaskData = WsTaskData::new(&data, &work_dir, &bb_build_dir, &context).expect("Failed parsing task data");
+        task.expand_ctx(&context);
+        assert_eq!(task.env(), &indexmap! {
+            "KEY1".to_string() => "ctx-value1".to_string(),
+            "KEY2".to_string() => "ctx-value2".to_string(),
+            "KEY3".to_string() => "VALUE3".to_string(),
+        });
     }
 }
