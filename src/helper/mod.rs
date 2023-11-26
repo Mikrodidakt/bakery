@@ -269,4 +269,13 @@ impl Helper {
         ).expect("Failed to parse config");
         artifacts
     }
+
+    pub fn assert_hashmap(hash: &HashMap<String, String>, verify: &HashMap<String, String>) {
+        assert!(!hash.is_empty());
+        assert!(!verify.is_empty());
+        hash.iter().for_each(|(key, value)|{
+            println!("Verify key {}={}", key, value);
+            assert_eq!(value, &verify[key]);
+        });
+    }
 }

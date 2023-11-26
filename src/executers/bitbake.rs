@@ -10,6 +10,7 @@ use crate::executers::{
 use crate::fs::BitbakeConf;
 
 use std::collections::HashMap;
+use indexmap::IndexMap;
 
 pub struct BitbakeExecuter<'a> {
     bb_data: &'a WsBitbakeData,
@@ -19,9 +20,10 @@ pub struct BitbakeExecuter<'a> {
 }
 
 impl<'a> TaskExecuter for BitbakeExecuter<'a> {
-    fn exec(&self, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+    fn exec(&self, args_env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
         let force: bool = dry_run;
-        let env: HashMap<String, String> = self.bb_build_env(self.task_data, env_variables)?;
+        let env: HashMap<String, String> = self.bb_build_env(args_env_variables)?;
+        //let env: HashMap<String, String> = HashMap::new();
         // if we are running a dry run we should always create the bb configs.
         // When not a dry run it will be determined if it is needed or not to
         // regenerate the bb configs based on the content of the existing configs
@@ -70,10 +72,44 @@ impl<'a> TaskExecuter for BitbakeExecuter<'a> {
 }
 
 impl<'a> BitbakeExecuter<'a> {
-    fn bb_build_env(&self, _task_data: &WsTaskData, _env_variables: &HashMap<String, String>) -> Result<HashMap<String, String>, BError> {
-        //let task_env = self.env();
-        //let os_env = env::vars();
-        Ok(HashMap::new())
+    fn bb_build_env(&self, args_env_variables: &HashMap<String, String>) -> Result<HashMap<String, String>, BError> {
+        // Env variables priority are
+        // 1. Cli env variables
+        // 2. Build config env variables
+        // 3. System env variables
+
+        // Sourcing the init env file and returning the all env variables available
+        let mut env: HashMap<String, String> = self.cli.source_init_env(&self.bb_data.init_env_file(), self.task_data.build_dir())?;
+        // Reading out the env variables defined in the build config for the specific
+        // task that will be executed
+        let task_env: &IndexMap<String, String> = self.task_data.env();
+        // Any variable that should be able to passthrough into bitbake needs to be defined as part of the bb passthrough variable
+        // we define some defaults that should always be possible to passthrough
+        let mut bb_env_passthrough_additions: String = String::from("SSTATE_DIR DL_DIR TMPDIR");
+
+        // Process the task build config env variables
+        task_env.iter().for_each(|(key, value)| {
+            env.insert(key.clone(), value.clone());
+            // Add any task build config variable to the list of passthrough variables
+            bb_env_passthrough_additions.push_str(&String::from(" "));
+            bb_env_passthrough_additions.push_str(&key.clone());
+        });
+
+        // Process the env variables from the cli
+        args_env_variables.iter().for_each(|(key, value)| {
+            env.insert(key.clone(), value.clone());
+            // Any variable comming from the cli should not by default be added to the passthrough
+            // list. The only way to get it through is if this variable is already defined as part
+            // of the task build config env
+        });
+
+        if env.contains_key("BB_ENV_PASSTHROUGH_ADDITIONS") {
+            bb_env_passthrough_additions.push_str(env.get("BB_ENV_PASSTHROUGH_ADDITIONS").unwrap_or(&String::from("")));
+        }
+
+        env.insert(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), bb_env_passthrough_additions);
+
+        Ok(env)
     }
 
     pub fn new(cli: &'a Cli, task_data: &'a WsTaskData, bb_data: &'a WsBitbakeData, bb_variables: &'a Vec<String>) -> Self {
@@ -158,11 +194,14 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::new(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
                 shell: true,
             }))
             .once()
             .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let cli: Cli = Cli::new(
             Box::new(mocked_logger),
             Box::new(mocked_system),
@@ -177,7 +216,6 @@ mod tests {
     fn test_bitbake_executer_dry_run() {
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
-        let build_dir: PathBuf = work_dir.join("builds/default");
         let bb_variables: Vec<String> = vec![];
         let env_variables: HashMap<String, String> = HashMap::new();
         let json_build_config: &str = r#"
@@ -210,6 +248,10 @@ mod tests {
         }"#;
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let task_data: WsTaskData = WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task config");
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
@@ -228,7 +270,7 @@ mod tests {
             .returning(|_x| ());
         let cli: Cli = Cli::new(
             Box::new(mocked_logger),
-            Box::new(BSystem::new()),
+            Box::new(mocked_system),
             clap::Command::new("bakery"),
             Some(vec!["bakery"]),
         );
@@ -298,11 +340,14 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::new(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
                 shell: true,
             }))
             .once()
             .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let cli: Cli = Cli::new(
             Box::new(mocked_logger),
             Box::new(mocked_system),
@@ -375,11 +420,14 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::new(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
                 shell: true,
             }))
             .once()
             .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let cli: Cli = Cli::new(
             Box::new(mocked_logger),
             Box::new(mocked_system),
@@ -453,11 +501,14 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::new(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
                 shell: true,
             }))
             .once()
             .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let cli: Cli = Cli::new(
             Box::new(mocked_logger),
             Box::new(mocked_system),
@@ -466,5 +517,207 @@ mod tests {
         );
         let executer: BitbakeExecuter = BitbakeExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
         executer.exec(&env_variables, false, true).expect("Failed to execute task");
+    }
+
+    #[test]
+    fn test_bitbake_executer_env_empty() {
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let bb_variables: Vec<String> = vec![];
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {
+                "machine": "raspberrypi3",
+                "variant": "release",
+                "distro": "strix",
+                "docker": "test-registry/bb-docker:0.1",
+                "bblayersconf": [
+                    "LCONF_VERSION=\"7\"",
+                    "BBPATH=\"${TOPDIR}\""
+                ],
+                "localconf": [
+                    "BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"",
+                    "PARALLEL_MAKE ?= \"-j ${@oe.utils.cpu_count()}\""
+                ]
+            }
+        }"#;
+        let json_task_config: &str = r#"
+        {
+            "index": "0",
+            "name": "task1-name",
+            "docker": "test-registry/task-docker:0.1",
+            "recipes": [
+                "test-image"
+            ]
+        }"#;
+        let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
+        let task_data: WsTaskData = WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task config");
+        let args_env_variables: HashMap<String, String> = HashMap::new();
+        let init_env_variables: HashMap<String, String> = HashMap::new();
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_init_env_file()
+            .returning(move|_x, _y| Ok(init_env_variables.clone()));
+        let cli: Cli = Cli::new(
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            clap::Command::new("bakery"),
+            Some(vec!["bakery"]),
+        );
+        let executer: BitbakeExecuter = BitbakeExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
+        let env: HashMap<String, String> = executer.bb_build_env(&args_env_variables).expect("Failed to process bb build env");
+        Helper::assert_hashmap(&env, &HashMap::from([
+            (String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))
+        ]))
+    }
+
+    #[test]
+    fn test_bitbake_executer_env() {
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let bb_variables: Vec<String> = vec![];
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {
+                "machine": "raspberrypi3",
+                "variant": "release",
+                "distro": "strix",
+                "docker": "test-registry/bb-docker:0.1",
+                "bblayersconf": [
+                    "LCONF_VERSION=\"7\"",
+                    "BBPATH=\"${TOPDIR}\""
+                ],
+                "localconf": [
+                    "BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"",
+                    "PARALLEL_MAKE ?= \"-j ${@oe.utils.cpu_count()}\""
+                ]
+            }
+        }"#;
+        let json_task_config: &str = r#"
+        {
+            "index": "0",
+            "name": "task1-name",
+            "docker": "test-registry/task-docker:0.1",
+            "env": [
+                "BUILD_CONFIG_ENV1=BC_VALUE1",
+                "BUILD_CONFIG_ENV2=BC_VALUE2"
+            ],
+            "recipes": [
+                "test-image"
+            ]
+        }"#;
+        let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
+        let task_data: WsTaskData = WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task config");
+        let args_env_variables: HashMap<String, String> = HashMap::from([
+            (String::from("CLI_ARG_ENV1"), String::from("CLI_VALUE1")),
+            (String::from("CLI_ARG_ENV2"), String::from("CLI_VALUE2")),
+            (String::from("BUILD_CONFIG_ENV2"), String::from("CLI_VALUE3")),
+        ]);
+        let init_env_variables: HashMap<String, String> = HashMap::new();
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_init_env_file()
+            .returning(move|_x, _y| Ok(init_env_variables.clone()));
+        let cli: Cli = Cli::new(
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            clap::Command::new("bakery"),
+            Some(vec!["bakery"]),
+        );
+        let executer: BitbakeExecuter = BitbakeExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
+        let env: HashMap<String, String> = executer.bb_build_env(&args_env_variables).expect("Failed to process bb build env");
+        Helper::assert_hashmap(&env, &HashMap::from([
+            (String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR BUILD_CONFIG_ENV1 BUILD_CONFIG_ENV2")),
+            (String::from("CLI_ARG_ENV1"), String::from("CLI_VALUE1")),
+            (String::from("CLI_ARG_ENV2"), String::from("CLI_VALUE2")),
+            (String::from("BUILD_CONFIG_ENV1"), String::from("BC_VALUE1")),
+            (String::from("BUILD_CONFIG_ENV2"), String::from("CLI_VALUE3")),
+            ]));
+    }
+
+    #[test]
+    fn test_bitbake_executer_env_prio() {
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let bb_variables: Vec<String> = vec![];
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {
+                "machine": "raspberrypi3",
+                "variant": "release",
+                "distro": "strix",
+                "docker": "test-registry/bb-docker:0.1",
+                "bblayersconf": [
+                    "LCONF_VERSION=\"7\"",
+                    "BBPATH=\"${TOPDIR}\""
+                ],
+                "localconf": [
+                    "BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"",
+                    "PARALLEL_MAKE ?= \"-j ${@oe.utils.cpu_count()}\""
+                ]
+            }
+        }"#;
+        let json_task_config: &str = r#"
+        {
+            "index": "0",
+            "name": "task1-name",
+            "docker": "test-registry/task-docker:0.1",
+            "env": [
+                "BUILD_CONFIG_ENV1=BC_VALUE1",
+                "BUILD_CONFIG_ENV2=BC_VALUE2"
+            ],
+            "recipes": [
+                "test-image"
+            ]
+        }"#;
+        let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
+        let task_data: WsTaskData = WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task config");
+        // The env cli args should overwrite any env variable defined in the build config
+        let args_env_variables: HashMap<String, String> = HashMap::from([
+            (String::from("CLI_ARG_ENV1"), String::from("CLI_VALUE1")),
+            (String::from("CLI_ARG_ENV2"), String::from("CLI_VALUE2")),
+            (String::from("BUILD_CONFIG_ENV2"), String::from("CLI_VALUE3")),
+        ]);
+        // Any variable defined in the system env should always be used
+        // we might change this where the cli env have highest priority
+        let init_env_variables: HashMap<String, String> = HashMap::from([
+            (String::from("CLI_ARG_ENV1"), String::from("INIT_ENV_VALUE1")),
+            (String::from("CLI_ARG_ENV2"), String::from("INIT_ENV_VALUE2")),
+            (String::from("BUILD_CONFIG_ENV1"), String::from("INIT_ENV_VALUE3")),
+            (String::from("BUILD_CONFIG_ENV2"), String::from("INIT_ENV_VALUE4")),
+            (String::from("SYSTEM_ENV2"), String::from("INIT_ENV_VALUE5")),
+        ]);
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_init_env_file()
+            .returning(move|_x, _y| Ok(init_env_variables.clone()));
+        let cli: Cli = Cli::new(
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            clap::Command::new("bakery"),
+            Some(vec!["bakery"]),
+        );
+        let executer: BitbakeExecuter = BitbakeExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
+        let env: HashMap<String, String> = executer.bb_build_env(&args_env_variables).expect("Failed to process bb build env");
+        Helper::assert_hashmap(&env, &HashMap::from([
+            (String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR BUILD_CONFIG_ENV1 BUILD_CONFIG_ENV2")),
+            (String::from("CLI_ARG_ENV1"), String::from("CLI_VALUE1")),
+            (String::from("CLI_ARG_ENV2"), String::from("CLI_VALUE2")),
+            (String::from("BUILD_CONFIG_ENV1"), String::from("BC_VALUE1")),
+            (String::from("BUILD_CONFIG_ENV2"), String::from("CLI_VALUE3")),
+            (String::from("SYSTEM_ENV2"), String::from("INIT_ENV_VALUE5")),
+            ]));
     }
 }

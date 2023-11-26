@@ -382,7 +382,10 @@ mod tests {
         let build_dir: PathBuf = work_dir.join("builds/default");
         let local_conf_path: PathBuf = build_dir.clone().join("conf/local.conf");
         let bblayers_conf_path: PathBuf = build_dir.clone().join("conf/bblayers.conf");
-        let mocked_system: MockSystem = MockSystem::new();
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
@@ -471,11 +474,14 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::new(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
                 shell: true,
             }))
             .once()
             .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,
@@ -532,6 +538,9 @@ mod tests {
             }))
             .once()
             .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,
@@ -585,11 +594,14 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::new(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
                 shell: true,
             }))
             .once()
             .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,
@@ -641,11 +653,14 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::new(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
                 shell: true,
             }))
             .once()
             .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,
@@ -710,7 +725,7 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::new(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
                 shell: true,
             }))
             .once()
@@ -722,11 +737,14 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::new(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
                 shell: true,
             }))
             .once()
             .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,
@@ -780,7 +798,10 @@ mod tests {
         "#;
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
-        let mocked_system: MockSystem = MockSystem::new();
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
@@ -917,6 +938,9 @@ mod tests {
             }))
             .once()
             .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,

@@ -15,6 +15,7 @@ pub struct WsBitbakeData {
     docker: String, // Optional if nothing is set the bitbake task will be executed inside the bakery container. Default is an empty string
     bblayers_conf: Vec<String>, // Optional but if there is a task with type bitbake defined it will fail without a bblayers.conf
     local_conf: Vec<String>, // Optional but if there is a task with type bitbake defined it will fail without a local.conf
+    init_env: String, // Optional but if not set the default oe-init-build-env file will be used
     settings: WsSettingsHandler,
 }
 
@@ -47,6 +48,7 @@ impl WsBitbakeData {
         let deploy_dir: String = Self::get_str_value("deploydir", bb_data, Some(String::from("tmp/deploy/images")))?;
         let bblayers_conf: Vec<String> = Self::get_array_value("bblayersconf", bb_data, Some(vec![]))?;
         let local_conf: Vec<String> = Self::get_array_value("localconf", bb_data, Some(vec![]))?;
+        let init_env: String = Self::get_str_value("initenv", bb_data, Some(String::from("layers/poky/oe-init-build-env")))?;
 
         Ok(WsBitbakeData {
             product,
@@ -58,6 +60,7 @@ impl WsBitbakeData {
             bblayers_conf,
             local_conf,
             settings: settings.clone(),
+            init_env,
         })
     }
 
@@ -134,22 +137,12 @@ impl WsBitbakeData {
 
     pub fn dl_dir(&self) -> PathBuf {
         self.settings.cache_dir().clone().join("download".to_string())
-    }        
-
-    pub fn poky_dir(&self) -> PathBuf {
-        // TODO: not sure about this we should not lock the bakery into using poky
-        // we only need this to be able to determine where to find the OE init file.
-        // I think the solution is to add a entry in the build config file in the bb-node
-        // where you can specify a path for the init file to source. The default could be
-        // layers/poky/oe-init-build-env. Potentially we should also add an entry in the
-        // Workspace settings file where you can specify the layers directory
-        self.settings.work_dir().clone().join("layers".to_string()).join("poky".to_string())
     }
 
-    pub fn oe_init_file(&self) -> PathBuf {
+    pub fn init_env_file(&self) -> PathBuf {
         // TODO: we should probably setup an option to configure what OE init script
         // to source to setup the env.
-        self.poky_dir().join("oe-init-build-env")
+        self.settings.work_dir().clone().join(self.init_env.clone())
     }
 }
 
@@ -185,8 +178,7 @@ mod tests {
         assert!(!data.local_conf().is_empty());
         assert_eq!(data.sstate_dir(), PathBuf::from(String::from("/workspace/.cache/NA/sstate-cache")));
         assert_eq!(data.dl_dir(), PathBuf::from(String::from("/workspace/.cache/download")));
-        assert_eq!(data.poky_dir(), PathBuf::from(String::from("/workspace/layers/poky")));
-        assert_eq!(data.oe_init_file(), PathBuf::from(String::from("/workspace/layers/poky/oe-init-build-env")));
+        assert_eq!(data.init_env_file(), PathBuf::from(String::from("/workspace/layers/poky/oe-init-build-env")));
     }
 
     #[test]
@@ -205,6 +197,7 @@ mod tests {
                 "distro": "test-distro",
                 "deploydir": "tmp/test/deploy",
                 "docker": "test-registry/test-image:0.1",
+                "initenv": "layers/test/oe-my-init-env",
                 "bblayersconf": [
                     "BB_LAYERS_CONF_TEST_LINE_1",
                     "BB_LAYERS_CONF_TEST_LINE_2",
@@ -248,7 +241,6 @@ mod tests {
         assert_eq!(data.local_conf(), conf_str);
         assert_eq!(data.sstate_dir(), PathBuf::from(String::from("/workspace/.cache/test-arch/sstate-cache")));
         assert_eq!(data.dl_dir(), PathBuf::from(String::from("/workspace/.cache/download")));
-        assert_eq!(data.poky_dir(), PathBuf::from(String::from("/workspace/layers/poky")));
-        assert_eq!(data.oe_init_file(), PathBuf::from(String::from("/workspace/layers/poky/oe-init-build-env")));
+        assert_eq!(data.init_env_file(), PathBuf::from(String::from("/workspace/layers/test/oe-my-init-env")));
     }
 }

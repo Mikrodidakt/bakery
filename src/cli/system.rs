@@ -90,6 +90,11 @@ impl System for BSystem {
             .arg(command)
             .output()?;
 
+        let status: std::process::ExitStatus = output.status;
+        if !status.success() {
+            return Err(BError::CliError(format!("{}", status)));
+        }
+        
         // Capture the output as a string
         let output_str: &str = str::from_utf8(&output.stdout)?;
 
@@ -143,6 +148,32 @@ mod tests {
         assert_eq!(&envs.get("ENV2").unwrap_or(&"error".to_string()), &verify.get("ENV2").unwrap());
         assert_eq!(&envs.get("ENV3").unwrap_or(&"error".to_string()), &verify.get("ENV3").unwrap());
     }
+
+    /*
+    TODO: we need to fix this test not sure why it does not fail
+    #[test]
+    fn test_system_init_env_file_error() {
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = PathBuf::from(temp_dir.path());
+        let build_dir: PathBuf = work_dir.clone().join("build");
+        let test_file_path: PathBuf = work_dir.clone().join("init_env");
+        let mut test_file: File = File::create(&test_file_path).expect("Failed to create init env test file");
+        let env: &str = r#"#!/bin/sh
+        garbage sdlkjsdklsjdlskj"#;
+        test_file.write_all(env.as_bytes()).expect("Failed to write init env test file");
+        let system: BSystem = BSystem::new();
+        let result: Result<HashMap<String, String>, BError> = system.init_env_file(&test_file_path, &build_dir);
+        match result {
+            Ok(_env) => {
+                panic!("Was expecting an error!");
+            },
+            Err(e) => {
+                assert_eq!(e.to_string(), format!("Init env file {} dose not exists", test_file_path.to_string_lossy().to_string()));
+            }
+        }
+    }
+    */
 
     #[test]
     fn test_system_init_env_file_missing() {

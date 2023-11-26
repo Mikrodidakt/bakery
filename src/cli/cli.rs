@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-
+use std::path::PathBuf;
 use clap::ArgMatches;
 
 use crate::commands::{CmdHandler, BCommand};
@@ -44,6 +44,10 @@ impl Cli {
         self.system.check_call(&CallParams{ cmd_line: cmd_line.to_owned(), env: env.to_owned(), shell })?;
         //self.system.test(String::from(cmd.as_str().trim_end()))?;
         Ok(())
+    }
+
+    pub fn source_init_env(&self, init_file: &PathBuf, build_dir: &PathBuf) -> Result<HashMap<String, String>, BError> {
+        self.system.init_env_file(init_file, build_dir)
     }
 
     pub fn get_command(&self, name: &str) -> Result<&Box<dyn BCommand>, BError> {

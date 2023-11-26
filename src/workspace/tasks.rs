@@ -408,11 +408,14 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::new(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
                 shell: true,
             }))
             .once()
             .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let cli: Cli = Cli::new(
             Box::new(BLogger::new()),
             Box::new(mocked_system),
@@ -448,11 +451,14 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::new(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
                 shell: true,
             }))
             .once()
             .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let cli: Cli = Cli::new(
             Box::new(BLogger::new()),
             Box::new(mocked_system),
@@ -487,7 +493,7 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::new(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
                 shell: true,
             }))
             .once()
@@ -499,11 +505,14 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::new(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
                 shell: true,
             }))
             .once()
             .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let cli: Cli = Cli::new(
             Box::new(BLogger::new()),
             Box::new(mocked_system),
@@ -584,6 +593,10 @@ mod tests {
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
@@ -602,7 +615,7 @@ mod tests {
             .returning(|_x| ());
         let cli: Cli = Cli::new(
             Box::new(mocked_logger),
-            Box::new(BSystem::new()),
+            Box::new(mocked_system),
             clap::Command::new("bakery"),
             None,
         );
