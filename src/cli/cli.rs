@@ -58,6 +58,28 @@ impl Cli {
         &self.args
     }
 
+    pub fn get_home_dir(&self) -> PathBuf {
+        match std::env::var_os("HOME") {
+            Some(var) => { 
+                return PathBuf::from(var.into_string().or::<String>(Ok(String::from(""))).unwrap());
+            },
+            None => {
+                return PathBuf::from("");
+            }
+        }
+    }
+
+    pub fn get_curr_dir(&self) -> PathBuf {
+        match std::env::current_dir() {
+            Ok(path) => {
+                return path;
+            },
+            Err(e) => {
+                return PathBuf::from("");
+            }
+        }
+    }
+
     //pub fn build_cli(&self, cmd: &clap::Command) -> clap::ArgMatches {
     //    self.cmd_handler.build_cli(cmd.clone()).get_matches()
     //}

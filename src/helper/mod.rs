@@ -1,9 +1,3 @@
-#[cfg(test)]
-use crate::cli::{
-    BSystem,
-    MockLogger,
-    Cli,
-};
 use crate::workspace::{
     WsBuildConfigHandler,
     WsSettingsHandler,
@@ -14,10 +8,7 @@ use crate::data::WsBuildData;
 
 use crate::error::BError;
 use crate::configs::WsSettings;
-use crate::fs::{
-    Archiver,
-    BitbakeConf
-};
+use crate::fs::Archiver;
 
 use std::path::{PathBuf, Path};
 use std::fs::File;
@@ -29,7 +20,6 @@ use rand::prelude::*;
 
 pub struct Helper;
 
-#[cfg(test)]
 impl Helper {
     pub fn setup_test_ws_default_dirs(work_dir: &Path) {
         std::fs::create_dir_all(work_dir.join("configs")).expect("Failed to create config dir!");
@@ -197,7 +187,7 @@ impl Helper {
     }
     */
 
-    pub fn setup_ws_config_handler(test_work_dir: &str, json_settings: &str, json_build_config: &str) -> WsBuildConfigHandler {
+    pub fn setup_ws_build_config_handler(test_work_dir: &str, json_settings: &str, json_build_config: &str) -> WsBuildConfigHandler {
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
         let mut settings: WsSettingsHandler = WsSettingsHandler::new(
             work_dir,

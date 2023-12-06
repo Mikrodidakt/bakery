@@ -20,6 +20,11 @@ pub trait BCommand {
     fn is_docker_required(&self) -> bool {
         false
     }
+
+    fn get_config_name(&self, cli: &Cli) -> String {
+        String::from("default")
+    }
+    
     fn get_arg_str(&self, cli: &Cli, id: &str, cmd: &str) -> Result<String, BError> {
         if let Some(sub_matches) = cli.get_args().subcommand_matches(cmd) {
             if sub_matches.contains_id(id) {

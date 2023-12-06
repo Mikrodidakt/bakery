@@ -138,6 +138,17 @@ impl BCommand for BuildCommand {
 }
 
 impl BuildCommand {
+    fn get_config_name(&self, cli: &Cli) -> String {
+        if let Some(sub_matches) = cli.get_args().subcommand_matches(BCOMMAND) {
+            if sub_matches.contains_id("config") {
+                if let Some(value) = sub_matches.get_one::<String>("config") {
+                    return value.clone()
+                }
+            }
+        }
+        return String::from("default");
+    }
+
     fn setup_context(&self, ctx: Vec<&String>) -> IndexMap<String, String> {
         let context: IndexMap<String, String> = ctx.iter().map(|&c|{
             let v: Vec<&str> = c.split('=').collect();
@@ -950,4 +961,63 @@ mod tests {
             vec!["bakery", "build", "--config", "default", "--tasks", "task-name", "--context", "DIR1=dir3", "--context", "PROJECT=test"],
         );
     }
+
+/*
+    #[test]
+    fn test_cmd_build_env() {
+        let json_ws_settings: &str = r#"
+        {
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "tasks": {
+                "task-name": { 
+                    "index": "1",
+                    "name": "task-name",
+                    "type": "non-bitbake",
+                    "env": [
+                        "ENV_VAR1=VALUE1"
+                    ],
+                    "builddir": "build",
+                    "build": "test.sh build",
+                    "clean": "test.sh clean"
+                }
+            }
+        }"#;
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let build_dir: PathBuf = work_dir.join("build/");
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "test.sh", "build"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                env: HashMap::new(),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
+        let _result: Result<(), BError> = helper_test_build_subcommand(
+            json_ws_settings,
+            json_build_config,
+            &work_dir,
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            vec!["bakery", "build", "--config", "default", "--tasks", "task-name", "--env", "ENV_VAR1=CLI_VALUE1"],
+        );
+    }
+*/
 }

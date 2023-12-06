@@ -1,5 +1,6 @@
 use crate::cli::{BLogger, Cli};
 use crate::commands::BCommand;
+use crate::configs::WsConfigFileHandler;
 use crate::error::BError;
 use crate::executers::Docker;
 use crate::workspace::{WsSettingsHandler, Workspace, WsBuildConfigHandler};
@@ -35,62 +36,39 @@ impl Bakery {
         }
     }
 
-    pub fn bake(&self) {
-        let json_ws_settings: &str = r#"
-        {
-            "version": "4",
-            "builds": {
-                "supported": [
-                    "default"
-                ]
-            }
-        }"#;
-        let json_build_config: &str = r#"
-        {
-            "version": "4",
-            "name": "default",
-            "description": "Test Description",
-            "arch": "test-arch",
-            "bb": {},
-            "tasks": { 
-                "task1": {
-                    "index": "1",
-                    "name": "task1",
-                    "type": "non-bitbake"
-                },
-                "task2": {
-                    "index": "2",
-                    "name": "task2",
-                    "type": "non-bitbake"
-                }
+    pub fn match_and_exit<T>(&self, result: Result<T, BError>) -> T {
+        match result {
+            Ok(content) => {
+                return content;
+            },
+            Err(err) => {
+                self.cli.error(format!("{}", err.to_string()));
+                std::process::exit(1);
             }
         }
-        "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let mut settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_ws_settings).expect("Failed to parse settings.json");
-        let config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut settings).expect("Failed to parse build config");
-        let mut workspace: Workspace = Workspace::new(Some(work_dir), Some(settings), Some(config)).expect("Failed to setup workspace");
+    }
 
+    pub fn bake(&self) {
+        let work_dir: PathBuf = self.cli.get_curr_dir();
+        let home_dir: PathBuf = self.cli.get_home_dir();
+        let cfg_handler: WsConfigFileHandler = WsConfigFileHandler::new(&work_dir, &home_dir);
+        let settings: WsSettingsHandler = self.match_and_exit::<WsSettingsHandler>(cfg_handler.ws_settings());
         let cmd_name: &str = self.cli.get_args().subcommand_name().unwrap();
-        let cmd: Result<&Box<dyn BCommand>, BError> = self.cli.get_command(cmd_name);
+        let cmd_result: Result<&Box<dyn BCommand>, BError> = self.cli.get_command(cmd_name);
 
-        match cmd {
+        match cmd_result {
             Ok(command) => {
+                let config: WsBuildConfigHandler = self.match_and_exit(cfg_handler.build_config(&command.get_config_name(&self.cli), &settings));
+                let mut workspace: Workspace = self.match_and_exit::<Workspace>(Workspace::new(Some(work_dir), Some(settings), Some(config)));
+                /*
                 if command.is_docker_required() && !Docker::inside_docker() {
                     self.cli.info(format!("Bootstrap bakery into docker"));
                     let docker: Docker = Docker::new(workspace.settings().docker_image(), true);
                     let _result: Result<(), BError> = docker.bootstrap_bakery(self.cli.get_args());
                     std::process::exit(0);
                 }
-
-                let error: Result<(), BError> = command.execute(&self.cli, &mut workspace);
-                match error {
-                    Err(err) => {
-                        self.cli.error(format!("{}", err.to_string()));
-                        std::process::exit(1);
-                    }
-                    Ok(()) => {}
-                }
+                */
+                let _res: () = self.match_and_exit::<()>(command.execute(&self.cli, &mut workspace));
             }
             Err(err) => {
                 self.cli.error(format!("{}", err.to_string()));

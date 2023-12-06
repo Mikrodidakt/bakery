@@ -1,8 +1,10 @@
 pub mod settings;
 pub mod context;
+pub mod handler;
 
 pub use settings::WsSettings;
 pub use context::Context;
+pub use handler::WsConfigFileHandler;
 
 use indexmap::IndexMap;
 use serde_json::Value;

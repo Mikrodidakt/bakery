@@ -1,6 +1,6 @@
 use std::fs::File;
-use std::io::{self, Read};
-use std::path::{Path, PathBuf};
+use std::io::Read;
+use std::path::PathBuf;
 
 use crate::error::BError;
 use serde_json::Value;
