@@ -114,6 +114,20 @@ impl WsSettingsHandler {
         &self.ws_settings.docker_args
     }
 
+    pub fn docker_enabled(&self) -> bool {
+        match self.ws_settings.docker_enabled.as_str() {
+            "true" => {
+                return true;
+            },
+            "false" => {
+                return false;
+            },
+            _ => {
+                return false;
+            }
+        }
+    }
+
     pub fn supported_builds(&self) -> &Vec<String> {
         &self.ws_settings.supported
     }

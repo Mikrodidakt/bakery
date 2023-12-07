@@ -65,6 +65,7 @@ pub struct WsSettings {
     pub docker_image: String,
     pub docker_registry: String,
     pub docker_args: Vec<String>,
+    pub docker_enabled: String,
 }
 
 impl Config for WsSettings {
@@ -86,6 +87,7 @@ impl WsSettings {
         let mut docker_tag: String = String::from(BAKERY_DOCKER_TAG);
         let mut docker_registry: String = String::from(BAKERY_DOCKER_REGISTRY);
         let mut docker_args: Vec<String> = vec![String::from("--rm=true"), String::from("-t")];
+        let mut docker_enabled: String = String::from("true");
 
         match Self::get_value("workspace", &data) {
             Ok(ws_data) => { 
@@ -112,6 +114,7 @@ impl WsSettings {
 
         match Self::get_value("docker", &data) {
             Ok(docker_data) => {
+                docker_enabled = Self::get_str_value("enabled", docker_data, Some(String::from("true")))?;
                 docker_image = Self::get_str_value("image", docker_data, Some(String::from(BAKERY_DOCKER_IMAGE)))?;
                 docker_tag = Self::get_str_value("tag", docker_data, Some(String::from(BAKERY_DOCKER_TAG)))?;
                 docker_registry = Self::get_str_value("registry", docker_data, Some(String::from(BAKERY_DOCKER_REGISTRY)))?;
@@ -134,6 +137,7 @@ impl WsSettings {
             docker_image,
             docker_registry,
             docker_args,
+            docker_enabled,
         })
     }
 }
@@ -379,6 +383,29 @@ mod tests {
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_tag, "0.68");
+    }
+
+    #[test]
+    fn test_settings_config_no_docker_enabled() {
+        let json_test_str = r#"
+        {
+            "version": "4"
+        }"#;
+        let settings = Helper::setup_ws_settings(json_test_str);
+        assert_eq!(&settings.docker_enabled, "true");
+    }
+
+    #[test]
+    fn test_settings_config_docker_enabled() {
+        let json_test_str = r#"
+        {
+            "version": "4",
+            "docker": {
+                "enabled": "false"
+            }
+        }"#;
+        let settings = Helper::setup_ws_settings(json_test_str);
+        assert_eq!(&settings.docker_enabled, "false");
     }
 
     #[test]
