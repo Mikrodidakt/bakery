@@ -87,7 +87,7 @@ impl WsSettings {
         let mut docker_tag: String = String::from(BAKERY_DOCKER_TAG);
         let mut docker_registry: String = String::from(BAKERY_DOCKER_REGISTRY);
         let mut docker_args: Vec<String> = vec![String::from("--rm=true"), String::from("-t")];
-        let mut docker_enabled: String = String::from("true");
+        let mut docker_enabled: String = String::from("false");
 
         match Self::get_value("workspace", &data) {
             Ok(ws_data) => { 
@@ -114,7 +114,7 @@ impl WsSettings {
 
         match Self::get_value("docker", &data) {
             Ok(docker_data) => {
-                docker_enabled = Self::get_str_value("enabled", docker_data, Some(String::from("true")))?;
+                docker_enabled = Self::get_str_value("enabled", docker_data, Some(String::from("false")))?;
                 docker_image = Self::get_str_value("image", docker_data, Some(String::from(BAKERY_DOCKER_IMAGE)))?;
                 docker_tag = Self::get_str_value("tag", docker_data, Some(String::from(BAKERY_DOCKER_TAG)))?;
                 docker_registry = Self::get_str_value("registry", docker_data, Some(String::from(BAKERY_DOCKER_REGISTRY)))?;
@@ -392,7 +392,7 @@ mod tests {
             "version": "4"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.docker_enabled, "true");
+        assert_eq!(&settings.docker_enabled, "false");
     }
 
     #[test]
@@ -401,11 +401,11 @@ mod tests {
         {
             "version": "4",
             "docker": {
-                "enabled": "false"
+                "enabled": "true"
             }
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.docker_enabled, "false");
+        assert_eq!(&settings.docker_enabled, "true");
     }
 
     #[test]
