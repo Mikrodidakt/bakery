@@ -58,7 +58,7 @@ impl Docker {
         Ok(())
     }
 
-    pub fn docker_cmd_line(&self, cmd_line: &mut Vec<String>, dir: String) -> Vec<String> {
+    pub fn docker_cmd_line(&self, cmd_line: &mut Vec<String>, _dir: String) -> Vec<String> {
         let mut docker_cmd: Vec<String> = vec!["docker".to_string(), "run".to_string()];
         docker_cmd.push(format!("{}", self.image));
         docker_cmd.append(cmd_line);

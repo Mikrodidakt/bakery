@@ -3,7 +3,6 @@ use crate::data::{
     WsTaskData,
     TType, WsBuildData
 };
-use crate::error::BError;
 use crate::executers::{
     TaskExecuter,
     BitbakeExecuter,

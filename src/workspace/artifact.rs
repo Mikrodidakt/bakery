@@ -1,12 +1,9 @@
-use crate::collector::{CollectorFactory, Collector};
 use crate::configs::Context;
 use crate::error::BError;
 use crate::fs::JsonFileReader;
-use crate::cli::Cli;
 use crate::data::{
     WsArtifactData,
     WsBuildData,
-    AType
 };
 
 use std::path::PathBuf;

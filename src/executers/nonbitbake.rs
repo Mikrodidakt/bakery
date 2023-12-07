@@ -16,8 +16,6 @@ pub struct NonBitbakeExecuter<'a> {
 
 impl<'a> TaskExecuter for NonBitbakeExecuter<'a> {
     fn exec(&self, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
-        let force: bool = dry_run;
-
         if dry_run {
             self.cli.info("Dry run. Skipping build!".to_string());
             return Ok(());

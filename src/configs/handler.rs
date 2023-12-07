@@ -5,7 +5,6 @@ use crate::fs::JsonFileReader;
 use crate::error::BError;
 
 const WORKSPACE_SETTINGS: &str = "workspace.json";
-const CONFIG_DIR: &str = "configs";
 
 pub struct WsConfigFileHandler {
     work_dir: PathBuf,

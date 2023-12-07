@@ -74,7 +74,7 @@ impl Cli {
             Ok(path) => {
                 return path;
             },
-            Err(e) => {
+            Err(_e) => {
                 return PathBuf::from("");
             }
         }

@@ -64,10 +64,10 @@ impl Manifest {
 #[cfg(test)]
 mod tests {
     use crate::error::BError;
-    use crate::fs::{json, Manifest};
+    use crate::fs::Manifest;
 
     use std::fs::File;
-    use std::io::{self, Read};
+    use std::io::Read;
     use std::path::{Path, PathBuf};
     use tempdir::TempDir;
 

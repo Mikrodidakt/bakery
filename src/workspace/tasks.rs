@@ -60,16 +60,16 @@ impl WsTaskHandler {
 
     pub fn collect(&self, cli: &Cli, build_data: &WsBuildData) -> Result<Vec<Collected>, BError> {
         let mut collected: Vec<Collected> = vec![];
+        
         if !self.artifacts.is_empty() {
+            
             for artifact in self.artifacts.iter() {
                 cli.info(format!("Collecting artifacts for task '{}'", self.data.name()));
                 let collector: Box<dyn Collector> = CollectorFactory::create(artifact, Some(cli))?;
                 let mut c: Vec<Collected> = collector.collect(self.data.build_dir(), &build_data.settings().artifacts_dir())?;
                 collected.append(&mut c);
             }
-            /*for c in collected.iter() {
-                cli.info(c.to_string_lossy().to_string());
-            }*/
+            
             cli.info(
             format!("All artifacts for task '{}' have been collected to '{}'",
                 self.data.name(),
@@ -80,6 +80,7 @@ impl WsTaskHandler {
                 format!("No artifacts to collect for task '{}'",
                     self.data.name())); 
         }
+        
         Ok(collected)
     }
 
@@ -107,7 +108,7 @@ mod tests {
     use std::fs::File;
     use std::io::Read;
     
-    use crate::cli::{BLogger, MockLogger, Cli, MockSystem, CallParams, BSystem};
+    use crate::cli::{BLogger, MockLogger, Cli, MockSystem, CallParams};
     use crate::workspace::{
         WsTaskHandler,
         WsArtifactsHandler,
