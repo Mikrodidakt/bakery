@@ -54,7 +54,11 @@ impl WsTaskHandler {
 
         let executer: Box<dyn TaskExecuter> = ExecuterFactory::create(&self.data, build_data, bb_variables, cli);
         executer.exec(env_variables, dry_run, interactive)?;
-        //self.collect(cli, build_data)?;
+
+        if !dry_run {
+            self.collect(cli, build_data)?;
+        }
+        
         Ok(())
     }
 
