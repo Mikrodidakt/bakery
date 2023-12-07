@@ -2,7 +2,7 @@ use indexmap::{IndexMap, indexmap};
 use std::collections::HashMap;
 
 use crate::commands::{BCommand, BBaseCommand};
-use crate::data::WsContextData;
+use crate::data::{WsContextData, WsBuildData};
 use crate::workspace::{Workspace, WsTaskHandler};
 use crate::cli::Cli;
 use crate::error::BError;
@@ -16,6 +16,17 @@ pub struct BuildCommand {
 }
 
 impl BCommand for BuildCommand {
+    fn get_config_name(&self, cli: &Cli) -> String {
+        if let Some(sub_matches) = cli.get_args().subcommand_matches(BCOMMAND) {
+            if sub_matches.contains_id("config") {
+                if let Some(value) = sub_matches.get_one::<String>("config") {
+                    return value.clone()
+                }
+            }
+        }
+        return String::from("default");
+    }
+
     fn cmd_str(&self) -> &str {
         &self.cmd.cmd_str
     }
@@ -92,11 +103,11 @@ impl BCommand for BuildCommand {
 
         if variant == "release" {
             /*
-            build commands defined in the build config needs to
-            know if it is release build or not running by including
-            the BUILD_VARIANT to the context we can expose this to
-            the build commands. We are keeping RELEASE_BUILD for
-            backwards compatibility but should be replaced with BUILD_VARIANT
+             * Build commands defined in the build config needs to
+             * know if it is release build or not running by including
+             * the BUILD_VARIANT to the context we can expose this to
+             * the build commands. We are keeping RELEASE_BUILD for
+             * backwards compatibility but should be replaced with BUILD_VARIANT
             */
             extra_ctx.insert("BUILD_VARIANT".to_string(), "release".to_string());
             extra_ctx.insert("RELEASE_BUILD".to_string(), "1".to_string());
@@ -117,7 +128,9 @@ impl BCommand for BuildCommand {
             // More then one task was specified on the command line
             for t_name in tasks {
                 let task: &WsTaskHandler = workspace.config().task(t_name)?;
-                task.run(cli, workspace.config().build_data(), &bb_variables, &env_variables, dry_run, interactive)?;
+                let build_data: &WsBuildData = workspace.config().build_data();
+                task.run(cli, build_data, &bb_variables, &env_variables, dry_run, interactive)?;
+                //task.collect(cli, build_data)?;
             }
         } else {
             // One task was specified on the command line or default was used
@@ -125,12 +138,16 @@ impl BCommand for BuildCommand {
             if task == "all" {
                 // The alias "all" was specified on the command line or it none was specified and "all" was used
                 for (_t_name, task) in workspace.config().tasks() {
-                    task.run(cli, workspace.config().build_data(), &bb_variables, &env_variables, dry_run, interactive)?;
+                    let build_data: &WsBuildData = workspace.config().build_data();
+                    task.run(cli, build_data, &bb_variables, &env_variables, dry_run, interactive)?;
+                    //task.collect(cli, build_data)?;
                 }
             } else {
                 // One task was specified on the command line
                 let task: &WsTaskHandler = workspace.config().task(tasks.get(0).unwrap())?;
-                task.run(cli, workspace.config().build_data(), &bb_variables, &env_variables, dry_run, interactive)?;
+                let build_data: &WsBuildData = workspace.config().build_data();
+                task.run(cli, build_data, &bb_variables, &env_variables, dry_run, interactive)?;
+                //task.collect(cli, build_data)?;
             }
         }
         Ok(())
@@ -138,17 +155,6 @@ impl BCommand for BuildCommand {
 }
 
 impl BuildCommand {
-    fn get_config_name(&self, cli: &Cli) -> String {
-        if let Some(sub_matches) = cli.get_args().subcommand_matches(BCOMMAND) {
-            if sub_matches.contains_id("config") {
-                if let Some(value) = sub_matches.get_one::<String>("config") {
-                    return value.clone()
-                }
-            }
-        }
-        return String::from("default");
-    }
-
     fn setup_context(&self, ctx: Vec<&String>) -> IndexMap<String, String> {
         let context: IndexMap<String, String> = ctx.iter().map(|&c|{
             let v: Vec<&str> = c.split('=').collect();

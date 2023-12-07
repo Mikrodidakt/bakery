@@ -21,7 +21,7 @@ impl WsArtifactsHandler {
     }
 
     pub fn new(data: &Value, task_build_dir: &PathBuf, build_data: &WsBuildData) -> Result<Self, BError> {
-        let artifact_data: WsArtifactData = WsArtifactData::from_value(data, task_build_dir, build_data)?;
+        let artifact_data: WsArtifactData = WsArtifactData::from_value(data)?;
         let children: Vec<WsArtifactsHandler> = build_data.get_artifacts(data, task_build_dir)?;
         Ok(WsArtifactsHandler {
             data: artifact_data,

@@ -1,9 +1,7 @@
 use serde_json::Value;
-use std::path::PathBuf;
 
 use crate::configs::Context;
 use crate::error::BError;
-use crate::data::WsBuildData;
 use crate::configs::Config;
 
 #[derive(Clone, Eq, Hash, PartialEq, Debug)]
@@ -28,20 +26,16 @@ impl Config for WsArtifactData {
 }
 
 impl WsArtifactData {
-    pub fn from_str(json_string: &str, task_build_dir: &PathBuf, build_data: &WsBuildData) -> Result<Self, BError> {
+    pub fn from_str(json_string: &str) -> Result<Self, BError> {
         let data: Value = Self::parse(json_string)?;
-        Self::from_value(&data, task_build_dir, build_data)
+        Self::from_value(&data)
     }
 
-    pub fn from_value(data: &Value, task_build_dir: &PathBuf, build_data: &WsBuildData) -> Result<Self, BError> {
-        Self::new(data,
-            task_build_dir,
-            &build_data.settings().artifacts_dir(),
-            build_data.context().ctx()
-        )
+    pub fn from_value(data: &Value) -> Result<Self, BError> {
+        Self::new(data)
     }
 
-    pub fn new(data: &Value, task_build_dir: &PathBuf, artifacts_dir: &PathBuf, context: &Context) -> Result<Self, BError> {
+    pub fn new(data: &Value) -> Result<Self, BError> {
         let ttype: String = Self::get_str_value("type", &data, Some(String::from("file")))?;
         let name: String = Self::get_str_value("name", &data, Some(String::from("")))?;
         let source: String = Self::get_str_value("source", &data, Some(String::from("")))?;
@@ -141,7 +135,6 @@ impl WsArtifactData {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
     use serde_json::Value;
     use indexmap::{IndexMap, indexmap};
 
@@ -160,12 +153,8 @@ mod tests {
             "source": "file1.txt"
         }
         "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let task_build_dir: PathBuf = work_dir.clone().join(String::from("task/builddir"));
-        let artifact_dir: PathBuf = work_dir.clone().join(String::from("artifacts"));
-        let context: Context = Context::new(&IndexMap::new());
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let data: WsArtifactData = WsArtifactData::new(&value, &task_build_dir, &artifact_dir, &context).expect("Failed to parse artifact data");
+        let data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
         assert!(data.name().is_empty());
         assert_eq!(data.atype(), &AType::File);
         assert_eq!(data.source(), "file1.txt");
@@ -180,12 +169,8 @@ mod tests {
             "dest": "dest"
         }
         "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let task_build_dir: PathBuf = work_dir.clone().join(String::from("task/builddir"));
-        let artifact_dir: PathBuf = work_dir.clone().join(String::from("artifacts"));
-        let context: Context = Context::new(&IndexMap::new());
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let data: WsArtifactData = WsArtifactData::new(&value, &task_build_dir, &artifact_dir, &context).expect("Failed to parse artifact data");
+        let data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
         assert!(data.name.is_empty());
         assert_eq!(data.atype(), &AType::File);
         assert_eq!(data.source(), "file1.txt");
@@ -201,12 +186,8 @@ mod tests {
             "dest": "dest"
         }
         "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let task_build_dir: PathBuf = work_dir.clone().join(String::from("task/builddir"));
-        let artifact_dir: PathBuf = work_dir.clone().join(String::from("artifacts"));
-        let context: Context = Context::new(&IndexMap::new());
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let data: WsArtifactData = WsArtifactData::new(&value, &task_build_dir, &artifact_dir, &context).expect("Failed to parse artifact data");
+        let data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
         assert!(data.name().is_empty());
         assert_eq!(data.atype(), &AType::File);
         assert_eq!(data.source(), "file1.txt");
@@ -226,12 +207,8 @@ mod tests {
             ]
         }
         "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let task_build_dir: PathBuf = work_dir.clone().join(String::from("task/builddir"));
-        let artifact_dir: PathBuf = work_dir.clone().join(String::from("artifacts"));
-        let context: Context = Context::new(&IndexMap::new());
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let data: WsArtifactData = WsArtifactData::new(&value, &task_build_dir, &artifact_dir, &context).expect("Failed to parse artifact data");
+        let data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
         assert_eq!(data.atype(), &AType::Directory);
         assert_eq!(data.name(), "dir");
     }
@@ -245,12 +222,8 @@ mod tests {
             "dest": "dest"
         }
         "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let task_build_dir: PathBuf = work_dir.clone().join(String::from("task/builddir"));
-        let artifact_dir: PathBuf = work_dir.clone().join(String::from("artifacts"));
-        let context: Context = Context::new(&IndexMap::new());
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value, &task_build_dir, &artifact_dir, &context);
+        let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value);
         match result {
             Ok(_data) => {
                 panic!("We should have recived an error because the type is invalid!");
@@ -268,12 +241,9 @@ mod tests {
             "type": "directory"
         }
         "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let task_build_dir: PathBuf = work_dir.clone().join(String::from("task/builddir"));
-        let artifact_dir: PathBuf = work_dir.clone().join(String::from("artifacts"));
         let context: Context = Context::new(&IndexMap::new());
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value, &task_build_dir, &artifact_dir, &context);
+        let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value);
         match result {
             Ok(_rconfig) => {
                 panic!("We should have recived an error because the type is invalid!");
@@ -291,12 +261,8 @@ mod tests {
             "type": "manifest"
         }
         "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let task_build_dir: PathBuf = work_dir.clone().join(String::from("task/builddir"));
-        let artifact_dir: PathBuf = work_dir.clone().join(String::from("artifacts"));
-        let context: Context = Context::new(&IndexMap::new());
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value, &task_build_dir, &artifact_dir, &context);
+        let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value);
         match result {
             Ok(_rconfig) => {
                 panic!("We should have recived an error because the type is invalid!");
@@ -335,12 +301,9 @@ mod tests {
             ]
         }
         "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let task_build_dir: PathBuf = work_dir.clone().join(String::from("task/builddir"));
-        let artifact_dir: PathBuf = work_dir.clone().join(String::from("artifacts"));
         let context: Context = Context::new(&ctx_variables);
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let mut data: WsArtifactData = WsArtifactData::new(&value, &task_build_dir, &artifact_dir, &context).expect("Failed to parse artifact data");
+        let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
         data.expand_ctx(&context);
         assert_eq!(data.name(), "test-archive.zip");
     }
@@ -368,12 +331,9 @@ mod tests {
             }
         }
         "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let task_build_dir: PathBuf = work_dir.clone().join(String::from("task/builddir"));
-        let artifact_dir: PathBuf = work_dir.clone().join(String::from("artifacts"));
         let context: Context = Context::new(&ctx_variables);
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let mut data: WsArtifactData = WsArtifactData::new(&value, &task_build_dir, &artifact_dir, &context).expect("Failed to parse artifact data");
+        let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
         data.expand_ctx(&context);
         assert_eq!(data.name(), "test-manifest.json");
         assert!(!data.manifest().is_empty());
@@ -391,12 +351,9 @@ mod tests {
             "name": "${MANIFEST_FILE}"
         }
         "#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let task_build_dir: PathBuf = work_dir.clone().join(String::from("task/builddir"));
-        let artifact_dir: PathBuf = work_dir.clone().join(String::from("artifacts"));
         let context: Context = Context::new(&ctx_variables);
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let mut data: WsArtifactData = WsArtifactData::new(&value, &task_build_dir, &artifact_dir, &context).expect("Failed to parse artifact data");
+        let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
         data.expand_ctx(&context);
         assert_eq!(data.name(), "test-manifest.json");
         assert!(!data.manifest().is_empty());
