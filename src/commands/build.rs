@@ -394,6 +394,11 @@ mod tests {
         let build_dir: PathBuf = work_dir.join("builds/default");
         let local_conf_path: PathBuf = build_dir.clone().join("conf/local.conf");
         let bblayers_conf_path: PathBuf = build_dir.clone().join("conf/bblayers.conf");
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_ws_settings).expect("Failed to setup settings handler");
+        let config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &settings).expect("Failed to setup build config handler");
+        let mut workspace: Workspace =
+            Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config)).expect("Failed to setup workspace handler");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_init_env_file()
@@ -411,17 +416,29 @@ mod tests {
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Dry run. Skipping build!".to_string()))
+            .with(mockall::predicate::eq(format!("source init env file {}", workspace.config().build_data().bitbake().init_env_file().display())))
             .once()
             .returning(|_x| ());
-        let _result: Result<(), BError> = helper_test_build_subcommand(
-            json_ws_settings,
-            json_build_config,
-            &work_dir,
+        for (name, _task) in workspace.config().tasks() {
+            mocked_logger
+                .expect_info()
+                .with(mockall::predicate::eq(format!("execute bitbake task '{}'", name)))
+                .once()
+                .returning(|_x| ());
+            mocked_logger
+                .expect_info()
+                .with(mockall::predicate::eq("Dry run. Skipping build!".to_string()))
+                .once()
+                .returning(|_x| ());
+        }
+        let cli: Cli = Cli::new(
             Box::new(mocked_logger),
             Box::new(mocked_system),
-            cmd_line,
+            clap::Command::new("bakery"),
+            Some(cmd_line),
         );
+        let cmd: BuildCommand = BuildCommand::new();
+        let _result: Result<(), BError> = cmd.execute(&cli, &mut workspace);
         let mut bblayers_conf_content: String = String::from("");
         bblayers_conf_content.push_str("LCONF_VERSION=\"7\"\n");
         bblayers_conf_content.push_str("BBPATH=\"${TOPDIR}\"\n");
@@ -764,79 +781,6 @@ mod tests {
             Box::new(BLogger::new()),
             Box::new(mocked_system),
             vec!["bakery", "build", "--config", "default", "--tasks", "image,sdk"],
-        );
-    }
-
-    #[test]
-    fn test_cmd_build_dry_run() {
-        let json_ws_settings: &str = r#"
-        {
-            "version": "4",
-            "builds": {
-                "supported": [
-                    "default"
-                ]
-            }
-        }"#;
-        let json_build_config: &str = r#"
-        {
-            "version": "4",
-            "name": "default",
-            "description": "Test Description",
-            "arch": "test-arch",
-            "bb": {
-                "machine": "raspberrypi3",
-                "variant": "release",
-                "distro": "strix",
-                "bblayersconf": [
-                    "LCONF_VERSION=\"7\"",
-                    "BBPATH=\"${TOPDIR}\""
-                ],
-                "localconf": [
-                    "BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"",
-                    "PARALLEL_MAKE ?= \"-j ${@oe.utils.cpu_count()}\""
-                ]
-            },
-            "tasks": {
-                "image": { 
-                    "index": "1",
-                    "name": "image",
-                    "recipes": [
-                        "image"
-                    ]
-                }
-            }
-        }
-        "#;
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
-        let work_dir: PathBuf = temp_dir.into_path();
-        let mut mocked_system: MockSystem = MockSystem::new();
-        mocked_system
-            .expect_init_env_file()
-            .returning(|_x, _y| Ok(HashMap::new()));
-        let mut mocked_logger: MockLogger = MockLogger::new();
-        mocked_logger
-            .expect_info()
-            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
-            .once()
-            .returning(|_x| ());
-        mocked_logger
-            .expect_info()
-            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
-            .once()
-            .returning(|_x| ());
-        mocked_logger
-            .expect_info()
-            .with(mockall::predicate::eq("Dry run. Skipping build!".to_string()))
-            .once()
-            .returning(|_x| ());
-        let _result: Result<(), BError> = helper_test_build_subcommand(
-            json_ws_settings,
-            json_build_config,
-            &work_dir,
-            Box::new(mocked_logger),
-            Box::new(mocked_system),
-            vec!["bakery", "build", "--config", "default", "--tasks", "image", "--dry-run"],
         );
     }
 
