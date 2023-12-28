@@ -316,6 +316,7 @@ mod tests {
             WsBuildConfigHandler::from_str(json_build_config, &settings)?;
         let mut workspace: Workspace =
             Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config))?;
+        
         let cli: Cli = Cli::new(
             logger,
             system,
@@ -400,12 +401,12 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", local_conf_path.display())))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", bblayers_conf_path.display())))
             .once()
             .returning(|_x| ());
         mocked_logger

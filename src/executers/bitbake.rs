@@ -21,9 +21,9 @@ pub struct BitbakeExecuter<'a> {
 
 impl<'a> TaskExecuter for BitbakeExecuter<'a> {
     fn exec(&self, args_env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+        self.cli.info(format!("execute bitbake task '{}'", self.task_data.name()));
         let force: bool = dry_run;
         let env: HashMap<String, String> = self.bb_build_env(args_env_variables)?;
-        //let env: HashMap<String, String> = HashMap::new();
         // if we are running a dry run we should always create the bb configs.
         // When not a dry run it will be determined if it is needed or not to
         // regenerate the bb configs based on the content of the existing configs
@@ -78,7 +78,8 @@ impl<'a> BitbakeExecuter<'a> {
         // 2. Build config env variables
         // 3. System env variables
 
-        // Sourcing the init env file and returning the all env variables available
+        // Sourcing the init env file and returning all the env variables available including from the shell
+        self.cli.info(format!("source init env file {}", self.bb_data.init_env_file().display()));
         let mut env: HashMap<String, String> = self.cli.source_init_env(&self.bb_data.init_env_file(), self.task_data.build_dir())?;
         // Reading out the env variables defined in the build config for the specific
         // task that will be executed
@@ -173,12 +174,22 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", data.bitbake().local_conf_path().display())))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", data.bitbake().bblayers_conf_path().display())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq(format!("source init env file {}", data.bitbake().init_env_file().display())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq(format!("execute bitbake task '{}'", task_data.name())))
             .once()
             .returning(|_x| ());
         mocked_logger
@@ -255,12 +266,22 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", data.bitbake().local_conf_path().display())))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", data.bitbake().bblayers_conf_path().display())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq(format!("source init env file {}", data.bitbake().init_env_file().display())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq(format!("execute bitbake task '{}'", task_data.name())))
             .once()
             .returning(|_x| ());
         mocked_logger
@@ -319,12 +340,22 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", data.bitbake().local_conf_path().display())))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", data.bitbake().bblayers_conf_path().display())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq(format!("source init env file {}", data.bitbake().init_env_file().display())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq(format!("execute bitbake task '{}'", task_data.name())))
             .once()
             .returning(|_x| ());
         mocked_logger
@@ -399,12 +430,22 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", data.bitbake().local_conf_path().display())))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", data.bitbake().bblayers_conf_path().display())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq(format!("source init env file {}", data.bitbake().init_env_file().display())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq(format!("execute bitbake task '{}'", task_data.name())))
             .once()
             .returning(|_x| ());
         mocked_logger
@@ -480,12 +521,22 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", data.bitbake().local_conf_path().display())))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", data.bitbake().bblayers_conf_path().display())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq(format!("source init env file {}", data.bitbake().init_env_file().display())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq(format!("execute bitbake task '{}'", task_data.name())))
             .once()
             .returning(|_x| ());
         mocked_logger

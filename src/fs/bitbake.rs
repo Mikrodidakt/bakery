@@ -53,9 +53,7 @@ impl BitbakeConf {
         }
 
         if force {
-            let msg: String = format!("Autogenerate {}", file_name);
-            println!("{}", msg);
-            cli.info(msg.clone());
+            cli.info(format!("Autogenerate {}", conf_path.display()));
             self.write_bb_build_conf(&conf_path, &conf_str)?;
         } else {
             if conf_path.exists() {
@@ -65,11 +63,11 @@ impl BitbakeConf {
                 if identical {
                     cli.info(format!("{} exists skipping", file_name));
                 } else {
-                    cli.info(format!("Autogenerate {}", file_name));
+                    cli.info(format!("Autogenerate {}", conf_path.display()));
                     self.write_bb_build_conf(conf_path, &conf_str)?;    
                 }
             } else {
-                cli.info(format!("Autogenerate {}", file_name));
+                cli.info(format!("Autogenerate {}", conf_path.display()));
                 self.write_bb_build_conf(conf_path, &conf_str)?;
             }
         }
@@ -140,7 +138,7 @@ mod tests {
     use crate::cli::{
         BSystem,
         MockLogger,
-        Cli,
+        Cli, BLogger,
     };
     use crate::fs::BitbakeConf;
 
@@ -162,7 +160,7 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", local_conf_path.display())))
             .once()
             .returning(|_x| ());
         let cli: Cli = Cli::new(
@@ -208,7 +206,7 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", bblayers_conf_path.display())))
             .once()
             .returning(|_x| ());
         let cli: Cli = Cli::new(
@@ -254,7 +252,7 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", bblayers_conf_path.display())))
             .once()
             .returning(|_x| ());
         mocked_logger
@@ -306,7 +304,7 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", local_conf_path.display())))
             .once()
             .returning(|_x| ());
         mocked_logger
@@ -358,12 +356,12 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", bblayers_conf_path.display())))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", bblayers_conf_path.display())))
             .once()
             .returning(|_x| ());
         let cli: Cli = Cli::new(
@@ -410,12 +408,12 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", local_conf_path.display())))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", local_conf_path.display())))
             .once()
             .returning(|_x| ());
         let cli: Cli = Cli::new(
@@ -465,12 +463,12 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", local_conf_path.display())))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", bblayers_conf_path.display())))
             .once()
             .returning(|_x| ());
         let cli: Cli = Cli::new(

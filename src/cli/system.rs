@@ -39,18 +39,25 @@ impl BSystem {
 
 impl System for BSystem {
     fn check_call(&self, params: &CallParams) -> Result<(), BError> {
-        // Set up environment variables
+        let mut cmd: String = String::new();
+        params.cmd_line.iter().for_each(|c|{
+            cmd.push_str(c);
+            cmd.push(' ');
+        });
+
         // TODO: we should consider how to handle different shells for now we
         // will stick to bash since that is what OE/Yocto requires
         let mut child: std::process::Child = std::process::Command::new("/bin/bash")
             .arg("-c")
-            .args(&params.cmd_line)
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
+            .arg(cmd.as_str().trim_end())
+            .stdout(os_pipe::dup_stdout()?)
+            .stderr(os_pipe::dup_stderr()?)
             .env_clear()
             .envs(&params.env)
             .spawn()?;
 
+        /*
+        Lets keep this for now we might need this later
         let stdout_reader = std::io::BufReader::new(child.stdout.take().unwrap());
         let stderr_reader = std::io::BufReader::new(child.stderr.take().unwrap());
         let stdout_lines = stdout_reader.lines();
@@ -61,7 +68,7 @@ impl System for BSystem {
             if let Ok(line) = line {
                 println!("{}", line);
             }
-        }
+        }*/
 
         // Wait for the command to finish
         let status: std::process::ExitStatus = child.wait()?;
@@ -85,7 +92,7 @@ impl System for BSystem {
 
         // Execute the command
         // TODO: we should consider how to handle different shells
-        let output: std::process::Output = std::process::Command::new("/bin/dash")
+        let output: std::process::Output = std::process::Command::new("/bin/bash")
             .arg("-c")
             .arg(command)
             .output()?;

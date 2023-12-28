@@ -605,12 +605,22 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate local.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", local_conf_path.display())))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Autogenerate bblayers.conf".to_string()))
+            .with(mockall::predicate::eq(format!("Autogenerate {}", bblayers_conf_path.display())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq(format!("source init env file {}", build_data.bitbake().init_env_file().display())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq(format!("execute bitbake task '{}'", task.data().name())))
             .once()
             .returning(|_x| ());
         mocked_logger
