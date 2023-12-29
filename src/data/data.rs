@@ -136,6 +136,10 @@ impl WsBuildData {
         self.config.version()
     }
 
+    pub fn valid(&self) -> bool {
+        return self.config.version() != "NA" && self.product().name() != "NA" && self.product().description() != "NA";
+    }
+
     pub fn settings(&self) -> &WsSettingsHandler {
         &self.settings
     }

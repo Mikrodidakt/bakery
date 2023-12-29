@@ -12,6 +12,18 @@ pub struct ListCommand {
 }
 
 impl BCommand for ListCommand {
+    fn get_config_name(&self, cli: &Cli) -> String {
+        if let Some(sub_matches) = cli.get_args().subcommand_matches(BCOMMAND) {
+            if sub_matches.contains_id("config") {
+                if let Some(value) = sub_matches.get_one::<String>("config") {
+                    return value.clone()
+                }
+            }
+        }
+        
+        return String::from("default");
+    }
+
     fn cmd_str(&self) -> &str {
         &self.cmd.cmd_str
     }

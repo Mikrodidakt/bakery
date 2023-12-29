@@ -30,7 +30,7 @@ impl WsConfigFileHandler {
          * in the repo for the product that is going to be baked.
          */
         if path.exists() {
-            let settings_str: String = JsonFileReader::new(path.to_string_lossy().to_string()).read_json()?;
+            let settings_str: String = JsonFileReader::new(&path).read_json()?;
             return WsSettingsHandler::from_str(&self.work_dir, &settings_str);
         }
 
@@ -40,7 +40,7 @@ impl WsConfigFileHandler {
          */
         path = self.work_dir.clone().join(WORKSPACE_SETTINGS);
         if path.exists() {
-            let settings_str: String = JsonFileReader::new(path.to_string_lossy().to_string()).read_json()?;
+            let settings_str: String = JsonFileReader::new(&path).read_json()?;
             return WsSettingsHandler::from_str(&self.work_dir, &settings_str);
         }
 
@@ -62,7 +62,7 @@ impl WsConfigFileHandler {
 
         /* We start by looking for the build config in the workspace/work directory */
         if path.exists() {
-            let build_config_json: String = JsonFileReader::new(path.to_string_lossy().to_string()).read_json()?;
+            let build_config_json: String = JsonFileReader::new(&path).read_json()?;
             return WsBuildConfigHandler::from_str(&build_config_json, settings);
         }
 
@@ -72,7 +72,7 @@ impl WsConfigFileHandler {
          */
         path = settings.configs_dir().join(build_config.clone());
         if path.exists() {
-            let build_config_json: String = JsonFileReader::new(path.to_string_lossy().to_string()).read_json()?;
+            let build_config_json: String = JsonFileReader::new(&path).read_json()?;
             return WsBuildConfigHandler::from_str(&build_config_json, settings);
         }
 
@@ -91,6 +91,18 @@ impl WsConfigFileHandler {
             return WsBuildConfigHandler::from_str(&build_config_json, settings);
         }
         */
+
+        /* TODO: we should remove this and most likely refactor the code so that the sub-commands are responsible for the build config */
+        if build_config.display().to_string() == "all.json".to_string() {
+            let dummy_config_json: &str = r#"
+                {                                                                                                                   
+                    "version": "4",
+                    "name": "all",
+                    "description": "Dummy build config to be able to handle 'list' sub-command",
+                    "arch": "NA"
+                }"#;
+            return WsBuildConfigHandler::from_str(&dummy_config_json, settings);
+        }
 
         return Err(BError::ValueError(format!("Build config '{}' missing!", build_config.clone().display())));
     }

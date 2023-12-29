@@ -15,9 +15,9 @@ impl JsonFileReader {
         Ok(value)
     }
 
-    pub fn new(file_path: String) -> Self {
+    pub fn new(file_path: &PathBuf) -> Self {
         JsonFileReader {
-            file_path: PathBuf::from(file_path),
+            file_path: file_path.clone()
         }
     }
 
