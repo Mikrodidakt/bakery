@@ -336,7 +336,7 @@ impl Helper {
         }
         cmd_line.push(format!("{}", image));
         cmd_line.append(&mut cmd.clone());
-        //println!("cmd_line {:?}", cmd_line);
+        println!("cmd_line {:?}", cmd_line);
         cmd_line
     }
 }

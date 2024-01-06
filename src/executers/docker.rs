@@ -116,7 +116,6 @@ impl Docker {
     fn volumes(&self, volumes: &Vec<String>) -> Vec<String> {
         let mut v: Vec<String> = Vec::new();
         volumes.iter().for_each(|e| {
-            println!("{}", e);
             v.append(&mut vec![
                 String::from("-v"),
                 e.to_string(),

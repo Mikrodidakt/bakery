@@ -666,6 +666,213 @@ mod tests {
     }
 
     #[test]
+    fn test_cmd_build_docker_volumes() {
+        let json_ws_settings: &str = r#"
+        {
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            },
+            "docker": {
+                "enabled": "true"
+            }        
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {
+                "docker": "test-registry/test-image:0.1"
+            },
+            "tasks": {
+                "task-name": { 
+                    "index": "1",
+                    "name": "task-name",
+                    "type": "bitbake",
+                    "recipes": [
+                        "test-image"
+                    ]
+                }
+            }
+        }
+        "#;
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: Helper::docker_bootstrap_string(
+                        true, 
+                        &vec![], 
+                        &vec![String::from("/test/testdir:/test/testdir")], 
+                        &work_dir.clone(), 
+                        &work_dir, 
+                        &DockerImage::new("test-registry/test-image:0.1"),
+                        &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default"), String::from("-v"), String::from("/test/testdir:/test/testdir")]
+                    ),
+                env: HashMap::new(),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
+        let _result: Result<(), BError> = helper_test_build_subcommand(
+            json_ws_settings,
+            json_build_config,
+            &work_dir,
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            vec!["bakery", "build", "--config", "default", "-v", "/test/testdir:/test/testdir"],
+        );
+    }
+
+    #[test]
+    fn test_cmd_build_docker_interactive() {
+        let json_ws_settings: &str = r#"
+        {
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            },
+            "docker": {
+                "enabled": "true"
+            }        
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {
+                "docker": "test-registry/test-image:0.1"
+            },
+            "tasks": {
+                "task-name": { 
+                    "index": "1",
+                    "name": "task-name",
+                    "type": "bitbake",
+                    "recipes": [
+                        "test-image"
+                    ]
+                }
+            }
+        }
+        "#;
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: Helper::docker_bootstrap_string(
+                        false, 
+                        &vec![], 
+                        &vec![], 
+                        &work_dir.clone(), 
+                        &work_dir, 
+                        &DockerImage::new("test-registry/test-image:0.1"),
+                        &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default"), String::from("--interactive=false")]
+                    ),
+                env: HashMap::new(),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
+        let _result: Result<(), BError> = helper_test_build_subcommand(
+            json_ws_settings,
+            json_build_config,
+            &work_dir,
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            vec!["bakery", "build", "--config", "default", "--interactive=false"],
+        );
+    }
+
+    #[test]
+    fn test_cmd_build_docker_args() {
+        let json_ws_settings: &str = r#"
+        {
+            "version": "4",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            },
+            "docker": {
+                "enabled": "true",
+                "args": [
+                    "--test=test"
+                ]
+            }        
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {
+                "docker": "test-registry/test-image:0.1"
+            },
+            "tasks": {
+                "task-name": { 
+                    "index": "1",
+                    "name": "task-name",
+                    "type": "bitbake",
+                    "recipes": [
+                        "test-image"
+                    ]
+                }
+            }
+        }
+        "#;
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: Helper::docker_bootstrap_string(
+                        true, 
+                        &vec![String::from("--test=test")], 
+                        &vec![], 
+                        &work_dir.clone(), 
+                        &work_dir, 
+                        &DockerImage::new("test-registry/test-image:0.1"),
+                        &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default")]
+                    ),
+                env: HashMap::new(),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
+        mocked_system
+            .expect_init_env_file()
+            .returning(|_x, _y| Ok(HashMap::new()));
+        let _result: Result<(), BError> = helper_test_build_subcommand(
+            json_ws_settings,
+            json_build_config,
+            &work_dir,
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            vec!["bakery", "build", "--config", "default"],
+        );
+    }
+
+    #[test]
     fn test_cmd_build_task() {
         let json_ws_settings: &str = r#"
         {
