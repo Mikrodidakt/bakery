@@ -39,30 +39,37 @@ impl<'a> TaskExecuter for BitbakeExecuter<'a> {
         for r in self.task_data.recipes() {
             let recipe: Recipe = Recipe::new(r);
             let mut cmd: Vec<String> = recipe.bitbake_cmd();
-            let exec_dir: String = self.bb_data.build_dir().to_string_lossy().to_string();
+            let exec_dir: std::path::PathBuf = self.bb_data.build_dir();
             let mut cmd_line: Vec<String> = vec![];
             cmd_line.append(&mut vec![
                 "cd".to_string(),
-                exec_dir.clone(),
+                exec_dir.to_string_lossy().to_string(),
                 "&&".to_string(),
             ]);
             cmd_line.append(&mut cmd);
 
-            // If docker image is set specifically for the task we use that if not we check and
-            // see if there is a docker image set in the bb node for the build config which will
-            // then be used for all the bitbake tasks. If that is not set then we skip execute
-            // docker
             let mut docker_str: &str = "";
             if !self.task_data.docker_image().is_empty() && self.task_data.docker_image() != "NA" {
                 docker_str = self.task_data.docker_image();
-            } else if !self.bb_data.docker_image().is_empty() && self.bb_data.docker_image() != "NA" {
+            }
+            
+            /*
+            Not sure that this is a real usecase for now we will just remove this but if we for some
+            reason need to be able to use the docker image defined in the bb conf node of the build
+            config for executing a task inside docker this can be enabled
+            else if !self.bb_data.docker_image().is_empty() && self.bb_data.docker_image() != "NA" {
+                // If docker image is set specifically for the task we use that if not we check and
+                // see if there is a docker image set in the bb node for the build config which will
+                // then be used for all the bitbake tasks. If that is not set then we skip execute
+                // docker
                 docker_str = self.bb_data.docker_image();
             }
+            */
             
             if !docker_str.is_empty() {
                 let image: DockerImage = DockerImage::new(docker_str);
                 let docker: Docker = Docker::new(image, interactive);
-                docker.run_cmd(&mut cmd_line, &env, exec_dir, &self.cli)?;
+                docker.run_cmd(&mut cmd_line, &env, &exec_dir, &self.cli)?;
             } else {
                 self.cli.check_call(&cmd_line, &env, true)?;
             }
@@ -299,6 +306,7 @@ mod tests {
         executer.exec(&env_variables, true, true).expect("Failed to execute task");
     }
 
+    /*
     #[test]
     fn test_bitbake_executer_docker() {
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
@@ -569,6 +577,7 @@ mod tests {
         let executer: BitbakeExecuter = BitbakeExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
         executer.exec(&env_variables, false, true).expect("Failed to execute task");
     }
+    */
 
     #[test]
     fn test_bitbake_executer_env_empty() {

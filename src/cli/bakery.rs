@@ -36,7 +36,7 @@ impl Bakery {
         }
     }
 
-    pub fn match_and_exit<T>(&self, result: Result<T, BError>) -> T {
+    pub fn match_or_exit<T>(&self, result: Result<T, BError>) -> T {
         match result {
             Ok(content) => {
                 return content;
@@ -52,33 +52,15 @@ impl Bakery {
         let work_dir: PathBuf = self.cli.get_curr_dir();
         let home_dir: PathBuf = self.cli.get_home_dir();
         let cfg_handler: WsConfigFileHandler = WsConfigFileHandler::new(&work_dir, &home_dir);
-        let settings: WsSettingsHandler = self.match_and_exit::<WsSettingsHandler>(cfg_handler.ws_settings());
+        let settings: WsSettingsHandler = self.match_or_exit::<WsSettingsHandler>(cfg_handler.ws_settings());
         let cmd_name: &str = self.cli.get_args().subcommand_name().unwrap();
         let cmd_result: Result<&Box<dyn BCommand>, BError> = self.cli.get_command(cmd_name);
 
         match cmd_result {
             Ok(command) => {
-                let config: WsBuildConfigHandler = self.match_and_exit(cfg_handler.build_config(&command.get_config_name(&self.cli), &settings));
-                let mut workspace: Workspace = self.match_and_exit::<Workspace>(Workspace::new(Some(work_dir), Some(settings), Some(config)));
-                
-                /*
-                 * If docker is enabled in the workspace settings then bakery will be boottraped into a docker container
-                 * with a bakery inside and all the baking will be done inside that docker container
-                 */
-                if workspace.settings().docker_enabled() {
-                    /*
-                     * Not all commands should be run inside of docker and if we are already inside docker
-                     * we should not try and bootstrap into a second docker container.
-                     */
-                    if command.is_docker_required() && !Docker::inside_docker() {
-                        self.cli.info(format!("Bootstrap bakery into docker"));
-                        let docker: Docker = Docker::new(workspace.settings().docker_image(), true);
-                        let _result: Result<(), BError> = docker.bootstrap_bakery(self.cli.get_args());
-                        std::process::exit(0);
-                    }
-                }
-                
-                let _res: () = self.match_and_exit::<()>(command.execute(&self.cli, &mut workspace));
+                let config: WsBuildConfigHandler = self.match_or_exit(cfg_handler.build_config(&command.get_config_name(&self.cli), &settings));
+                let mut workspace: Workspace = self.match_or_exit::<Workspace>(Workspace::new(Some(work_dir), Some(settings), Some(config)));
+                let _res: () = self.match_or_exit::<()>(command.execute(&self.cli, &mut workspace));
             }
             Err(err) => {
                 self.cli.error(format!("{}", err.to_string()));

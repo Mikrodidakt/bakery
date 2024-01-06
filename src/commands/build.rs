@@ -2,10 +2,11 @@ use indexmap::{IndexMap, indexmap};
 use std::collections::HashMap;
 
 use crate::commands::{BCommand, BBaseCommand};
-use crate::data::{WsContextData, WsBuildData};
+use crate::data::WsContextData;
 use crate::workspace::{Workspace, WsTaskHandler};
 use crate::cli::Cli;
 use crate::error::BError;
+use crate::executers::{Docker, DockerImage};
 
 static BCOMMAND: &str = "build";
 static BCOMMAND_ABOUT: &str = "Execute a build either a full build or a task of one of the builds";
@@ -24,6 +25,7 @@ impl BCommand for BuildCommand {
                 }
             }
         }
+        
         return String::from("default");
     }
 
@@ -33,6 +35,10 @@ impl BCommand for BuildCommand {
 
     fn subcommand(&self) -> &clap::Command {
         &self.cmd.sub_cmd
+    }
+
+    fn is_docker_required(&self) -> bool {
+        true
     }
 
     fn execute(&self, cli: &Cli, workspace: &mut Workspace) -> Result<(), BError> {
@@ -46,10 +52,10 @@ impl BCommand for BuildCommand {
         let tar_balls: bool = self.get_arg_flag(cli, "tar_balls", BCOMMAND)?;
         let dry_run: bool = self.get_arg_flag(cli, "dry_run", BCOMMAND)?;
         let interactive_str: String = self.get_arg_str(cli, "interactive", BCOMMAND)?;
-        let ctx: Vec<&String> = self.get_arg_many(cli, "ctx", BCOMMAND)?;
-        let env: Vec<&String> = self.get_arg_many(cli, "env", BCOMMAND)?;
-        let _volumes: Vec<&String> = self.get_arg_many(cli, "volume", BCOMMAND)?;
-        let tasks: Vec<&String> = self.get_arg_many(cli, "tasks", BCOMMAND)?;
+        let ctx: Vec<String> = self.get_arg_many(cli, "ctx", BCOMMAND)?;
+        let env: Vec<String> = self.get_arg_many(cli, "env", BCOMMAND)?;
+        let volumes: Vec<String> = self.get_arg_many(cli, "volume", BCOMMAND)?;
+        let tasks: Vec<String> = self.get_arg_many(cli, "tasks", BCOMMAND)?;
         let variant: String = self.get_arg_str(cli, "variant", BCOMMAND)?;
         let mut bb_variables: Vec<String> = Vec::new();
         let mut interactive: bool = false;
@@ -60,6 +66,16 @@ impl BCommand for BuildCommand {
 
         if !workspace.valid_config(config.as_str()) {
             return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
+        }
+
+        /*
+         * If docker is enabled in the workspace settings then bakery will be boottraped into a docker container
+         * with a bakery inside and all the baking will be done inside that docker container. Not all commands should
+         * be run inside of docker and if we are already inside docker we should not try and bootstrap into a
+         * second docker container.
+         */
+        if workspace.settings().docker_enabled() && self.is_docker_required() && !Docker::inside_docker() {
+            return self.bootstrap(cli, workspace, &volumes, interactive);
         }
 
         /*
@@ -127,7 +143,7 @@ impl BCommand for BuildCommand {
         if tasks.len() > 1 {
             // More then one task was specified on the command line
             for t_name in tasks {
-                let task: &WsTaskHandler = workspace.config().task(t_name)?;
+                let task: &WsTaskHandler = workspace.config().task(&t_name)?;
                 task.run(cli, &workspace.config().build_data(), &bb_variables, &env_variables, dry_run, interactive)?;
             }
         } else {
@@ -149,16 +165,16 @@ impl BCommand for BuildCommand {
 }
 
 impl BuildCommand {
-    fn setup_context(&self, ctx: Vec<&String>) -> IndexMap<String, String> {
-        let context: IndexMap<String, String> = ctx.iter().map(|&c|{
+    fn setup_context(&self, ctx: Vec<String>) -> IndexMap<String, String> {
+        let context: IndexMap<String, String> = ctx.iter().map(|c|{
             let v: Vec<&str> = c.split('=').collect();
             (v[0].to_string(), v[1].to_string())
         }).collect();
         context
     }
 
-    fn setup_env(&self, env: Vec<&String>) -> HashMap<String, String> {
-        let variables: HashMap<String, String> = env.iter().map(|&e|{
+    fn setup_env(&self, env: Vec<String>) -> HashMap<String, String> {
+        let variables: HashMap<String, String> = env.iter().map(|e|{
             let v: Vec<&str> = e.split('=').collect();
             (v[0].to_string(), v[1].to_string())
         }).collect();
@@ -308,6 +324,8 @@ mod tests {
     use crate::commands::{BCommand, BuildCommand};
     use crate::error::BError;
     use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
+    use crate::helper::Helper;
+    use crate::executers::DockerImage;
 
     fn helper_test_build_subcommand(json_ws_settings: &str, json_build_config: &str,
             work_dir: &PathBuf, logger: Box<dyn Logger>, system: Box<dyn System>, cmd_line: Vec<&str>) -> Result<(), BError> {
@@ -316,7 +334,6 @@ mod tests {
             WsBuildConfigHandler::from_str(json_build_config, &settings)?;
         let mut workspace: Workspace =
             Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config))?;
-        
         let cli: Cli = Cli::new(
             logger,
             system,
@@ -589,7 +606,10 @@ mod tests {
                 "supported": [
                     "default"
                 ]
-            }
+            },
+            "docker": {
+                "enabled": "true"
+            }        
         }"#;
         let json_build_config: &str = r#"
         {
@@ -614,16 +634,20 @@ mod tests {
         "#;
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
-        let build_dir: PathBuf = work_dir.join("builds/default");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["docker", "run", "test-registry/test-image:0.1", "cd", &build_dir.to_string_lossy().to_string(), "&&", "bitbake", "test-image"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
-                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
+                cmd_line: Helper::docker_bootstrap_string(
+                        true, 
+                        &vec![], 
+                        &vec![], 
+                        &work_dir.clone(), 
+                        &work_dir, 
+                        &DockerImage::new("test-registry/test-image:0.1"),
+                        &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default")]
+                    ),
+                env: HashMap::new(),
                 shell: true,
             }))
             .once()
@@ -907,7 +931,7 @@ mod tests {
         );
     }
 
-/*
+    /*
     #[test]
     fn test_cmd_build_env() {
         let json_ws_settings: &str = r#"
@@ -964,5 +988,5 @@ mod tests {
             vec!["bakery", "build", "--config", "default", "--tasks", "task-name", "--env", "ENV_VAR1=CLI_VALUE1"],
         );
     }
-*/
+    */
 }

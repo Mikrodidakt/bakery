@@ -7,6 +7,7 @@ use crate::error::BError;
 use crate::cli::{Logger, System, CallParams};
 
 pub struct Cli {
+    cmd_line: Vec<String>,
     args: ArgMatches,
     cmd_handler: CmdHandler,
     logger: Box<dyn Logger>,
@@ -17,15 +18,23 @@ impl Cli {
     pub fn new(logger: Box<dyn Logger>, system: Box<dyn System>, cmd: clap::Command, cmd_line: Option<Vec<&str>>) -> Self {
         let cmd_handler: CmdHandler = CmdHandler::new();
         let args: ArgMatches;
+        let c: Vec<String>;
         match cmd_line {
             Some(cline) => {
-                args = cmd_handler.build_cli(cmd).get_matches_from(cline);
+                args = cmd_handler.build_cli(cmd).get_matches_from(cline.clone());
+                c = cline.iter().map(|s|{
+                    s.to_string()
+                }).collect();
             },
             None => {
                 args = cmd_handler.build_cli(cmd).get_matches();
+                c = std::env::args().into_iter().map(|s|{
+                    s
+                }).collect();
             }
         }
         Cli {
+            cmd_line: c,
             args,
             cmd_handler,
             logger,
@@ -40,7 +49,7 @@ impl Cli {
             cmd.push(' ');
         });
         self.info(String::from(cmd.as_str().trim_end()));
-        println!("cmd_line {:?}", cmd_line);
+        //println!("cmd_line {:?}", cmd_line);
         self.system.check_call(&CallParams{ cmd_line: cmd_line.to_owned(), env: env.to_owned(), shell })?;
         //self.system.test(String::from(cmd.as_str().trim_end()))?;
         Ok(())
@@ -56,6 +65,10 @@ impl Cli {
 
     pub fn get_args(&self) -> &ArgMatches {
         &self.args
+    }
+
+    pub fn get_cmd_line(&self) -> Vec<String> {
+        self.cmd_line.clone()
     }
 
     pub fn get_home_dir(&self) -> PathBuf {

@@ -22,5 +22,6 @@ subprocess = "0.2.9"
 tar = "0.4.40"
 tempdir = "0.3.7"
 thiserror = "1.0.49"
+users = "0.11.0"
 zip = "0.6.6"
 

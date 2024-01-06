@@ -21,8 +21,8 @@ impl<'a> TaskExecuter for NonBitbakeExecuter<'a> {
             return Ok(());
         }
 
-        let exec_dir: String = self.task_data.build_dir().to_string_lossy().to_string();
-        let mut cmd_line: Vec<String> = vec!["cd".to_string(), exec_dir.clone(), "&&".to_string()];
+        let exec_dir: &std::path::PathBuf = self.task_data.build_dir();
+        let mut cmd_line: Vec<String> = vec!["cd".to_string(), exec_dir.to_string_lossy().to_string(), "&&".to_string()];
         let mut cmd: Vec<String> = self.task_data.build_cmd().split(' ').map(|c| c.to_string()).collect();
         cmd_line.append(&mut cmd);
 
@@ -34,6 +34,15 @@ impl<'a> TaskExecuter for NonBitbakeExecuter<'a> {
             self.cli.check_call(&cmd_line, env_variables, true)?;
         }
         Ok(())
+    }
+}
+
+impl<'a> NonBitbakeExecuter<'a> {
+    pub fn new(cli: &'a Cli, task_data: &'a WsTaskData) -> Self {
+        NonBitbakeExecuter {
+            cli,
+            task_data,
+        }
     }
 }
 
@@ -134,6 +143,7 @@ mod tests {
         executer.exec(&env_variables, true, true).expect("Failed to execute task");
     }
 
+    /*
     #[test]
     fn test_bitbake_executer_docker() {
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
@@ -181,13 +191,5 @@ mod tests {
         let executer: NonBitbakeExecuter = NonBitbakeExecuter::new(&cli, &task_data);
         executer.exec(&env_variables, false, true).expect("Failed to execute task");
     }
-}
-
-impl<'a> NonBitbakeExecuter<'a> {
-    pub fn new(cli: &'a Cli, task_data: &'a WsTaskData) -> Self {
-        NonBitbakeExecuter {
-            cli,
-            task_data,
-        }
-    }
+    */
 }

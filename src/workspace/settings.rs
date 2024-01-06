@@ -106,6 +106,13 @@ impl WsSettingsHandler {
         path_buf
     }
 
+    pub fn docker_top_dir(&self) -> PathBuf {
+        if !self.ws_settings.docker_top_dir.is_empty() {
+            return self.work_dir().join(self.ws_settings.docker_top_dir.clone());
+        }
+        return self.work_dir();
+    }
+
     pub fn docker_image(&self) -> DockerImage {
         self.docker.clone()
     }
@@ -242,7 +249,7 @@ mod tests {
             work_dir,
             Helper::setup_ws_settings(json_test_str),
         );
-        assert_eq!(settings.docker_args(), &vec!["--rm=true".to_string(), "-t".to_string()]);
+        assert!(settings.docker_args().is_empty());
     }
 
     #[test]
