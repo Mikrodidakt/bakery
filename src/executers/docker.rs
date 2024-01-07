@@ -181,7 +181,7 @@ impl Docker {
         docker_cmd
     }
 
-    pub fn cmd_line(&self, cmd_line: &mut Vec<String>, env_file: &PathBuf, dir: &PathBuf) -> Vec<String> {
+    pub fn cmd_line(&self, cmd_line: &Vec<String>, env_file: &PathBuf, dir: &PathBuf) -> Vec<String> {
         let mut docker_cmd: Vec<String> = vec!["docker".to_string(), "run".to_string()];
         docker_cmd.append(&mut self.user());
         docker_cmd.append(&mut self.etc_files());
@@ -194,7 +194,7 @@ impl Docker {
         docker_cmd.append(&mut self.group());
         docker_cmd.append(&mut self.env_file(env_file));
         docker_cmd.push(format!("{}", self.image));
-        docker_cmd.append(cmd_line);
+        docker_cmd.append(&mut cmd_line.clone());
         docker_cmd
     }
 
@@ -217,7 +217,7 @@ impl Docker {
     pub fn run_cmd(&self, cmd_line: &mut Vec<String>, env: &HashMap<String, String>, exec_dir: &PathBuf, cli: &Cli) -> Result<(), BError> {
         let temp_dir: TempDir = TempDir::new("bakery")?;
         let env_file_path: PathBuf = self.setup_env_file(temp_dir.path(), env)?;
-        cli.check_call(&self.cmd_line(cmd_line, &env_file_path, exec_dir), &env, true)?;
+        cli.check_call(&self.cmd_line(cmd_line, &env_file_path, exec_dir), &HashMap::new(), true)?;
         Ok(())
     }
 }
@@ -380,5 +380,47 @@ TEST_KEY1=TEST_VALUE1
         } else {
             assert_eq!(env_str2, contents);
         }
+    }
+
+    #[test]
+    fn test_docker_cmdline() {
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = PathBuf::from(temp_dir.path());
+        let env_file: PathBuf = work_dir.clone().join("test-docker.env");
+        let test_build_dir: PathBuf = work_dir.join(PathBuf::from("test_build_dir"));
+        let test_cmd: Vec<String> = vec![
+            String::from("cd"),
+            format!("{}", test_build_dir.display()),
+            String::from("&&"),
+            String::from("test"),
+        ];
+        let interactive: bool = false;
+        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
+        let docker: Docker = Docker::new(image.clone(), interactive);
+        let result: Vec<String> = docker.cmd_line(&test_cmd, &env_file, &work_dir);
+        let cmd_line: Vec<String> = Helper::docker_cmdline_string(interactive, &work_dir, &image, &test_cmd, &env_file);
+        assert_eq!(result, cmd_line);
+    }
+
+    #[test]
+    fn test_docker_cmdline_interactive() {
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = PathBuf::from(temp_dir.path());
+        let env_file: PathBuf = work_dir.clone().join("test-docker.env");
+        let test_build_dir: PathBuf = work_dir.join(PathBuf::from("test_build_dir"));
+        let test_cmd: Vec<String> = vec![
+            String::from("cd"),
+            format!("{}", test_build_dir.display()),
+            String::from("&&"),
+            String::from("test"),
+        ];
+        let interactive: bool = true;
+        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
+        let docker: Docker = Docker::new(image.clone(), interactive);
+        let result: Vec<String> = docker.cmd_line(&test_cmd, &env_file, &work_dir);
+        let cmd_line: Vec<String> = Helper::docker_cmdline_string(interactive, &work_dir, &image, &test_cmd, &env_file);
+        assert_eq!(result, cmd_line);
     }
 }

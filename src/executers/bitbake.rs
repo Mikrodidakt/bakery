@@ -140,6 +140,7 @@ mod tests {
     use crate::executers::{BitbakeExecuter, TaskExecuter};
     use crate::data::{WsBuildData, WsTaskData};
     use crate::helper::Helper;
+    use crate::executers::DockerImage;
 
     #[test]
     fn test_bitbake_executer() {
@@ -306,14 +307,15 @@ mod tests {
         executer.exec(&env_variables, true, true).expect("Failed to execute task");
     }
 
-    /*
     #[test]
     fn test_bitbake_executer_docker() {
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
+        let env_file: PathBuf = work_dir.clone().join("bakery-docker.env");
         let build_dir: PathBuf = work_dir.join("builds/default");
         let bb_variables: Vec<String> = vec![];
         let env_variables: HashMap<String, String> = HashMap::new();
+        let interactive: bool = true;
         let json_build_config: &str = r#"
         {
             "version": "4",
@@ -343,6 +345,25 @@ mod tests {
                 "test-image"
             ]
         }"#;
+        let docker_cmd_line: Vec<String> = Helper::docker_cmdline_string(
+            interactive,
+            &build_dir, 
+            &DockerImage::new("test-registry/task-docker:0.1"), 
+            &vec![
+                String::from("cd"),
+                build_dir.to_string_lossy().to_string(),
+                String::from("&&"),
+                String::from("bitbake"),
+                String::from("test-image"),
+            ],
+            &env_file,
+        );
+        let mut cmd_line_str: String = String::new();
+        docker_cmd_line.iter().for_each(|c|{
+            cmd_line_str.push_str(c);
+            cmd_line_str.push(' ');
+        });
+        //println!("str {}", cmd_line_str);
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let task_data: WsTaskData = WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task config");
         let mut mocked_logger: MockLogger = MockLogger::new();
@@ -368,18 +389,15 @@ mod tests {
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("docker run test-registry/task-docker:0.1 cd {} && bitbake test-image", &build_dir.to_string_lossy().to_string())))
+            .with(mockall::predicate::eq(cmd_line_str))
             .once()
             .returning(|_x| ());
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["docker", "run", "test-registry/task-docker:0.1", "cd", &build_dir.to_string_lossy().to_string(), "&&", "bitbake", "test-image"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
-                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
+                cmd_line: docker_cmd_line,
+                env: HashMap::new(),
                 shell: true,
             }))
             .once()
@@ -394,9 +412,10 @@ mod tests {
             Some(vec!["bakery"]),
         );
         let executer: BitbakeExecuter = BitbakeExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
-        executer.exec(&env_variables, false, true).expect("Failed to execute task");
+        executer.exec(&env_variables, false, interactive).expect("Failed to execute task");
     }
 
+    /*
     #[test]
     fn test_bitbake_executer_bb_docker() {
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");

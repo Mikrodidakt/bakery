@@ -336,7 +336,41 @@ impl Helper {
         }
         cmd_line.push(format!("{}", image));
         cmd_line.append(&mut cmd.clone());
-        println!("cmd_line {:?}", cmd_line);
+        cmd_line
+    }
+
+    pub fn docker_cmdline_string(interactive: bool, work_dir: &PathBuf, image: &DockerImage, cmd: &Vec<String>, env_file: &PathBuf) -> Vec<String>{
+        let mut cmd_line: Vec<String> = vec![
+            String::from("docker"),
+            String::from("run"),
+            String::from("-u"),
+            format!("{}:{}", users::get_current_uid(), users::get_current_gid()),
+            String::from("-v"),
+            String::from("/etc/passwd:/etc/passwd"),
+            String::from("-v"),
+            String::from("/etc/group:/etc/group"),
+            String::from("-v"),
+            format!("{}:{}", Helper::env_home(), Helper::env_home()),
+            String::from("-w"),
+            format!("{}", work_dir.display()),
+            String::from("-t"),
+            String::from("--rm"),
+        ];
+        if interactive {
+            cmd_line.push("-i".to_string());
+        }
+        let cache: users::UsersCache = users::UsersCache::new();
+        cmd_line.append(&mut vec![
+            String::from("--group-add"),
+            cache.get_group_by_name("docker").unwrap().gid().to_string(),
+        ]);
+        cmd_line.append(&mut vec![
+            String::from("--env-file"),
+            env_file.to_string_lossy().to_string(),
+        ]);
+        cmd_line.push(format!("{}", image));
+        cmd_line.append(&mut cmd.clone());
+        //println!("cmd_line {:?}", cmd_line);
         cmd_line
     }
 }
