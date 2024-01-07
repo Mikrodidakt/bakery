@@ -214,7 +214,7 @@ impl Docker {
         Ok(())
     }
 
-    pub fn run_cmd(&self, cmd_line: &mut Vec<String>, env: &HashMap<String, String>, exec_dir: &PathBuf, cli: &Cli) -> Result<(), BError> {
+    pub fn run_cmd(&self, cmd_line: &Vec<String>, env: &HashMap<String, String>, exec_dir: &PathBuf, cli: &Cli) -> Result<(), BError> {
         let temp_dir: TempDir = TempDir::new("bakery")?;
         let env_file_path: PathBuf = self.setup_env_file(temp_dir.path(), env)?;
         cli.check_call(&self.cmd_line(cmd_line, &env_file_path, exec_dir), &HashMap::new(), true)?;

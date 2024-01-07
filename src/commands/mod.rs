@@ -3,6 +3,7 @@ pub mod clean;
 pub mod list;
 pub mod tests;
 pub mod handler;
+pub mod shell;
 
 use std::collections::HashMap;
 
@@ -91,6 +92,7 @@ pub fn get_supported_cmds() -> HashMap<&'static str, Box<dyn BCommand>> {
     supported_cmds.insert("build", Box::new(BuildCommand::new()));
     supported_cmds.insert("clean", Box::new(CleanCommand::new()));
     supported_cmds.insert("list", Box::new(ListCommand::new()));
+    supported_cmds.insert("shell", Box::new(ShellCommand::new()));
 
     // Add more commands as needed
 
@@ -100,4 +102,5 @@ pub fn get_supported_cmds() -> HashMap<&'static str, Box<dyn BCommand>> {
 pub use build::BuildCommand;
 pub use clean::CleanCommand;
 pub use list::ListCommand;
+pub use shell::ShellCommand;
 pub use handler::CmdHandler;

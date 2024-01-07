@@ -93,7 +93,7 @@ impl WsConfigFileHandler {
         */
 
         /* TODO: we should remove this and most likely refactor the code so that the sub-commands are responsible for the build config */
-        if build_config.display().to_string() == "all.json".to_string() {
+        if build_config.display().to_string() == "NA.json".to_string() {
             let dummy_config_json: &str = r#"
                 {                                                                                                                   
                     "version": "4",

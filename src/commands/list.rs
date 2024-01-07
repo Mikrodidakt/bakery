@@ -38,7 +38,7 @@ impl BCommand for ListCommand {
 
     fn execute(&self, cli: &Cli, workspace: &mut Workspace) -> Result<(), BError> {
         let config: String = self.get_arg_str(cli, "config", BCOMMAND)?;
-        if config == "all" { // default value if not specified
+        if config == "NA" { // default value if not specified
             // If no config is specified then we will list all supported build configs
             workspace
                 .build_configs()
@@ -72,7 +72,7 @@ impl ListCommand {
                 .long("config")
                 .help("The build config defining all the components for the full build")
                 .value_name("name")
-                .default_value("all"),
+                .default_value("NA"),
         );
         // Initialize and return a new BuildCommand instance
         ListCommand {
