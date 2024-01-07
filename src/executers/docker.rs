@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 use std::fmt;
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 use users::Groups;
+use tempdir::TempDir;
+use std::fs::File;
+use std::io::Write;
 
 use crate::cli::Cli;
 use crate::error::BError;
@@ -109,8 +112,11 @@ impl Docker {
         ]
     }
 
-    fn env_file(&self) -> Vec<String> {
-        vec![]
+    fn env_file(&self, env_file: &PathBuf) -> Vec<String> {
+        vec![
+            String::from("--env-file"),
+            env_file.to_string_lossy().to_string(),
+        ]
     }
 
     fn volumes(&self, volumes: &Vec<String>) -> Vec<String> {
@@ -175,7 +181,7 @@ impl Docker {
         docker_cmd
     }
 
-    pub fn cmd_line(&self, cmd_line: &mut Vec<String>, dir: &PathBuf) -> Vec<String> {
+    pub fn cmd_line(&self, cmd_line: &mut Vec<String>, env_file: &PathBuf, dir: &PathBuf) -> Vec<String> {
         let mut docker_cmd: Vec<String> = vec!["docker".to_string(), "run".to_string()];
         docker_cmd.append(&mut self.user());
         docker_cmd.append(&mut self.etc_files());
@@ -186,10 +192,21 @@ impl Docker {
             docker_cmd.push("-i".to_string());
         }
         docker_cmd.append(&mut self.group());
-        docker_cmd.append(&mut self.env_file());
+        docker_cmd.append(&mut self.env_file(env_file));
         docker_cmd.push(format!("{}", self.image));
         docker_cmd.append(cmd_line);
         docker_cmd
+    }
+
+    pub fn setup_env_file(&self, temp_dir: &Path, env: &HashMap<String, String>) -> Result<PathBuf, BError> {
+        let env_file_path: PathBuf = PathBuf::from(temp_dir).join("bakery-docker.env");
+        let mut env_file: File = File::create(env_file_path.clone())?;
+
+        for (key, value) in env.iter() {
+            writeln!(env_file, "{}={}", key, value)?; 
+        }
+
+        Ok(env_file_path)
     }
 
     pub fn bootstrap_bakery(&self, cli: &Cli, docker_top_dir: &PathBuf, work_dir: &PathBuf, docker_args: &Vec<String>, volumes: &Vec<String>) -> Result<(), BError> {
@@ -198,16 +215,20 @@ impl Docker {
     }
 
     pub fn run_cmd(&self, cmd_line: &mut Vec<String>, env: &HashMap<String, String>, exec_dir: &PathBuf, cli: &Cli) -> Result<(), BError> {
-        cli.check_call(&self.cmd_line(cmd_line, exec_dir), &env, true)?;
+        let temp_dir: TempDir = TempDir::new("bakery")?;
+        let env_file_path: PathBuf = self.setup_env_file(temp_dir.path(), env)?;
+        cli.check_call(&self.cmd_line(cmd_line, &env_file_path, exec_dir), &env, true)?;
         Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::path::PathBuf;
     use tempdir::TempDir;
-    use users::Groups;
+    use std::fs::File;
+    use std::io::Read;
 
     use crate::executers::{Docker, DockerImage};
     use crate::helper::Helper;
@@ -330,5 +351,34 @@ mod tests {
         let result: Vec<String> = docker.bootstrap_cmd_line(&test_cmd, &docker_top_dir, &work_dir, &docker_args, &volumes);
         let cmd_line: Vec<String> = Helper::docker_bootstrap_string(interactive, &docker_args, &volumes, &docker_top_dir, &work_dir, &image, &test_cmd);
         assert_eq!(result, cmd_line);
+    }
+
+    #[test]
+    fn test_docker_env_file() {
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
+        let docker: Docker = Docker::new(image.clone(), true);
+        let env: HashMap<String, String> = HashMap::from([
+            (String::from("TEST_KEY1"), String::from("TEST_VALUE1")),
+            (String::from("TEST_KEY2"), String::from("TEST_VALUE2"))
+        ]);
+        let env_str1 = r#"TEST_KEY1=TEST_VALUE1
+TEST_KEY2=TEST_VALUE2
+"#;
+        let env_str2 = r#"TEST_KEY2=TEST_VALUE2
+TEST_KEY1=TEST_VALUE1
+"#;
+        let env_file: PathBuf = docker.setup_env_file(temp_dir.path(), &env).expect("Failed to setup env file");
+        assert!(env_file.exists());
+        let mut file: File = File::open(&env_file).expect("Failed to open env file!");
+        let mut contents: String = String::new();
+        file.read_to_string(&mut contents)
+            .expect("Failed to read env file!");
+        if contents == env_str1 {
+            assert_eq!(env_str1, contents);
+        } else {
+            assert_eq!(env_str2, contents);
+        }
     }
 }

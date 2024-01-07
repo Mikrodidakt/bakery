@@ -138,7 +138,7 @@ mod tests {
     use crate::cli::{
         BSystem,
         MockLogger,
-        Cli, BLogger,
+        Cli,
     };
     use crate::fs::BitbakeConf;
 
