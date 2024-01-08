@@ -65,7 +65,6 @@ impl BCommand for ShellCommand {
                 return self.run_bitbake_shell(cli, workspace, &self.setup_env(env));
             }
         }
-        println!("{}", config);
         Ok(())
     }
 }
