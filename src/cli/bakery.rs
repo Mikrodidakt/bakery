@@ -60,6 +60,11 @@ impl Bakery {
             Ok(command) => {
                 let config: WsBuildConfigHandler = self.match_or_exit(cfg_handler.build_config(&command.get_config_name(&self.cli), &settings));
                 let mut workspace: Workspace = self.match_or_exit::<Workspace>(Workspace::new(Some(work_dir), Some(settings), Some(config)));
+                /*
+                We always need to make sure we expand all the context variables in the build config
+                before we start using the workspace
+                */
+                workspace.expand_ctx();
                 let _res: () = self.match_or_exit::<()>(command.execute(&self.cli, &mut workspace));
             }
             Err(err) => {

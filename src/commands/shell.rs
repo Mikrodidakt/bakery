@@ -62,7 +62,6 @@ impl BCommand for ShellCommand {
             }
 
             if docker.is_empty() {
-                println!("f");
                 return self.run_bitbake_shell(cli, workspace, &self.setup_env(env));
             }
         }
@@ -136,7 +135,7 @@ impl ShellCommand {
 
         // Sourcing the init env file and returning all the env variables available including from the shell
         cli.info(format!("source init env file {}", init_env.display()));
-        let mut env: HashMap<String, String> = cli.source_init_env(&init_env, &workspace.settings().work_dir())?;
+        let mut env: HashMap<String, String> = cli.source_init_env(&init_env, &workspace.config().build_data().bitbake().build_dir())?;
         // Any variable that should be able to passthrough into bitbake needs to be defined as part of the bb passthrough variable
         // we define some defaults that should always be possible to passthrough
         let mut bb_env_passthrough_additions: String = String::from("SSTATE_DIR DL_DIR TMPDIR");
