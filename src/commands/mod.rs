@@ -23,21 +23,21 @@ pub trait BCommand {
         false
     }
 
-    fn bootstrap(&self, cli: &Cli, workspace: &Workspace, volumes: &Vec<String>, interactive: bool) -> Result<(), BError> {
+    fn bootstrap(&self, cmd_line: &Vec<String>, cli: &Cli, workspace: &Workspace, volumes: &Vec<String>, interactive: bool) -> Result<(), BError> {
         let mut docker: Docker = Docker::new(workspace.settings().docker_image(), interactive);
-            
+
         if workspace.config().build_data().bitbake().docker_image() != "NA" {
             docker = Docker::new(DockerImage::new(workspace.config().build_data().bitbake().docker_image()), interactive);
         }
 
         cli.info(format!("Bootstrap bakery into docker"));
-        return docker.bootstrap_bakery(cli, &workspace.settings().docker_top_dir(), &workspace.settings().work_dir(), workspace.settings().docker_args(), volumes);
+        return docker.bootstrap_bakery(cmd_line, cli, &workspace.settings().docker_top_dir(), &workspace.settings().work_dir(), workspace.settings().docker_args(), volumes);
     }
 
     fn get_config_name(&self, cli: &Cli) -> String {
         String::from("default")
     }
-    
+
     fn get_arg_str(&self, cli: &Cli, id: &str, cmd: &str) -> Result<String, BError> {
         if let Some(sub_matches) = cli.get_args().subcommand_matches(cmd) {
             if sub_matches.contains_id(id) {

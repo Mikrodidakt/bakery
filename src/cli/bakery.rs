@@ -2,7 +2,6 @@ use crate::cli::{BLogger, Cli};
 use crate::commands::BCommand;
 use crate::configs::WsConfigFileHandler;
 use crate::error::BError;
-use crate::executers::Docker;
 use crate::workspace::{WsSettingsHandler, Workspace, WsBuildConfigHandler};
 
 use clap::Command;
@@ -21,7 +20,7 @@ impl Bakery {
             the about, author and version can be read out from the
             Cargo.toml
         */
-        let cli: Cli = Cli::new(Box::new(BLogger::new()), 
+        let cli: Cli = Cli::new(Box::new(BLogger::new()),
             Box::new(BSystem::new()),
             Command::new("bakery")
                 .version("0.0.1")

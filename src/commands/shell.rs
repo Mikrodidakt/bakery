@@ -52,7 +52,58 @@ impl BCommand for ShellCommand {
          * second docker container.
          */
         if workspace.settings().docker_enabled() && self.is_docker_required() && !Docker::inside_docker() {
-            return self.bootstrap(cli, workspace, &volumes, true);
+            let mut cmd_line: Vec<String> = vec![
+                String::from("bakery"),
+                String::from("shell"),
+            ];
+
+            /*
+             * We need to rebuild the command line because if the cmd is defined
+             * we need to add "" around it to make sure it is not expanded and
+             * getting mixed up with the bakery command
+             */
+            if !cmd.is_empty() {
+                if !config.is_empty() {
+                    cmd_line.append(&mut vec![
+                        String::from("-c"),
+                        config,
+                    ]);
+                }
+
+                if !docker.is_empty() {
+                    cmd_line.append(&mut vec![
+                        String::from("-d"),
+                        docker,
+                    ]);
+                }
+
+                if !volumes.is_empty() {
+                    volumes.iter().for_each(|key_value|{
+                        cmd_line.append(&mut vec![
+                            String::from("-v"),
+                            key_value.to_string(),
+                        ]);
+                    })
+                }
+
+                if !env.is_empty() {
+                    env.iter().for_each(|key_value|{
+                        cmd_line.append(&mut vec![
+                            String::from("-e"),
+                            key_value.to_string(),
+                        ])
+                    })
+                }
+
+                cmd_line.append(&mut vec![
+                    String::from("-r"),
+                    format!("\"{}\"", cmd),
+                ]);
+
+                return self.bootstrap(&cmd_line, cli, workspace, &volumes, true);
+            }
+
+            return self.bootstrap(&cli.get_cmd_line(), cli, workspace, &volumes, true);
         }
 
         if config == "NA" {
@@ -173,6 +224,7 @@ impl ShellCommand {
         ];
         let env: HashMap<String, String> = self.bb_build_env(cli, workspace, args_env_variables)?;
 
+        cli.info(String::from("Start shell setting up bitbake build env"));
         if !docker.is_empty() {
             let image: DockerImage = DockerImage::new(&docker);
             let executer: Docker = Docker::new(image, true);
@@ -193,8 +245,9 @@ impl ShellCommand {
         /*
          * The command don't have to be a bitbake command but we will setup the bb env anyway
          */
-         let env: HashMap<String, String> = self.bb_build_env(cli, workspace, args_env_variables)?;
+        let env: HashMap<String, String> = self.bb_build_env(cli, workspace, args_env_variables)?;
 
+        cli.info(format!("Running command '{}'", cmd));
         if !docker.is_empty() {
             let image: DockerImage = DockerImage::new(&docker);
             let executer: Docker = Docker::new(image, true);
@@ -210,6 +263,7 @@ impl ShellCommand {
             String::from("-i")
         ];
 
+        cli.info(String::from("Starting shell"));
         if !docker.is_empty() {
             let image: DockerImage = DockerImage::new(&docker);
             let executer: Docker = Docker::new(image, true);

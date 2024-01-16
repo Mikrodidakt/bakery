@@ -3,11 +3,10 @@ use mockall::*;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str;
-use std::io::BufRead;
 
 
 /*
-Tried using "withf" and closure when mocking the check_call for testing 
+Tried using "withf" and closure when mocking the check_call for testing
 but it did not work when using multiple expectations not sure why but suspect
 that it had something todo with that it could not determine which
 closure to use because it would always use the first closure which always
@@ -101,7 +100,7 @@ impl System for BSystem {
         if !status.success() {
             return Err(BError::CliError(format!("{}", status)));
         }
-        
+
         // Capture the output as a string
         let output_str: &str = str::from_utf8(&output.stdout)?;
 
@@ -113,7 +112,7 @@ impl System for BSystem {
                 env_vars.insert(parts[0].to_string(), parts[1].to_string());
             }
         }
-   
+
         Ok(env_vars)
     }
 }
@@ -204,11 +203,11 @@ mod tests {
     #[test]
     fn test_system_check_call_error() {
         let system: BSystem = BSystem::new();
-        let params: CallParams = CallParams { 
+        let params: CallParams = CallParams {
             cmd_line: vec![
                 "exit 1".to_string(),
             ],
-            env: HashMap::new(), 
+            env: HashMap::new(),
             shell: true,
         };
         let result: Result<(), BError> = system.check_call(&params);
@@ -232,7 +231,7 @@ mod tests {
         env.insert("TEST_FILE1".to_string(), work_dir.clone().join("test1").to_string_lossy().to_string());
         env.insert("TEST_FILE2".to_string(), work_dir.clone().join("test2").to_string_lossy().to_string());
         env.insert("TEST_FILE3".to_string(), work_dir.clone().join("test3").to_string_lossy().to_string());
-        let params: CallParams = CallParams { 
+        let params: CallParams = CallParams {
             cmd_line: vec![
                 format!("cd {}; touch $TEST_FILE1; touch $TEST_FILE2; touch $TEST_FILE3; ls -la .", work_dir.to_string_lossy().to_string()),
             ],
