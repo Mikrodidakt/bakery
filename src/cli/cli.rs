@@ -39,7 +39,7 @@ impl Cli {
             cmd_handler,
             logger,
             system,
-        } 
+        }
     }
 
     pub fn check_call(&self, cmd_line: &Vec<String>, env: &HashMap<String, String>, shell: bool) -> Result<(), BError> {
@@ -73,7 +73,7 @@ impl Cli {
 
     pub fn get_home_dir(&self) -> PathBuf {
         match std::env::var_os("HOME") {
-            Some(var) => { 
+            Some(var) => {
                 return PathBuf::from(var.into_string().or::<String>(Ok(String::from(""))).unwrap());
             },
             None => {

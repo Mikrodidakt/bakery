@@ -6,7 +6,7 @@ use crate::data::WsContextData;
 use crate::workspace::{Workspace, WsTaskHandler};
 use crate::cli::Cli;
 use crate::error::BError;
-use crate::executers::{Docker, DockerImage};
+use crate::executers::Docker;
 
 static BCOMMAND: &str = "build";
 static BCOMMAND_ABOUT: &str = "Execute a build either a full build or a task of one of the builds";
@@ -25,7 +25,7 @@ impl BCommand for BuildCommand {
                 }
             }
         }
-        
+
         return String::from("default");
     }
 
@@ -75,7 +75,7 @@ impl BCommand for BuildCommand {
          * second docker container.
          */
         if workspace.settings().docker_enabled() && self.is_docker_required() && !Docker::inside_docker() {
-            return self.bootstrap(cli, workspace, &volumes, interactive);
+            return self.bootstrap(&cli.get_cmd_line(), cli, workspace, &volumes, interactive);
         }
 
         /*
@@ -102,7 +102,7 @@ impl BCommand for BuildCommand {
             bb_variables.push("IMAGE_GEN_DEBUGFS = \"1\"".to_string());
             bb_variables.push("IMAGE_FSTYPES_DEBUGFS = \"tar.bz2\"".to_string());
         }
-        
+
         let env_variables: HashMap<String, String> = self.setup_env(env);
         let args_context: IndexMap<String, String> = self.setup_context(ctx);
 
@@ -134,12 +134,12 @@ impl BCommand for BuildCommand {
         for (key, value) in extra_ctx.clone() {
             bb_variables.push(format!("{} ?= \"{}\"", key, value));
         }
-        
+
         // Update the config context with the context from the args
         let mut context: WsContextData = WsContextData::new(&args_context)?;
         context.update(&extra_ctx);
         workspace.update_ctx(&context);
-        
+
         if tasks.len() > 1 {
             // More then one task was specified on the command line
             for t_name in tasks {
@@ -396,7 +396,7 @@ mod tests {
                 ]
             },
             "tasks": {
-                "image": { 
+                "image": {
                     "index": "1",
                     "name": "image",
                     "recipes": [
@@ -477,7 +477,7 @@ mod tests {
         default_bb_variables.push_str("BUILD_VARIANT ?= \"dev\"\n");
         default_bb_variables.push_str("PLATFORM_RELEASE ?= \"0.0.0-0\"\n");
         local_conf_content.push_str(bb_variables.unwrap_or(&default_bb_variables));
-        helper_verify_bitbake_conf(&local_conf_path, &local_conf_content, &bblayers_conf_path, &bblayers_conf_content); 
+        helper_verify_bitbake_conf(&local_conf_path, &local_conf_content, &bblayers_conf_path, &bblayers_conf_content);
     }
 
     #[test]
@@ -499,7 +499,7 @@ mod tests {
             "arch": "test-arch",
             "bb": {},
             "tasks": {
-                "task-name": { 
+                "task-name": {
                     "index": "1",
                     "name": "task-name",
                     "recipes": [
@@ -557,7 +557,7 @@ mod tests {
             "arch": "test-arch",
             "bb": {},
             "tasks": {
-                "task-name": { 
+                "task-name": {
                     "index": "1",
                     "name": "task-name",
                     "type": "non-bitbake",
@@ -609,7 +609,7 @@ mod tests {
             },
             "docker": {
                 "enabled": "true"
-            }        
+            }
         }"#;
         let json_build_config: &str = r#"
         {
@@ -621,7 +621,7 @@ mod tests {
                 "docker": "test-registry/test-image:0.1"
             },
             "tasks": {
-                "task-name": { 
+                "task-name": {
                     "index": "1",
                     "name": "task-name",
                     "type": "bitbake",
@@ -639,11 +639,11 @@ mod tests {
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
                 cmd_line: Helper::docker_bootstrap_string(
-                        true, 
-                        &vec![], 
-                        &vec![], 
-                        &work_dir.clone(), 
-                        &work_dir, 
+                        true,
+                        &vec![],
+                        &vec![],
+                        &work_dir.clone(),
+                        &work_dir,
                         &DockerImage::new("test-registry/test-image:0.1"),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default")]
                     ),
@@ -677,7 +677,7 @@ mod tests {
             },
             "docker": {
                 "enabled": "true"
-            }        
+            }
         }"#;
         let json_build_config: &str = r#"
         {
@@ -689,7 +689,7 @@ mod tests {
                 "docker": "test-registry/test-image:0.1"
             },
             "tasks": {
-                "task-name": { 
+                "task-name": {
                     "index": "1",
                     "name": "task-name",
                     "type": "bitbake",
@@ -707,11 +707,11 @@ mod tests {
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
                 cmd_line: Helper::docker_bootstrap_string(
-                        true, 
-                        &vec![], 
-                        &vec![String::from("/test/testdir:/test/testdir")], 
-                        &work_dir.clone(), 
-                        &work_dir, 
+                        true,
+                        &vec![],
+                        &vec![String::from("/test/testdir:/test/testdir")],
+                        &work_dir.clone(),
+                        &work_dir,
                         &DockerImage::new("test-registry/test-image:0.1"),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default"), String::from("-v"), String::from("/test/testdir:/test/testdir")]
                     ),
@@ -745,7 +745,7 @@ mod tests {
             },
             "docker": {
                 "enabled": "true"
-            }        
+            }
         }"#;
         let json_build_config: &str = r#"
         {
@@ -757,7 +757,7 @@ mod tests {
                 "docker": "test-registry/test-image:0.1"
             },
             "tasks": {
-                "task-name": { 
+                "task-name": {
                     "index": "1",
                     "name": "task-name",
                     "type": "bitbake",
@@ -775,11 +775,11 @@ mod tests {
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
                 cmd_line: Helper::docker_bootstrap_string(
-                        false, 
-                        &vec![], 
-                        &vec![], 
-                        &work_dir.clone(), 
-                        &work_dir, 
+                        false,
+                        &vec![],
+                        &vec![],
+                        &work_dir.clone(),
+                        &work_dir,
                         &DockerImage::new("test-registry/test-image:0.1"),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default"), String::from("--interactive=false")]
                     ),
@@ -816,7 +816,7 @@ mod tests {
                 "args": [
                     "--test=test"
                 ]
-            }        
+            }
         }"#;
         let json_build_config: &str = r#"
         {
@@ -828,7 +828,7 @@ mod tests {
                 "docker": "test-registry/test-image:0.1"
             },
             "tasks": {
-                "task-name": { 
+                "task-name": {
                     "index": "1",
                     "name": "task-name",
                     "type": "bitbake",
@@ -846,11 +846,11 @@ mod tests {
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
                 cmd_line: Helper::docker_bootstrap_string(
-                        true, 
-                        &vec![String::from("--test=test")], 
-                        &vec![], 
-                        &work_dir.clone(), 
-                        &work_dir, 
+                        true,
+                        &vec![String::from("--test=test")],
+                        &vec![],
+                        &work_dir.clone(),
+                        &work_dir,
                         &DockerImage::new("test-registry/test-image:0.1"),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default")]
                     ),
@@ -891,7 +891,7 @@ mod tests {
             "arch": "test-arch",
             "bb": {},
             "tasks": {
-                "task-name": { 
+                "task-name": {
                     "index": "1",
                     "name": "task-name",
                     "type": "bitbake",
@@ -950,21 +950,21 @@ mod tests {
             "arch": "test-arch",
             "bb": {},
             "tasks": {
-                "image": { 
+                "image": {
                     "index": "1",
                     "name": "image",
                     "recipes": [
                         "image"
                     ]
                 },
-                "test": { 
+                "test": {
                     "index": "2",
                     "name": "test",
                     "recipes": [
                         "test-image"
                     ]
                 },
-                "sdk": { 
+                "sdk": {
                     "index": "3",
                     "name": "sdk",
                     "recipes": [
@@ -1099,7 +1099,7 @@ mod tests {
                 "PROJECT=all"
             ],
             "tasks": {
-                "task-name": { 
+                "task-name": {
                     "index": "1",
                     "name": "task-name",
                     "type": "non-bitbake",
@@ -1157,7 +1157,7 @@ mod tests {
             "description": "Test Description",
             "arch": "test-arch",
             "tasks": {
-                "task-name": { 
+                "task-name": {
                     "index": "1",
                     "name": "task-name",
                     "type": "non-bitbake",

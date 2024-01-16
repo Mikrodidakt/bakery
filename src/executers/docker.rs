@@ -209,8 +209,8 @@ impl Docker {
         Ok(env_file_path)
     }
 
-    pub fn bootstrap_bakery(&self, cli: &Cli, docker_top_dir: &PathBuf, work_dir: &PathBuf, docker_args: &Vec<String>, volumes: &Vec<String>) -> Result<(), BError> {
-        cli.check_call(&self.bootstrap_cmd_line(&mut cli.get_cmd_line(), docker_top_dir, work_dir, docker_args, volumes), &HashMap::new(), true)?;
+    pub fn bootstrap_bakery(&self, cmd_line: &Vec<String>, cli: &Cli, docker_top_dir: &PathBuf, work_dir: &PathBuf, docker_args: &Vec<String>, volumes: &Vec<String>) -> Result<(), BError> {
+        cli.check_call(&self.bootstrap_cmd_line(cmd_line, docker_top_dir, work_dir, docker_args, volumes), &HashMap::new(), true)?;
         Ok(())
     }
 
