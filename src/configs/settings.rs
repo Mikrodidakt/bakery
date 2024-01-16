@@ -18,6 +18,7 @@ in the root of the workspace. The current format is
               ]
             },
             "docker": {
+              "enabled": "true",
               "registry": "test",
               "image": "test-workspace",
               "tag": "0.1",
@@ -45,9 +46,9 @@ use crate::error::BError;
 // Not the ideal solution we should see if it is possible to
 // read them from the Cargo.toml and then incorporate them
 // into the binary and read them out in runtime.
-pub const _BAKERY_DOCKER_ARGS: [&str; 2] = ["--rm=true", "-t"];                                                                          
-pub const BAKERY_DOCKER_IMAGE: &str = "bakery-workspace";                                                                           
-pub const BAKERY_DOCKER_TAG: &str = "0.68";                                                                                      
+pub const _BAKERY_DOCKER_ARGS: [&str; 2] = ["--rm=true", "-t"];
+pub const BAKERY_DOCKER_IMAGE: &str = "bakery-workspace";
+pub const BAKERY_DOCKER_TAG: &str = "0.68";
 pub const BAKERY_DOCKER_REGISTRY: &str = "strixos";
 
 #[derive(Clone)]
@@ -92,12 +93,12 @@ impl WsSettings {
         let mut docker_top_dir: String = String::from("");
 
         match Self::get_value("workspace", &data) {
-            Ok(ws_data) => { 
+            Ok(ws_data) => {
                 configs_dir = Self::get_str_value("configsdir", ws_data, Some(String::from("configs")))?;
                 include_dir = Self::get_str_value("includedir", ws_data, Some(String::from("configs/include")))?;
                 builds_dir = Self::get_str_value("buildsdir", ws_data, Some(String::from("builds")))?;
                 artifacts_dir = Self::get_str_value("artifactsdir", ws_data, Some(String::from("artifacts")))?;
-             
+
                 scripts_dir = Self::get_str_value("scriptsdir", ws_data, Some(String::from("scripts")))?;
                 docker_dir = Self::get_str_value("dockerdir", ws_data, Some(String::from("docker")))?;
                 cache_dir = Self::get_str_value("cachedir", ws_data, Some(String::from(".cache")))?;
@@ -484,7 +485,7 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let settings = Helper::setup_ws_settings(json_test_str);  
+        let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_args, &vec![String::from("--rm=true"), String::from("-t")]);
     }
 
