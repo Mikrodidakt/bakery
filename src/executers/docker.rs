@@ -45,13 +45,13 @@ impl DockerImage {
 impl Docker {
     fn env_home(&self) -> String {
         match std::env::var_os("HOME") {
-            Some(var) => { 
+            Some(var) => {
                 return var.into_string().or::<String>(Ok(String::from(""))).unwrap();
             },
             None => {
                 return String::new();
             }
-        }    
+        }
     }
 
     fn user(&self) -> Vec<String> {
@@ -64,18 +64,18 @@ impl Docker {
     fn etc_files(&self) -> Vec<String> {
         vec![
             String::from("-v"),
-            String::from("/etc/passwd:/etc/passwd"),
+            String::from("/etc/passwd:/etc/passwd:ro"),
             String::from("-v"),
-            String::from("/etc/group:/etc/group"),
+            String::from("/etc/group:/etc/group:ro"),
         ]
     }
 
     fn hidden_home_files(&self) -> Vec<String> {
         vec![
             String::from("-v"),
-            format!("{}/.gitconfig:{}/.gitconfig", self.env_home(), self.env_home()),
+            format!("{}/.gitconfig:{}/.gitconfig:ro", self.env_home(), self.env_home()),
             String::from("-v"),
-            format!("{}/.ssh:{}/.ssh", self.env_home(), self.env_home()),
+            format!("{}/.ssh:{}/.ssh:ro", self.env_home(), self.env_home()),
             String::from("-v"),
             format!("{}/.bashrc:{}/.bashrc", self.env_home(), self.env_home()),
             String::from("-v"),
@@ -203,7 +203,7 @@ impl Docker {
         let mut env_file: File = File::create(env_file_path.clone())?;
 
         for (key, value) in env.iter() {
-            writeln!(env_file, "{}={}", key, value)?; 
+            writeln!(env_file, "{}={}", key, value)?;
         }
 
         Ok(env_file_path)

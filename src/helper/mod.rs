@@ -71,7 +71,7 @@ impl Helper {
             for entry in std::fs::read_dir(dir)? {
                 let entry = entry?;
                 let path = entry.path();
-    
+
                 if path.is_dir() {
                     // Recursively visit sub-directory and collect its file paths
                     Self::list_files_in_dir(&path, files, strip)?;
@@ -85,7 +85,7 @@ impl Helper {
                 }
             }
         }
-    
+
         Ok(())
     }
 
@@ -137,7 +137,7 @@ impl Helper {
                         .to_path_buf();
                     p
                 }).collect();
-            
+
             // Convert to HashSet so we are not failing if the order of the vectors are not matching
             let expected: HashSet<_> = files.iter().map(|p| p.as_path()).collect();
             let archived: HashSet<_> = archived_files.iter().map(|p| p.as_path()).collect();
@@ -154,7 +154,7 @@ impl Helper {
             Err(e) => {
                 eprintln!("Error parsing tasks from build config: {}", e);
                 panic!();
-            } 
+            }
         }
     }
     */
@@ -169,7 +169,7 @@ impl Helper {
             Err(e) => {
                 eprintln!("Error parsing JSON: {}", e);
                 panic!();
-            } 
+            }
         }
         settings
     }
@@ -184,7 +184,7 @@ impl Helper {
             Err(e) => {
                 eprintln!("Error parsing build config: {}", e);
                 panic!();
-            } 
+            }
         }
     }
     */
@@ -203,13 +203,13 @@ impl Helper {
             Err    (e) => {
             eprintln!("Error parsing build config: {}", e);
                 panic!();
-            } 
+            }
         }
     }
 
     pub fn setup_ws(test_work_dir: &str, json_settings: &str, json_build_config: &str) -> Workspace {
         let work_dir: PathBuf = PathBuf::from(test_work_dir);
-        let mut settings: WsSettingsHandler = WsSettingsHandler::new(work_dir.clone(), Self::setup_ws_settings(json_settings)); 
+        let mut settings: WsSettingsHandler = WsSettingsHandler::new(work_dir.clone(), Self::setup_ws_settings(json_settings));
         let config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut settings).expect("Failed to parse build config");
         Workspace::new(Some(work_dir), Some(settings), Some(config)).expect("Failed to setup workspace")
     }
@@ -220,7 +220,7 @@ impl Helper {
             "version": "4"
         }"#;
         let json_default_build_config = r#"
-        {                                                                                                                   
+        {
             "version": "4"
         }"#;
         let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(
@@ -228,20 +228,20 @@ impl Helper {
             json_settings.unwrap_or(json_default_settings),
         )
         .unwrap_or_else(|err| panic!("Error parsing JSON settings: {}", err));
-    
+
         let data: WsBuildData = WsBuildData::from_str(
             json_build_config.unwrap_or(json_default_build_config),
             &ws_settings,
         )
         .unwrap_or_else(|err| panic!("Error parsing JSON build config: {}", err));
-    
+
         data
     }
 
     pub fn parse(json_string: &str) -> Result<Value, BError> {
         match serde_json::from_str(json_string) {
             Ok(data) => {
-                Ok(data) 
+                Ok(data)
             },
             Err(err) => Err(BError::ParseError(format!("Failed to parse JSON: {}", err))),
         }
@@ -273,13 +273,13 @@ impl Helper {
 
     pub fn env_home() -> String {
         match std::env::var_os("HOME") {
-            Some(var) => { 
+            Some(var) => {
                 return var.into_string().or::<String>(Ok(String::from(""))).unwrap();
             },
             None => {
                 return String::new();
             }
-        }    
+        }
     }
 
     pub fn docker_bootstrap_string(interactive: bool, args: &Vec<String>, volumes: &Vec<String>, top_dir: &PathBuf, work_dir: &PathBuf, image: &DockerImage, cmd: &Vec<String>) -> Vec<String>{
@@ -309,13 +309,13 @@ impl Helper {
         }
         cmd_line.append(&mut vec![
             String::from("-v"),
-            String::from("/etc/passwd:/etc/passwd"),
+            String::from("/etc/passwd:/etc/passwd:ro"),
             String::from("-v"),
-            String::from("/etc/group:/etc/group"),
+            String::from("/etc/group:/etc/group:ro"),
             String::from("-v"),
-            format!("{}/.gitconfig:{}/.gitconfig", Helper::env_home(), Helper::env_home()),
+            format!("{}/.gitconfig:{}/.gitconfig:ro", Helper::env_home(), Helper::env_home()),
             String::from("-v"),
-            format!("{}/.ssh:{}/.ssh", Helper::env_home(), Helper::env_home()),
+            format!("{}/.ssh:{}/.ssh:ro", Helper::env_home(), Helper::env_home()),
             String::from("-v"),
             format!("{}/.bashrc:{}/.bashrc", Helper::env_home(), Helper::env_home()),
             String::from("-v"),
@@ -346,9 +346,9 @@ impl Helper {
             String::from("-u"),
             format!("{}:{}", users::get_current_uid(), users::get_current_gid()),
             String::from("-v"),
-            String::from("/etc/passwd:/etc/passwd"),
+            String::from("/etc/passwd:/etc/passwd:ro"),
             String::from("-v"),
-            String::from("/etc/group:/etc/group"),
+            String::from("/etc/group:/etc/group:ro"),
             String::from("-v"),
             format!("{}:{}", Helper::env_home(), Helper::env_home()),
             String::from("-w"),
