@@ -3,7 +3,8 @@ use serde_json::Value;
 
 use crate::workspace::{
     WsSettingsHandler,
-    WsTaskHandler
+    WsTaskHandler,
+    WsDeployHandler,
 };
 use crate::data::WsBuildData;
 use crate::error::BError;
@@ -13,6 +14,7 @@ use crate::configs::Context;
 pub struct WsBuildConfigHandler {
     data: WsBuildData,
     tasks: IndexMap<String, WsTaskHandler>,
+    deploy: WsDeployHandler,
 }
 
 impl WsBuildConfigHandler {
@@ -24,9 +26,11 @@ impl WsBuildConfigHandler {
     pub fn new(data: &Value, settings: &WsSettingsHandler) -> Result<Self, BError> {
         let build_data: WsBuildData = WsBuildData::new(data, settings)?;
         let tasks: IndexMap<String, WsTaskHandler> = build_data.get_tasks(data)?;
+        let deploy: WsDeployHandler = WsDeployHandler::new(data)?;
 
         Ok(WsBuildConfigHandler {
             data: build_data,
+            deploy,
             tasks,
         })
     }
@@ -44,6 +48,7 @@ impl WsBuildConfigHandler {
         for (_name, task) in self.tasks.iter_mut() {
             task.expand_ctx(self.data.context().ctx());
         }
+        self.deploy.expand_ctx(self.data.context().ctx());
     }
 
     pub fn task(&self, task: &str) -> Result<&WsTaskHandler, BError> {
@@ -59,6 +64,10 @@ impl WsBuildConfigHandler {
 
     pub fn tasks(&self) -> &IndexMap<String, WsTaskHandler> {
         &self.tasks
+    }
+
+    pub fn deploy(&self) -> &WsDeployHandler {
+        &self.deploy
     }
 
     pub fn description(&self) -> &str {

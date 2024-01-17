@@ -9,6 +9,8 @@ use crate::executers::{
     NonBitbakeExecuter,
 };
 
+use super::DeployExecuter;
+
 pub struct ExecuterFactory {}
 
 impl ExecuterFactory {
@@ -20,7 +22,7 @@ impl ExecuterFactory {
             },
             TType::NonBitbake => {
                 executer = Box::new(NonBitbakeExecuter::new(cli, task_data));
-            },
+            }
         }
         executer
     }

@@ -12,7 +12,7 @@ pub enum AType {
     Manifest,
 }
 
-//TODO: we should consider using IndexSet instead of vector to make sure we
+// TODO: we should consider using IndexSet instead of vector to make sure we
 // keep the order from the json file
 pub struct WsArtifactData {
     pub atype: AType, // Optional if not set for the task the default type 'file' is used

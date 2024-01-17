@@ -7,7 +7,7 @@ use crate::workspace::Workspace;
 use crate::executers::{Docker, DockerImage};
 
 static BCOMMAND: &str = "shell";
-static BCOMMAND_ABOUT: &str = "Start a shell inside docker or run a bitbake command inside or outside of docker";
+static BCOMMAND_ABOUT: &str = "Start a shell inside docker or run any command inside bitbake command inside or outside of docker";
 pub struct ShellCommand {
     cmd: BBaseCommand,
     // Your struct fields and methods here
@@ -108,18 +108,17 @@ impl BCommand for ShellCommand {
 
         if config == "NA" {
             return self.run_shell(cli, workspace, &docker);
-        } else {
-            if !workspace.valid_config(config.as_str()) {
-                return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
-            }
-
-            if cmd.is_empty() {
-                return self.run_bitbake_shell(cli, workspace, &self.setup_env(env), &docker);
-            } else {
-                return self.run_cmd(&cmd, cli, workspace, &self.setup_env(env), &docker);
-            }
         }
-        Ok(())
+
+        if !workspace.valid_config(config.as_str()) {
+            return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
+        }
+
+        if cmd.is_empty() {
+            return self.run_bitbake_shell(cli, workspace, &self.setup_env(env), &docker);
+        }
+
+        self.run_cmd(&cmd, cli, workspace, &self.setup_env(env), &docker)
     }
 }
 

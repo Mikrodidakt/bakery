@@ -4,8 +4,11 @@ pub mod list;
 pub mod tests;
 pub mod handler;
 pub mod shell;
+pub mod deploy;
+pub mod upload;
 
 use std::collections::HashMap;
+use indexmap::{IndexMap, indexmap};
 
 use crate::error::BError;
 use crate::cli::Cli;
@@ -14,6 +17,14 @@ use crate::executers::docker::{Docker, DockerImage};
 
 // Bakery SubCommand
 pub trait BCommand {
+    fn setup_context(&self, ctx: Vec<String>) -> IndexMap<String, String> {
+        let context: IndexMap<String, String> = ctx.iter().map(|c|{
+            let v: Vec<&str> = c.split('=').collect();
+            (v[0].to_string(), v[1].to_string())
+        }).collect();
+        context
+    }
+
     fn execute(&self, cli: &Cli, _workspace: &mut Workspace) -> Result<(), BError> {
         cli.info(format!("Execute command {}", self.cmd_str()));
         Ok(())
@@ -93,6 +104,8 @@ pub fn get_supported_cmds() -> HashMap<&'static str, Box<dyn BCommand>> {
     supported_cmds.insert("clean", Box::new(CleanCommand::new()));
     supported_cmds.insert("list", Box::new(ListCommand::new()));
     supported_cmds.insert("shell", Box::new(ShellCommand::new()));
+    supported_cmds.insert("deploy", Box::new(DeployCommand::new()));
+    supported_cmds.insert("upload", Box::new(UploadCommand::new()));
 
     // Add more commands as needed
 
@@ -104,3 +117,5 @@ pub use clean::CleanCommand;
 pub use list::ListCommand;
 pub use shell::ShellCommand;
 pub use handler::CmdHandler;
+pub use deploy::DeployCommand;
+pub use upload::UploadCommand;

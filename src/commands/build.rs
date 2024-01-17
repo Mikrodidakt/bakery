@@ -165,14 +165,6 @@ impl BCommand for BuildCommand {
 }
 
 impl BuildCommand {
-    fn setup_context(&self, ctx: Vec<String>) -> IndexMap<String, String> {
-        let context: IndexMap<String, String> = ctx.iter().map(|c|{
-            let v: Vec<&str> = c.split('=').collect();
-            (v[0].to_string(), v[1].to_string())
-        }).collect();
-        context
-    }
-
     fn setup_env(&self, env: Vec<String>) -> HashMap<String, String> {
         let variables: HashMap<String, String> = env.iter().map(|e|{
             let v: Vec<&str> = e.split('=').collect();
