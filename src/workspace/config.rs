@@ -5,6 +5,7 @@ use crate::workspace::{
     WsSettingsHandler,
     WsTaskHandler,
     WsDeployHandler,
+    WsUploadHandler,
 };
 use crate::data::WsBuildData;
 use crate::error::BError;
@@ -15,6 +16,7 @@ pub struct WsBuildConfigHandler {
     data: WsBuildData,
     tasks: IndexMap<String, WsTaskHandler>,
     deploy: WsDeployHandler,
+    upload: WsUploadHandler,
 }
 
 impl WsBuildConfigHandler {
@@ -27,10 +29,12 @@ impl WsBuildConfigHandler {
         let build_data: WsBuildData = WsBuildData::new(data, settings)?;
         let tasks: IndexMap<String, WsTaskHandler> = build_data.get_tasks(data)?;
         let deploy: WsDeployHandler = WsDeployHandler::new(data)?;
+        let upload: WsUploadHandler = WsUploadHandler::new(data)?;
 
         Ok(WsBuildConfigHandler {
             data: build_data,
             deploy,
+            upload,
             tasks,
         })
     }
@@ -68,6 +72,10 @@ impl WsBuildConfigHandler {
 
     pub fn deploy(&self) -> &WsDeployHandler {
         &self.deploy
+    }
+
+    pub fn upload(&self) -> &WsUploadHandler {
+        &self.upload
     }
 
     pub fn description(&self) -> &str {
