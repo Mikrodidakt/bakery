@@ -1,12 +1,10 @@
 use std::collections::HashMap;
-
 use indexmap::IndexMap;
 
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
 use crate::workspace::{Workspace, WsDeployHandler};
 use crate::data::WsContextData;
-use crate::executers::Docker;
 
 static BCOMMAND: &str = "deploy";
 static BCOMMAND_ABOUT: &str = "Deploy artifact to target";
@@ -37,7 +35,7 @@ impl BCommand for DeployCommand {
     }
 
     fn is_docker_required(&self) -> bool {
-        false
+        self.cmd.require_docker
     }
 
     fn execute(&self, cli: &Cli, workspace: &mut Workspace) -> Result<(), BError> {
@@ -45,25 +43,14 @@ impl BCommand for DeployCommand {
         let ctx: Vec<String> = self.get_arg_many(cli, "ctx", BCOMMAND)?;
         let args_context: IndexMap<String, String> = self.setup_context(ctx);
         let context: WsContextData = WsContextData::new(&args_context)?;
-        let volumes: Vec<String> = self.get_arg_many(cli, "volume", BCOMMAND)?;
 
         if !workspace.valid_config(config.as_str()) {
             return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
         }
 
-        /*
-         * If docker is enabled in the workspace settings then bakery will be boottraped into a docker container
-         * with a bakery inside and all the baking will be done inside that docker container. Not all commands should
-         * be run inside of docker and if we are already inside docker we should not try and bootstrap into a
-         * second docker container.
-         */
-        if workspace.settings().docker_enabled() && self.is_docker_required() && !Docker::inside_docker() {
-            return self.bootstrap(&cli.get_cmd_line(), cli, workspace, &volumes, true);
-        }
-
         workspace.update_ctx(&context);
         let deploy: &WsDeployHandler = workspace.config().deploy();
-        deploy.run(cli, &HashMap::new(), false, true)
+        deploy.run(cli, &HashMap::new(), false, self.cmd.interactive)
     }
 }
 
@@ -80,14 +67,6 @@ impl DeployCommand {
               .required(true),
         )
         .arg(
-          clap::Arg::new("volume")
-              .action(clap::ArgAction::Append)
-              .short('v')
-              .long("docker-volume")
-              .value_name("path:path")
-              .help("Docker volume to mount bind when boot strapping into docker."),
-        )
-        .arg(
           clap::Arg::new("ctx")
               .action(clap::ArgAction::Append)
               .short('x')
@@ -102,7 +81,7 @@ impl DeployCommand {
                 cmd_str: String::from(BCOMMAND),
                 sub_cmd: subcmd,
                 interactive: true,
-                require_docker: true,
+                require_docker: false,
             },
         }
     }
