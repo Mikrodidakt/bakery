@@ -196,7 +196,7 @@ mod tests {
     #[test]
     fn test_ws_build_data_no_tasks() {
         let json_build_config = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
@@ -214,7 +214,7 @@ mod tests {
     #[test]
     fn test_ws_build_data_tasks_error() {
         let json_build_config: &str = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
@@ -242,7 +242,7 @@ mod tests {
     #[test]
     fn test_ws_build_data_task() {
         let json_task_str: &str = r#"
-        { 
+        {
             "index": "2",
             "name": "task-name",
             "type": "bitbake",
@@ -251,7 +251,7 @@ mod tests {
             ]
         }"#;
         let json_build_config: &str = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
@@ -268,7 +268,7 @@ mod tests {
     #[test]
     fn test_ws_build_data_task_expand_ctx() {
         let json_task_str: &str = r#"
-        { 
+        {
             "index": "2",
             "name": "task-name",
             "type": "bitbake",
@@ -277,7 +277,7 @@ mod tests {
             ]
         }"#;
         let json_build_config: &str = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
@@ -297,12 +297,12 @@ mod tests {
     #[test]
     fn test_ws_build_tasks() {
         let json_build_config: &str = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
-            "tasks": { 
+            "tasks": {
                 "task1": {
                     "index": "1",
                     "name": "task1",
@@ -335,7 +335,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
         let json_artifact_config: &str = r#"
-        { 
+        {
             "index": "2",
             "name": "task2",
             "type": "non-bitbake",
@@ -388,7 +388,7 @@ mod tests {
     #[test]
     fn test_ws_build_data_expand_artifact() {
         let json_build_config: &str = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",

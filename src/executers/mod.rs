@@ -3,6 +3,7 @@ pub mod recipe;
 pub mod factory;
 pub mod bitbake;
 pub mod nonbitbake;
+pub mod deploy;
 
 pub use docker::Docker;
 pub use docker::DockerImage;
@@ -10,6 +11,7 @@ pub use recipe::Recipe;
 pub use factory::ExecuterFactory;
 pub use bitbake::BitbakeExecuter;
 pub use nonbitbake::NonBitbakeExecuter;
+pub use deploy::DeployExecuter;
 
 use crate::error::BError;
 
