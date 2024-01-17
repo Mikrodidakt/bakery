@@ -17,7 +17,7 @@ pub enum AType {
 pub struct WsArtifactData {
     pub atype: AType, // Optional if not set for the task the default type 'file' is used
     pub name: String, // The name can be a name for a directory, archive, file or manifest
-    pub source: String, // The source is only used if the type is file 
+    pub source: String, // The source is only used if the type is file
     pub dest: String, // The dest is optional
     pub manifest: String, // The manifest content will be a json string that can be put in a file. The manifest can then be used by the CI to collect information from the build
 }
@@ -141,7 +141,7 @@ mod tests {
     use crate::error::BError;
     use crate::helper::Helper;
     use crate::data::{
-        WsArtifactData, 
+        WsArtifactData,
         AType,
     };
     use crate::configs::Context;
@@ -230,7 +230,7 @@ mod tests {
             }
             Err(e) => {
                 assert_eq!(e.to_string(), String::from("Invalid 'artifact' node in build config. Invalid type 'invalid'"));
-            } 
+            }
         }
     }
 
@@ -241,7 +241,6 @@ mod tests {
             "type": "directory"
         }
         "#;
-        let context: Context = Context::new(&IndexMap::new());
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
         let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value);
         match result {
@@ -250,7 +249,7 @@ mod tests {
             }
             Err(e) => {
                 assert_eq!(e.to_string(), String::from("Invalid 'artifact' node in build config. The 'directory' type requires a 'name'"));
-            } 
+            }
         }
     }
 
@@ -269,7 +268,7 @@ mod tests {
             }
             Err(e) => {
                 assert_eq!(e.to_string(), String::from("Invalid 'artifact' node in build config. The 'manifest' type requires a 'name'"));
-            } 
+            }
         }
     }
 
@@ -358,5 +357,5 @@ mod tests {
         assert_eq!(data.name(), "test-manifest.json");
         assert!(!data.manifest().is_empty());
         assert_eq!(data.manifest(), "{}");
-    }  
+    }
 }

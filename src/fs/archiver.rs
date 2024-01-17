@@ -174,7 +174,6 @@ impl Archiver {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
     use std::path::{Path, PathBuf};
     use tempdir::TempDir;
 
@@ -341,10 +340,10 @@ mod tests {
         let work_dir: &Path = temp_dir.path();
         let archiver_path: PathBuf = work_dir.join("test-archiver.zip");
         let files: Vec<PathBuf> = vec![
-            PathBuf::from(work_dir.clone().join("dir2/file1.txt")),
-            PathBuf::from(work_dir.clone().join("file2.txt")),
-            PathBuf::from(work_dir.clone().join("dir3/file3.txt")),
-            PathBuf::from(work_dir.clone().join("dir1/file4.txt")),
+            PathBuf::from(work_dir.join("dir2/file1.txt")),
+            PathBuf::from(work_dir.join("file2.txt")),
+            PathBuf::from(work_dir.join("dir3/file3.txt")),
+            PathBuf::from(work_dir.join("dir1/file4.txt")),
         ];
 
         Helper::create_test_files(&files);

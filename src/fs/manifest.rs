@@ -107,23 +107,13 @@ mod tests {
 
     #[test]
     fn test_manifest_extension_error() {
-        let json_test_str = r#"
-        {
-            TEST1: "value1",
-            TEST2: "value2",
-            TEST3: "value3",
-            "data": {
-                TEST4: "value4"
-            }
-        }
-        "#;
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let path: &Path = temp_dir.path();
         let manifest_path: PathBuf = path.join("test-manifest.txt");
         let result: Result<Manifest, BError> = Manifest::new(&manifest_path);
         match result {
-            Ok(m) => {
+            Ok(_m) => {
                 panic!("We should have recived an error because the extension is not json");
             }
             Err(e) => {
