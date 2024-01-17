@@ -34,7 +34,7 @@ impl WsBuildConfigHandler {
     pub fn build_data(&self) -> &WsBuildData {
         &self.data
     }
-    
+
     pub fn update_ctx(&mut self, context: &Context) {
         self.data.update_ctx(context);
     }
@@ -56,7 +56,7 @@ impl WsBuildConfigHandler {
             }
         }
     }
-    
+
     pub fn tasks(&self) -> &IndexMap<String, WsTaskHandler> {
         &self.tasks
     }
@@ -67,7 +67,7 @@ impl WsBuildConfigHandler {
 
     //pub fn config_enabled(&self) -> bool {
     //    self.config.enabled()
-    //} 
+    //}
 }
 
 #[cfg(test)]
@@ -84,7 +84,7 @@ mod tests {
             "version": "4"
         }"#;
         let json_build_config = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
@@ -128,7 +128,7 @@ mod tests {
             "version": "4"
         }"#;
         let json_build_config = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
@@ -156,7 +156,7 @@ mod tests {
             "version": "4"
         }"#;
         let json_build_config = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
@@ -175,7 +175,7 @@ mod tests {
             "version": "4"
         }"#;
         let json_build_config = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
@@ -191,7 +191,7 @@ mod tests {
                 "TASK8_CONDITION=TRUE",
                 "TASK9_CONDITION=true"
             ],
-            "tasks": { 
+            "tasks": {
                 "task1": {
                     "index": "1",
                     "name": "task1",
@@ -275,7 +275,7 @@ mod tests {
             "version": "4"
         }"#;
         let json_build_config = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
@@ -283,7 +283,7 @@ mod tests {
             "context": [
                 "TASK1_BUILD_DIR=task1/build"
             ],
-            "tasks": { 
+            "tasks": {
                 "task1": {
                     "index": "1",
                     "name": "task1",
@@ -315,7 +315,7 @@ mod tests {
             "version": "4"
         }"#;
         let json_build_config = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
@@ -323,7 +323,7 @@ mod tests {
             "context": [
                 "TASK1_BUILD_DIR=task1/build/dir"
             ],
-            "tasks": { 
+            "tasks": {
                 "task1": {
                     "index": "0",
                     "name": "task1-name",
@@ -370,12 +370,12 @@ mod tests {
             "version": "4"
         }"#;
         let json_build_config = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
-            "tasks": { 
+            "tasks": {
                 "task0": {
                     "index": "0",
                     "name": "task0",
@@ -420,7 +420,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
         let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
-        
+
         let mut i: i32 = 0;
         ws_config.tasks().iter().for_each(|(name, task)| {
             assert_eq!(name, &format!("task{}", i));

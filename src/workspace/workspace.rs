@@ -7,7 +7,7 @@ use indexmap::IndexMap;
 use crate::fs::JsonFileReader;
 use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
 use crate::error::BError;
-use crate::data::{WsProductData, WsContextData, WsBuildData};
+use crate::data::{WsProductData, WsContextData};
 
 pub struct Workspace {
     settings: WsSettingsHandler,
@@ -32,7 +32,7 @@ impl Workspace {
                         panic!("{}", _e.to_string());
                     }
                 }
-            } 
+            }
         }
     }
 
@@ -70,7 +70,7 @@ impl Workspace {
                 // will be fine. This should be added as part of
                 // the tests.
                 let default_config: &str = r#"
-                {                                                                                                                   
+                {
                     "version": "4",
                     "name": "default",
                     "description": "Default build config",
@@ -91,7 +91,7 @@ impl Workspace {
             for entry in config_dir {
                 let e: DirEntry = entry.map_err(|err| BError::WsError(format!("Failed read dir entry: '{}'", err)))?;
                 let path: PathBuf = e.path();
-        
+
                 if path.is_file() {
                     if let Some(extension) = path.extension() {
                         if extension == "json" {
@@ -185,7 +185,7 @@ impl Workspace {
     pub fn set_recipes(&self, recipes: Vec<String>) {}
 
     pub fn bb_build_env(&self, build: Option<String>) {}
-    
+
     // Returns a ordered list of the builds
     pub fn builds(&self) -> IndexSet<String> {}
     */
@@ -209,7 +209,7 @@ mod tests {
         Helper::setup_test_ws_default_dirs(test_work_dir);
         let ws: Workspace = Workspace::new(
             Some(PathBuf::from(test_work_dir)),
-            None, 
+            None,
             None).expect("Failed to setup workspace");
         assert_eq!(ws.settings().builds_dir(), test_work_dir.join("builds"));
         assert_eq!(ws.settings().cache_dir(), test_work_dir.join(".cache"));
@@ -231,7 +231,7 @@ mod tests {
         let test_work_dir: &Path = temp_dir.path();
         let mut configs: IndexMap<PathBuf, String> = IndexMap::new();
         let config1_str: &str = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name1",
             "description": "Test1 Description",
@@ -239,7 +239,7 @@ mod tests {
             "bb": {}
         }"#;
         let config2_str: &str = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name2",
             "description": "Test2 Description",
@@ -254,7 +254,7 @@ mod tests {
         Helper::setup_test_build_configs_files(&configs);
         let ws: Workspace = Workspace::new(
             Some(PathBuf::from(test_work_dir)),
-            None, 
+            None,
             None).expect("Failed to setup workspace");
         assert!(!ws.build_configs().is_empty());
         ws.build_configs().iter().for_each(|(config, description)| {
@@ -284,7 +284,7 @@ mod tests {
             }
         }"#;
         let json_build_config: &str = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
@@ -312,7 +312,7 @@ mod tests {
         let test_work_dir: &Path = temp_dir.path();
         let mut configs: IndexMap<PathBuf, String> = IndexMap::new();
         let config_str: &str = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
@@ -325,12 +325,12 @@ mod tests {
         Helper::setup_test_build_configs_files(&configs);
         let ws: Workspace = Workspace::new(
             Some(PathBuf::from(test_work_dir)),
-            None, 
+            None,
             None).expect("Failed to setup workspace");
         assert!(!ws.build_configs().is_empty());
         let (path, description) = ws.build_configs().first().unwrap();
         assert_eq!(path.as_path(), test_work_dir.join("configs/test-name.json"));
         assert_eq!(description, "Test Description");
-        assert!(ws.valid_config("test-name"));        
+        assert!(ws.valid_config("test-name"));
     }
 }
