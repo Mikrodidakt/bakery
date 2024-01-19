@@ -53,6 +53,7 @@ impl WsBuildConfigHandler {
             task.expand_ctx(self.data.context().ctx());
         }
         self.deploy.expand_ctx(self.data.context().ctx());
+        self.upload.expand_ctx(self.data.context().ctx());
     }
 
     pub fn task(&self, task: &str) -> Result<&WsTaskHandler, BError> {
