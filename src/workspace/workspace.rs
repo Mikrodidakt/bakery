@@ -170,7 +170,7 @@ impl Workspace {
 
     pub fn update_ctx(&mut self, context: &WsContextData) {
         self.config.update_ctx(context.ctx());
-        self.config.expand_ctx()
+        self.expand_ctx()
     }
 
     pub fn expand_ctx(&mut self) {

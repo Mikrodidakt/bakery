@@ -33,7 +33,7 @@ pub const CTX_KEY_DEBUG_SYMBOLS: &str = "DEBUG_SYMBOLS";
 impl Config for WsContextData {}
 
 impl WsContextData {
-    pub fn mutable_key(key: &str) -> bool {
+    fn _mutable_key(key: &str) -> bool {
         match key {
             CTX_KEY_ARTIFACTS_DIR |
             CTX_KEY_SCRIPTS_DIR |
@@ -69,24 +69,24 @@ impl WsContextData {
 
     pub fn new(variables: &IndexMap<String, String>) -> Result<Self, BError> {
         let ctx_default_variables: IndexMap<String, String> = indexmap! {
-            CTX_KEY_MACHINE.to_string() => "NA".to_string(),
-            CTX_KEY_ARCH.to_string() => "NA".to_string(),
-            CTX_KEY_DISTRO.to_string() => "NA".to_string(),
-            CTX_KEY_PRODUCT_NAME.to_string() => "NA".to_string(),
+            CTX_KEY_MACHINE.to_string() => "".to_string(),
+            CTX_KEY_ARCH.to_string() => "".to_string(),
+            CTX_KEY_DISTRO.to_string() => "".to_string(),
+            CTX_KEY_PRODUCT_NAME.to_string() => "".to_string(),
             CTX_KEY_BB_BUILD_DIR.to_string() => "".to_string(),
             CTX_KEY_BB_DEPLOY_DIR.to_string() => "".to_string(),
             CTX_KEY_ARTIFACTS_DIR.to_string() => "".to_string(),
             CTX_KEY_SCRIPTS_DIR.to_string() => "".to_string(),
             CTX_KEY_BUILDS_DIR.to_string() => "".to_string(),
             CTX_KEY_WORK_DIR.to_string() => "".to_string(),
-            CTX_KEY_PLATFORM_VERSION.to_string() => "0.0.0".to_string(),
-            CTX_KEY_BUILD_ID.to_string() => "0".to_string(),
-            CTX_KEY_PLATFORM_RELEASE.to_string() => "0.0.0-0".to_string(), // We should combine the PLATFORM_VERSION with the BUILD_NUMBER
-            CTX_KEY_BUILD_SHA.to_string() => "dev".to_string(), // If no git sha is specified and it is built locally then this is the default
-            CTX_KEY_RELEASE_BUILD.to_string() => "0".to_string(),
-            CTX_KEY_VARIANT.to_string() => "dev".to_string(), // The variant can be dev, release and manufacturing
-            CTX_KEY_ARCHIVER.to_string() => "0".to_string(),
-            CTX_KEY_DEBUG_SYMBOLS.to_string() => "0".to_string(), // This can be used if you need to collect debug symbols from a build and have specific task defined for it
+            CTX_KEY_PLATFORM_VERSION.to_string() => "".to_string(),
+            CTX_KEY_BUILD_ID.to_string() => "".to_string(),
+            CTX_KEY_PLATFORM_RELEASE.to_string() => "".to_string(),
+            CTX_KEY_BUILD_SHA.to_string() => "".to_string(),
+            CTX_KEY_RELEASE_BUILD.to_string() => "".to_string(),
+            CTX_KEY_VARIANT.to_string() => "".to_string(),
+            CTX_KEY_ARCHIVER.to_string() => "".to_string(),
+            CTX_KEY_DEBUG_SYMBOLS.to_string() => "".to_string(),
         };
         let mut ctx: Context = Context::new(&ctx_default_variables);
         ctx.update(&variables);
@@ -95,25 +95,27 @@ impl WsContextData {
         })
     }
 
-    pub fn is_mutable(&self, key: &str) -> bool {
-        Self::mutable_key(key)
+    pub fn _is_mutable(&self, key: &str) -> bool {
+        Self::_mutable_key(key)
     }
-    /*
-    pub fn variables(&self) -> &IndexMap<String, String> {
-        &self.variables
-    }
-    */
+
     pub fn ctx(&self) -> &Context {
         &self.context
     }
 
     pub fn update(&mut self, variables: &IndexMap<String, String>) {
-        /*for (key, value) in variables {
-            if !self.is_mutable(key) {
-                return Err(BError::CtxKeyError(format!("Context value {} cannot not be changed!", key))));
+        /*
+         * We need to make sure that we are not trying to update
+         * any of the context variables with empty values
+         */
+        let mut v: IndexMap<String, String> = IndexMap::new();
+        for (key, value) in variables {
+            if !value.is_empty() {
+                //println!("key: {}, value: {}", key, value);
+                v.insert(key.to_owned(), value.to_owned());
             }
-        }*/
-        self.context.update(variables);
+        }
+        self.context.update(&v);
     }
 
     pub fn update_ctx(&mut self, context: &Context) {
@@ -159,15 +161,15 @@ mod tests {
     #[test]
     fn test_ws_context_data_default() {
         let json_default_build_config = r#"
-        {                                                                                                                   
+        {
             "version": "4"
         }"#;
         let data: WsContextData = WsContextData::from_str(json_default_build_config).expect("Failed to parse context data");
-        assert_eq!(data.get_ctx_value(CTX_KEY_MACHINE), "NA");
-        assert_eq!(data.get_ctx_value(CTX_KEY_ARCH), "NA");
-        assert_eq!(data.get_ctx_value(CTX_KEY_DISTRO), "NA");
-        assert_eq!(data.get_ctx_value(CTX_KEY_VARIANT), "dev");
-        assert_eq!(data.get_ctx_value(CTX_KEY_PRODUCT_NAME), "NA");
+        assert!(data.get_ctx_value(CTX_KEY_MACHINE).is_empty());
+        assert!(data.get_ctx_value(CTX_KEY_ARCH).is_empty());
+        assert!(data.get_ctx_value(CTX_KEY_DISTRO).is_empty());
+        assert!(data.get_ctx_value(CTX_KEY_VARIANT).is_empty());
+        assert!(data.get_ctx_value(CTX_KEY_PRODUCT_NAME).is_empty());
         assert_eq!(
             data.get_ctx_path(CTX_KEY_BB_BUILD_DIR),
             PathBuf::from("")
@@ -189,28 +191,28 @@ mod tests {
             PathBuf::from("")
         );
         assert_eq!(data.get_ctx_path(CTX_KEY_WORK_DIR), PathBuf::from(""));
-        assert_eq!(data.get_ctx_value(CTX_KEY_PLATFORM_VERSION), "0.0.0");
-        assert_eq!(data.get_ctx_value(CTX_KEY_BUILD_ID), "0");
-        assert_eq!(data.get_ctx_value(CTX_KEY_PLATFORM_RELEASE), "0.0.0-0");
-        assert_eq!(data.get_ctx_value(CTX_KEY_BUILD_SHA), "dev");
-        assert_eq!(data.get_ctx_value(CTX_KEY_RELEASE_BUILD), "0");
-        assert_eq!(data.get_ctx_value(CTX_KEY_ARCHIVER), "0");
-        assert_eq!(data.get_ctx_value(CTX_KEY_DEBUG_SYMBOLS), "0");
+        assert!(data.get_ctx_value(CTX_KEY_PLATFORM_VERSION).is_empty());
+        assert!(data.get_ctx_value(CTX_KEY_BUILD_ID).is_empty());
+        assert!(data.get_ctx_value(CTX_KEY_PLATFORM_RELEASE).is_empty());
+        assert!(data.get_ctx_value(CTX_KEY_BUILD_SHA).is_empty());
+        assert!(data.get_ctx_value(CTX_KEY_RELEASE_BUILD).is_empty());
+        assert!(data.get_ctx_value(CTX_KEY_ARCHIVER).is_empty());
+        assert!(data.get_ctx_value(CTX_KEY_DEBUG_SYMBOLS).is_empty());
     }
 
     #[test]
-    fn test_ws_context_data_overwrite() {
+    fn test_ws_context_data() {
         let json_settings: &str = r#"
         {
             "version": "4"
         }"#;
         let json_build_config = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "context": [
                 "KEY1=value1",
                 "KEY2=value2",
-                "KEY3=value3" 
+                "KEY3=value3"
             ]
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
@@ -234,6 +236,5 @@ mod tests {
         assert_eq!(data.get_ctx_value("KEY2"), "value2");
         assert_eq!(data.get_ctx_value("KEY3"), "value3");
         assert_eq!(data.get_ctx_path(CTX_KEY_WORK_DIR), settings.work_dir());
-
     }
 }
