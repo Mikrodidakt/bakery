@@ -1,8 +1,10 @@
 use crate::error::BError;
+
 use mockall::*;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str;
+use std::fmt;
 
 
 /*
@@ -20,6 +22,17 @@ pub struct CallParams {
     pub cmd_line: Vec<String>,
     pub env: HashMap<String, String>,
     pub shell: bool,
+}
+
+impl fmt::Display for CallParams {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut cmd: String = String::new();
+        self.cmd_line.iter().for_each(|c|{
+            cmd.push_str(c);
+            cmd.push(' ');
+        });
+        write!(f, "{}", cmd)
+    }
 }
 
 #[automock]
@@ -43,6 +56,8 @@ impl System for BSystem {
             cmd.push_str(c);
             cmd.push(' ');
         });
+
+        //println!("params: '{}'", params);
 
         // TODO: we should consider how to handle different shells for now we
         // will stick to bash since that is what OE/Yocto requires
