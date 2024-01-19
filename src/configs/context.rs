@@ -117,12 +117,12 @@ mod tests {
             "DIR1".to_string() => "dir1".to_string(),
             "DIR2".to_string() => "dir2".to_string(),
             "DIR3".to_string() => "dir3".to_string()
-        }; 
+        };
         let mut ctx: Context = Context::new(&variables1);
         let variables2: IndexMap<String, String> = indexmap! {
             "NEWDIR1".to_string() => "newdir1".to_string(),
             "NEWDIR2".to_string() => "newdir2".to_string()
-        };                             
+        };
         ctx.update(&variables2);
         assert_eq!(ctx.value("DIR1"), "dir1");
         assert_eq!(ctx.value("DIR2"), "dir2");
@@ -142,7 +142,7 @@ mod tests {
         assert_eq!(ctx.expand_str("Testing ${VAR1} expansion"), "Testing var1 expansion");
         assert_eq!(ctx.expand_str("Testing ${VAR2} expansion"), "Testing var2 expansion");
         assert_eq!(ctx.expand_str("Testing ${VAR3} expansion"), "Testing var3 expansion");
-        assert_eq!(ctx.expand_str("Testing ${VAR1} ${VAR2} ${VAR3} expansion"), "Testing var1 var2 var3 expansion");  
+        assert_eq!(ctx.expand_str("Testing ${VAR1} ${VAR2} ${VAR3} expansion"), "Testing var1 var2 var3 expansion");
     }
 
     #[test]
@@ -157,7 +157,7 @@ mod tests {
         assert_eq!(ctx.expand_str("Testing ${VAR1} expansion"), "Testing var4 expansion");
         assert_eq!(ctx.expand_str("Testing ${VAR2} expansion"), "Testing var2 expansion");
         assert_eq!(ctx.expand_str("Testing ${VAR3} expansion"), "Testing var3 expansion");
-        assert_eq!(ctx.expand_str("Testing ${VAR1} ${VAR2} ${VAR3} expansion"), "Testing var4 var2 var3 expansion");  
+        assert_eq!(ctx.expand_str("Testing ${VAR1} ${VAR2} ${VAR3} expansion"), "Testing var4 var2 var3 expansion");
     }
 
     #[test]
@@ -171,7 +171,7 @@ mod tests {
         let variables2: IndexMap<String, String> = indexmap! {
             "NEWDIR1".to_string() => "${DIR1}/newdir1".to_string(),
             "NEWDIR2".to_string() => "${DIR2}/newdir2".to_string()
-        };                             
+        };
         ctx.update(&variables2);
         assert_eq!(ctx.expand_str("/dir/${NEWDIR1}/file1.txt"), "/dir/dir1/newdir1/file1.txt");
         assert_eq!(ctx.expand_str("/dir/${NEWDIR2}/file2.txt"), "/dir/dir2/newdir2/file2.txt");
@@ -186,7 +186,7 @@ mod tests {
         };
         let ctx: Context = Context::new(&variables);
         let path: PathBuf = PathBuf::from("/dir1/${VAR1}/${VAR2}/${VAR3}/file1.txt");
-        assert_eq!(ctx.expand_path(&path), PathBuf::from("/dir1/var1/var2/var3/file1.txt")); 
+        assert_eq!(ctx.expand_path(&path), PathBuf::from("/dir1/var1/var2/var3/file1.txt"));
     }
 }
 

@@ -44,7 +44,52 @@ impl WsDeployData {
         self.docker = ctx.expand_str(&self.docker);
     }
 
-    pub fn deploy_cmd(&self) -> &String {
+    pub fn cmd(&self) -> &String {
         &self.cmd
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::data::WsDeployData;
+    use crate::configs::Context;
+    use indexmap::{IndexMap, indexmap};
+
+    #[test]
+    fn test_ws_deploy_data_default() {
+        let json_build_config = r#"
+        {
+        }"#;
+        let data: WsDeployData = WsDeployData::from_str(json_build_config).expect("Failed to parse config data");
+        assert_eq!(data.cmd(), "NA");
+    }
+
+    #[test]
+    fn test_ws_deploy_cmd() {
+        let json_build_config = r#"
+        {
+            "cmd": "/path/to/deploy/script.sh arg1 arg2 arg3"
+        }"#;
+        let data: WsDeployData = WsDeployData::from_str(json_build_config).expect("Failed to parse config data");
+        assert_eq!(data.cmd(), "/path/to/deploy/script.sh arg1 arg2 arg3");
+    }
+
+    #[test]
+    fn test_ws_deploy_cmd_ctx() {
+        let variables: IndexMap<String, String> = indexmap! {
+            "ARG1".to_string() => "arg1".to_string(),
+            "ARG2".to_string() => "arg2".to_string(),
+            "ARG3".to_string() => "arg3".to_string(),
+            "SCRIPTS_DIR".to_string() => "/path/to/deploy".to_string()
+        };
+        let ctx: Context = Context::new(&variables);
+        let json_build_config = r#"
+        {
+            "cmd": "${SCRIPTS_DIR}/script.sh ${ARG1} ${ARG2} ${ARG3}"
+        }"#;
+        let mut data: WsDeployData = WsDeployData::from_str(json_build_config).expect("Failed to parse config data");
+        assert_eq!(data.cmd(), "${SCRIPTS_DIR}/script.sh ${ARG1} ${ARG2} ${ARG3}");
+        data.expand_ctx(&ctx);
+        assert_eq!(data.cmd(), "/path/to/deploy/script.sh arg1 arg2 arg3");
     }
 }
