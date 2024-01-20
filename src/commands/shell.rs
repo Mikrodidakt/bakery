@@ -46,7 +46,7 @@ impl BCommand for ShellCommand {
         let cmd: String = self.get_arg_str(cli, "run", BCOMMAND)?;
 
         /*
-         * If docker is enabled in the workspace settings then bakery will be boottraped into a docker container
+         * If docker is enabled in the workspace settings then bakery will be bootstraped into a docker container
          * with a bakery inside and all the baking will be done inside that docker container. Not all commands should
          * be run inside of docker and if we are already inside docker we should not try and bootstrap into a
          * second docker container.
@@ -113,6 +113,8 @@ impl BCommand for ShellCommand {
         if !workspace.valid_config(config.as_str()) {
             return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
         }
+
+        workspace.expand_ctx();
 
         if cmd.is_empty() {
             return self.run_bitbake_shell(cli, workspace, &self.setup_env(env), &docker);
