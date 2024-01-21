@@ -1,11 +1,7 @@
 use crate::cli::Cli;
 use crate::error::BError;
 use crate::data::WsDeployData;
-use crate::executers::{
-    TaskExecuter,
-    Docker,
-    DockerImage,
-};
+use crate::executers::TaskExecuter;
 
 use std::collections::HashMap;
 

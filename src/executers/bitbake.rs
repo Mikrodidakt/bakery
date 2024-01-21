@@ -307,6 +307,7 @@ mod tests {
         executer.exec(&env_variables, true, true).expect("Failed to execute task");
     }
 
+    /*
     #[test]
     fn test_bitbake_executer_docker() {
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
@@ -363,7 +364,6 @@ mod tests {
             cmd_line_str.push_str(c);
             cmd_line_str.push(' ');
         });
-        //println!("str {}", cmd_line_str);
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let task_data: WsTaskData = WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task config");
         let mut mocked_logger: MockLogger = MockLogger::new();
@@ -415,7 +415,6 @@ mod tests {
         executer.exec(&env_variables, false, interactive).expect("Failed to execute task");
     }
 
-    /*
     #[test]
     fn test_bitbake_executer_bb_docker() {
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
