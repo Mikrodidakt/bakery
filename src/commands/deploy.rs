@@ -92,7 +92,6 @@ impl DeployCommand {
     }
 }
 
-/*
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
@@ -139,7 +138,7 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec![&format!("{}/script.sh", work_dir.display()), "arg1", "arg2", "arg3"]
+                cmd_line: vec![&format!("{}/scripts/script.sh", work_dir.display()), "arg1", "arg2", "arg3"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -198,7 +197,7 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec![&format!("{}/script.sh", work_dir.display()), "arg1", "arg2", "arg3"]
+                cmd_line: vec![&format!("{}/scripts/script.sh", work_dir.display()), "arg1", "arg2", "arg4"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -222,4 +221,3 @@ mod tests {
         let _result: Result<(), BError> = cmd.execute(&cli, &mut workspace);
     }
 }
-*/
