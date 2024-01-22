@@ -31,7 +31,7 @@ impl fmt::Display for CallParams {
             cmd.push_str(c);
             cmd.push(' ');
         });
-        write!(f, "{}", cmd)
+        write!(f, "{}", cmd.as_str().trim_end())
     }
 }
 

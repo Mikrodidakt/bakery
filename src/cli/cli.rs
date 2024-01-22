@@ -49,7 +49,7 @@ impl Cli {
             cmd.push(' ');
         });
         //println!("log {}", String::from(cmd.as_str().trim_end()));
-        self.info(String::from(cmd.as_str().trim_end()));
+        self.info(format!("{}", cmd.as_str().trim_end()));
         self.system.check_call(&CallParams{ cmd_line: cmd_line.to_owned(), env: env.to_owned(), shell })?;
         //self.system.test(String::from(cmd.as_str().trim_end()))?;
         Ok(())
