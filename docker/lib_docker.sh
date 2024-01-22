@@ -6,7 +6,7 @@ _ARTIFACT_SERVER="https://strixos.jfrog.io/strixos"
 _DOCKER_REGISTRY="strixos"
 _DOCKER_IMAGE="bakery-workspace"
 _DOCKER_DIR=${WORKSPACE}/docker
-_DOCKER_TAG="1.0.29"
+_DOCKER_TAG="1.30.0"
 _DOCKER_ARGS="--name bakery-workspace \
     --rm \
     -it \
