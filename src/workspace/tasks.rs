@@ -1,13 +1,17 @@
 use crate::configs::Context;
 use crate::executers::{
     TaskExecuter,
-    ExecuterFactory,
+    BBBuildExecuter,
+    BBCleanExecuter,
+    NonBBBuildExecuter,
+    NonBBCleanExecuter,
 };
 use crate::workspace::WsArtifactsHandler;
 use crate::error::BError;
 use crate::fs::JsonFileReader;
 use crate::cli::Cli;
 use crate::data::{
+    TType,
     WsBuildData,
     WsTaskData,
 };
@@ -34,14 +38,16 @@ impl WsTaskHandler {
     pub fn new(data: &Value, build_data: &WsBuildData) -> Result<Self, BError> {
         let task_data: WsTaskData = WsTaskData::from_value(data, build_data)?;
         let artifacts: Vec<WsArtifactsHandler> = build_data.get_artifacts(data, task_data.build_dir())?;
-        
+
         Ok(WsTaskHandler {
             data: task_data,
             artifacts,
         })
     }
 
-    pub fn run<'a>(&self, cli: &'a Cli, build_data: &WsBuildData, bb_variables: &Vec<String>, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+    pub fn build<'a>(&self, cli: &'a Cli, build_data: &WsBuildData, bb_variables: &Vec<String>, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+        let executer: Box<dyn TaskExecuter>;
+
         if self.data.disabled() {
             cli.info(format!("Task '{}' is disabled in build config so execution is skipped", self.data.name()));
             return Ok(());
@@ -49,22 +55,57 @@ impl WsTaskHandler {
 
         if !self.data.condition() {
             cli.info(format!("Task condition for task '{}' is not meet so execution is skipped", self.data.name()));
-            return Ok(()); 
+            return Ok(());
         }
 
-        let executer: Box<dyn TaskExecuter> = ExecuterFactory::create(&self.data, build_data, bb_variables, cli);
+        match self.data.ttype() {
+            TType::Bitbake => {
+                executer = Box::new(BBBuildExecuter::new(cli, &self.data, build_data.bitbake(), bb_variables));
+            },
+            TType::NonBitbake => {
+                executer = Box::new(NonBBBuildExecuter::new(cli, &self.data));
+            }
+        }
+
         executer.exec(env_variables, dry_run, interactive)?;
 
         if !dry_run {
             self.collect(cli, build_data)?;
         }
-        
+
+        Ok(())
+    }
+
+    pub fn clean<'a>(&self, cli: &'a Cli, build_data: &WsBuildData, env_variables: &HashMap<String, String>) -> Result<(), BError> {
+        let executer: Box<dyn TaskExecuter>;
+
+        if self.data.disabled() {
+            cli.info(format!("Task '{}' is disabled in build config, execution is skipped", self.data.name()));
+            return Ok(());
+        }
+
+        if !self.data.condition() {
+            cli.info(format!("Task condition for task '{}' is not met, execution is skipped", self.data.name()));
+            return Ok(());
+        }
+
+        match self.data.ttype() {
+            TType::Bitbake => {
+                executer = Box::new(BBCleanExecuter::new(cli, &self.data, build_data.bitbake()));
+            },
+            TType::NonBitbake => {
+                executer = Box::new(NonBBCleanExecuter::new(cli, &self.data));
+            }
+        }
+
+        executer.exec(env_variables, false, false)?;
+
         Ok(())
     }
 
     pub fn collect(&self, cli: &Cli, build_data: &WsBuildData) -> Result<Vec<Collected>, BError> {
         let mut collected: Vec<Collected> = vec![];
-        
+
         if !self.artifacts.is_empty() {
             cli.info(format!("Collecting artifacts for task '{}'", self.data.name()));
             for artifact in self.artifacts.iter() {
@@ -72,7 +113,7 @@ impl WsTaskHandler {
                 let mut c: Vec<Collected> = collector.collect(self.data.build_dir(), &build_data.settings().artifacts_dir())?;
                 collected.append(&mut c);
             }
-            
+
             cli.info(
             format!("All artifacts for task '{}' have been collected to '{}'",
                 self.data.name(),
@@ -81,9 +122,9 @@ impl WsTaskHandler {
         } else {
             cli.info(
                 format!("No artifacts to collect for task '{}'",
-                    self.data.name())); 
+                    self.data.name()));
         }
-        
+
         Ok(collected)
     }
 
@@ -97,7 +138,7 @@ impl WsTaskHandler {
     pub fn data(&self) -> &WsTaskData {
         &self.data
     }
-    
+
     pub fn artifacts(&self) -> &Vec<WsArtifactsHandler> {
         &self.artifacts
     }
@@ -110,7 +151,7 @@ mod tests {
     use tempdir::TempDir;
     use std::fs::File;
     use std::io::Read;
-    
+
     use crate::cli::{BLogger, MockLogger, Cli, MockSystem, CallParams};
     use crate::workspace::{
         WsTaskHandler,
@@ -118,7 +159,7 @@ mod tests {
     };
     use crate::data::{
         TType,
-        AType, 
+        AType,
         WsBuildData,
     };
     use crate::helper::Helper;
@@ -147,7 +188,7 @@ mod tests {
     fn test_ws_task_nonbitbake() {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let json_task_str: &str = r#"
-        { 
+        {
             "index": "0",
             "name": "task-name",
             "type": "non-bitbake",
@@ -173,7 +214,7 @@ mod tests {
     fn test_ws_task_bitbake() {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let json_task_str: &str = r#"
-        { 
+        {
             "index": "2",
             "name": "task-name",
             "type": "bitbake",
@@ -195,7 +236,7 @@ mod tests {
     fn test_ws_task_bb_build_dir() {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let json_task_str: &str = r#"
-        { 
+        {
             "index": "2",
             "name": "task-name",
             "type": "bitbake",
@@ -217,7 +258,7 @@ mod tests {
     fn test_ws_task_nonbitbake_artifacts() {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let json_task_str: &str = r#"
-        { 
+        {
             "index": "2",
             "name": "task-name",
             "type": "non-bitbake",
@@ -285,7 +326,7 @@ mod tests {
     fn test_ws_task_expand_ctx() {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let json_build_config: &str = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "Test Description",
@@ -305,7 +346,7 @@ mod tests {
             ]
         }"#;
         let json_task_str: &str = r#"
-        { 
+        {
             "index": "2",
             "name": "task-name",
             "type": "bitbake",
@@ -394,7 +435,7 @@ mod tests {
         let path: &Path = temp_dir.path();
         let work_dir: PathBuf = PathBuf::from(path);
         let json_task_str: &str = r#"
-        { 
+        {
             "index": "2",
             "name": "task-name",
             "type": "bitbake",
@@ -426,7 +467,7 @@ mod tests {
             clap::Command::new("bakery"),
             None,
         );
-        task.run(&cli, &build_data, &vec![], &HashMap::new(), false, false).expect("Failed to run task!");
+        task.build(&cli, &build_data, &vec![], &HashMap::new(), false, false).expect("Failed to run task!");
     }
 
     /*
@@ -438,7 +479,7 @@ mod tests {
         let path: &Path = temp_dir.path();
         let work_dir: PathBuf = PathBuf::from(path);
         let json_task_str: &str = r#"
-        { 
+        {
             "index": "2",
             "name": "task-name",
             "type": "bitbake",
@@ -482,7 +523,7 @@ mod tests {
         let path: &Path = temp_dir.path();
         let work_dir: PathBuf = PathBuf::from(path);
         let json_task_str: &str = r#"
-        { 
+        {
             "index": "2",
             "name": "task-name",
             "recipes": [
@@ -526,7 +567,7 @@ mod tests {
             clap::Command::new("bakery"),
             None,
         );
-        task.run(&cli, &build_data, &vec![], &HashMap::new(), false, false).expect("Failed to run task!");
+        task.build(&cli, &build_data, &vec![], &HashMap::new(), false, false).expect("Failed to run task!");
     }
 
     #[test]
@@ -591,7 +632,7 @@ mod tests {
         }
         "#;
         let json_task_str: &str = r#"
-        { 
+        {
             "index": "2",
             "name": "task-name",
             "recipes": [
@@ -622,7 +663,7 @@ mod tests {
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("execute bitbake task '{}'", task.data().name())))
+            .with(mockall::predicate::eq(format!("execute bitbake build task '{}'", task.data().name())))
             .once()
             .returning(|_x| ());
         mocked_logger
@@ -636,7 +677,7 @@ mod tests {
             clap::Command::new("bakery"),
             None,
         );
-        task.run(
+        task.build(
             &cli,
             &build_data,
             &vec![],

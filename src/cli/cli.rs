@@ -55,6 +55,11 @@ impl Cli {
         Ok(())
     }
 
+    pub fn rmdir_all(&self, path: &PathBuf) -> Result<(), BError> {
+        self.system.rmdir_all(path)?;
+        Ok(())
+    }
+
     pub fn source_init_env(&self, init_file: &PathBuf, build_dir: &PathBuf) -> Result<HashMap<String, String>, BError> {
         self.system.init_env_file(init_file, build_dir)
     }
