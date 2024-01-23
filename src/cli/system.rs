@@ -39,6 +39,7 @@ impl fmt::Display for CallParams {
 pub trait System {
     fn check_call(&self, params: &CallParams) -> Result<(), BError>;
     fn init_env_file(&self, init_file: &PathBuf, build_dir: &PathBuf) -> Result<HashMap<String, String>, BError>;
+    fn rmdir_all(&self, path: &PathBuf) -> Result<(), BError>;
 }
 
 pub struct BSystem {}
@@ -129,6 +130,11 @@ impl System for BSystem {
         }
 
         Ok(env_vars)
+    }
+
+    fn rmdir_all(&self, path: &PathBuf) -> Result<(), BError> {
+        std::fs::remove_dir_all(path)?;
+        Ok(())
     }
 }
 

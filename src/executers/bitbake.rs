@@ -12,16 +12,60 @@ use crate::fs::BitbakeConf;
 use std::collections::HashMap;
 use indexmap::IndexMap;
 
-pub struct BitbakeExecuter<'a> {
+pub struct BBCleanExecuter<'a> {
+    bb_data: &'a WsBitbakeData,
+    task_data: &'a WsTaskData,
+    cli: &'a Cli,
+}
+
+impl<'a> TaskExecuter for BBCleanExecuter<'a> {
+    fn exec(&self, args_env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+        let mut note: String = String::from("Please note that the sstate cache is not cleaned!\n");
+        note.push_str(&format!("The sstate cache is located at '{}'\n", self.bb_data.sstate_dir().display()));
+        note.push_str("The sstate cache might be used by multiple builds\n");
+        note.push_str("removing the sstate cache will require a full build\n");
+        note.push_str("and can potentially take hours\n");
+
+        self.cli.info(format!("execute bitbake clean task '{}'", self.task_data.name()));
+
+        /*
+         * We are only allowed to remove the bitbake build dir. We make sure that is
+         * the case by checking that it is a subdir of the task build directory which
+         * should be set to the work directory when it is a bitbake task
+         */
+        if self.bb_data.build_dir().starts_with(self.task_data.build_dir()) {
+            self.cli.info(format!("Removing bitbake build dir '{}'", self.bb_data.build_dir().display()));
+            self.cli.rmdir_all(&self.bb_data.build_dir())?;
+            self.cli.stdout(note);
+        } else {
+            self.cli.info(format!("Bitbake build dir '{}' is outside of the task build dir '{}'",
+                self.bb_data.build_dir().display(), self.task_data.build_dir().display()))
+        }
+
+        Ok(())
+    }
+}
+
+impl<'a> BBCleanExecuter<'a> {
+    pub fn new(cli: &'a Cli, task_data: &'a WsTaskData, bb_data: &'a WsBitbakeData) -> Self {
+        BBCleanExecuter {
+            cli,
+            bb_data,
+            task_data,
+        }
+    }
+}
+
+pub struct BBBuildExecuter<'a> {
     bb_data: &'a WsBitbakeData,
     task_data: &'a WsTaskData,
     bb_variables: &'a Vec<String>,
     cli: &'a Cli,
 }
 
-impl<'a> TaskExecuter for BitbakeExecuter<'a> {
+impl<'a> TaskExecuter for BBBuildExecuter<'a> {
     fn exec(&self, args_env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
-        self.cli.info(format!("execute bitbake task '{}'", self.task_data.name()));
+        self.cli.info(format!("execute bitbake build task '{}'", self.task_data.name()));
         let force: bool = dry_run;
         let env: HashMap<String, String> = self.bb_build_env(args_env_variables)?;
         // if we are running a dry run we should always create the bb configs.
@@ -52,7 +96,7 @@ impl<'a> TaskExecuter for BitbakeExecuter<'a> {
             if !self.task_data.docker_image().is_empty() && self.task_data.docker_image() != "NA" {
                 docker_str = self.task_data.docker_image();
             }
-            
+
             /*
             Not sure that this is a real usecase for now we will just remove this but if we for some
             reason need to be able to use the docker image defined in the bb conf node of the build
@@ -65,7 +109,7 @@ impl<'a> TaskExecuter for BitbakeExecuter<'a> {
                 docker_str = self.bb_data.docker_image();
             }
             */
-            
+
             if !docker_str.is_empty() {
                 let image: DockerImage = DockerImage::new(docker_str);
                 let docker: Docker = Docker::new(image, interactive);
@@ -78,7 +122,7 @@ impl<'a> TaskExecuter for BitbakeExecuter<'a> {
     }
 }
 
-impl<'a> BitbakeExecuter<'a> {
+impl<'a> BBBuildExecuter<'a> {
     fn bb_build_env(&self, args_env_variables: &HashMap<String, String>) -> Result<HashMap<String, String>, BError> {
         // Env variables priority are
         // 1. Cli env variables
@@ -121,7 +165,7 @@ impl<'a> BitbakeExecuter<'a> {
     }
 
     pub fn new(cli: &'a Cli, task_data: &'a WsTaskData, bb_data: &'a WsBitbakeData, bb_variables: &'a Vec<String>) -> Self {
-        BitbakeExecuter {
+        BBBuildExecuter {
             cli,
             bb_data,
             task_data,
@@ -137,10 +181,9 @@ mod tests {
     use tempdir::TempDir;
 
     use crate::cli::*;
-    use crate::executers::{BitbakeExecuter, TaskExecuter};
+    use crate::executers::{BBBuildExecuter, BBCleanExecuter, TaskExecuter};
     use crate::data::{WsBuildData, WsTaskData};
     use crate::helper::Helper;
-    use crate::executers::DockerImage;
 
     #[test]
     fn test_bitbake_executer() {
@@ -197,7 +240,7 @@ mod tests {
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("execute bitbake task '{}'", task_data.name())))
+            .with(mockall::predicate::eq(format!("execute bitbake build task '{}'", task_data.name())))
             .once()
             .returning(|_x| ());
         mocked_logger
@@ -227,7 +270,7 @@ mod tests {
             clap::Command::new("bakery"),
             Some(vec!["bakery"]),
         );
-        let executer: BitbakeExecuter = BitbakeExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
+        let executer: BBBuildExecuter = BBBuildExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
         executer.exec(&env_variables, false, true).expect("Failed to execute task");
     }
 
@@ -289,7 +332,7 @@ mod tests {
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("execute bitbake task '{}'", task_data.name())))
+            .with(mockall::predicate::eq(format!("execute bitbake build task '{}'", task_data.name())))
             .once()
             .returning(|_x| ());
         mocked_logger
@@ -303,11 +346,11 @@ mod tests {
             clap::Command::new("bakery"),
             Some(vec!["bakery"]),
         );
-        let executer: BitbakeExecuter = BitbakeExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
+        let executer: BBBuildExecuter = BBBuildExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
         executer.exec(&env_variables, true, true).expect("Failed to execute task");
     }
 
-    /*
+/*
     #[test]
     fn test_bitbake_executer_docker() {
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
@@ -348,8 +391,8 @@ mod tests {
         }"#;
         let docker_cmd_line: Vec<String> = Helper::docker_cmdline_string(
             interactive,
-            &build_dir, 
-            &DockerImage::new("test-registry/task-docker:0.1"), 
+            &build_dir,
+            &DockerImage::new("test-registry/task-docker:0.1"),
             &vec![
                 String::from("cd"),
                 build_dir.to_string_lossy().to_string(),
@@ -384,7 +427,7 @@ mod tests {
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("execute bitbake task '{}'", task_data.name())))
+            .with(mockall::predicate::eq(format!("execute bitbake build task '{}'", task_data.name())))
             .once()
             .returning(|_x| ());
         mocked_logger
@@ -411,7 +454,7 @@ mod tests {
             clap::Command::new("bakery"),
             Some(vec!["bakery"]),
         );
-        let executer: BitbakeExecuter = BitbakeExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
+        let executer: BBBuildExecuter = BBBuildExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
         executer.exec(&env_variables, false, interactive).expect("Failed to execute task");
     }
 
@@ -646,7 +689,7 @@ mod tests {
             clap::Command::new("bakery"),
             Some(vec!["bakery"]),
         );
-        let executer: BitbakeExecuter = BitbakeExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
+        let executer: BBBuildExecuter = BBBuildExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
         let env: HashMap<String, String> = executer.bb_build_env(&args_env_variables).expect("Failed to process bb build env");
         Helper::assert_hashmap(&env, &HashMap::from([
             (String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))
@@ -710,7 +753,7 @@ mod tests {
             clap::Command::new("bakery"),
             Some(vec!["bakery"]),
         );
-        let executer: BitbakeExecuter = BitbakeExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
+        let executer: BBBuildExecuter = BBBuildExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
         let env: HashMap<String, String> = executer.bb_build_env(&args_env_variables).expect("Failed to process bb build env");
         Helper::assert_hashmap(&env, &HashMap::from([
             (String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR BUILD_CONFIG_ENV1 BUILD_CONFIG_ENV2")),
@@ -787,7 +830,7 @@ mod tests {
             clap::Command::new("bakery"),
             Some(vec!["bakery"]),
         );
-        let executer: BitbakeExecuter = BitbakeExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
+        let executer: BBBuildExecuter = BBBuildExecuter::new(&cli, &task_data, data.bitbake(), &bb_variables);
         let env: HashMap<String, String> = executer.bb_build_env(&args_env_variables).expect("Failed to process bb build env");
         Helper::assert_hashmap(&env, &HashMap::from([
             (String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR BUILD_CONFIG_ENV1 BUILD_CONFIG_ENV2")),
@@ -797,5 +840,76 @@ mod tests {
             (String::from("BUILD_CONFIG_ENV2"), String::from("CLI_VALUE3")),
             (String::from("SYSTEM_ENV2"), String::from("INIT_ENV_VALUE5")),
             ]));
+    }
+
+    #[test]
+    fn test_bitbake_clean_executer() {
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let env_variables: HashMap<String, String> = HashMap::new();
+        let json_build_config: &str = r#"
+        {
+            "version": "4",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {
+                "machine": "raspberrypi3",
+                "variant": "release",
+                "distro": "strix",
+                "bblayersconf": [
+                    "LCONF_VERSION=\"7\"",
+                    "BBPATH=\"${TOPDIR}\""
+                ],
+                "localconf": [
+                    "BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"",
+                    "PARALLEL_MAKE ?= \"-j ${@oe.utils.cpu_count()}\""
+                ]
+            }
+        }"#;
+        let json_task_config: &str = r#"
+        {
+            "index": "0",
+            "name": "task1-name",
+            "recipes": [
+                "test-image"
+            ]
+        }"#;
+        let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
+        let mut note: String = String::from("Please note that the sstate cache is not cleaned!\n");
+        note.push_str(&format!("The sstate cache is located at '{}'\n", data.bitbake().sstate_dir().display()));
+        note.push_str("The sstate cache might be used by multiple builds\n");
+        note.push_str("removing the sstate cache will require a full build\n");
+        note.push_str("and can potentially take hours\n");
+        let task_data: WsTaskData = WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task config");
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_rmdir_all()
+            .with(mockall::predicate::eq(data.bitbake().build_dir()))
+            .returning(|_x| Ok(()));
+        let mut mocked_logger: MockLogger = MockLogger::new();
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq(format!("execute bitbake clean task '{}'", task_data.name())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq(format!("Removing bitbake build dir '{}'", data.bitbake().build_dir().display())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_stdout()
+            .with(mockall::predicate::eq(note))
+            .once()
+            .returning(|_x| ());
+        let cli: Cli = Cli::new(
+            Box::new(mocked_logger),
+            Box::new(mocked_system),
+            clap::Command::new("bakery"),
+            Some(vec!["bakery"]),
+        );
+        let executer: BBCleanExecuter = BBCleanExecuter::new(&cli, &task_data, data.bitbake());
+        executer.exec(&env_variables, true, true).expect("Failed to execute task");
     }
 }
