@@ -626,6 +626,8 @@ mod tests {
         "#;
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
+        let mut env: HashMap<String, String> = HashMap::new();
+        env.insert(String::from("HOME"), Helper::env_home());
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
@@ -639,7 +641,7 @@ mod tests {
                         &DockerImage::new("test-registry/test-image:0.1"),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default")]
                     ),
-                env: HashMap::new(),
+                env,
                 shell: true,
             }))
             .once()
@@ -694,6 +696,8 @@ mod tests {
         "#;
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
+        let mut env: HashMap<String, String> = HashMap::new();
+        env.insert(String::from("HOME"), Helper::env_home());
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
@@ -707,7 +711,7 @@ mod tests {
                         &DockerImage::new("test-registry/test-image:0.1"),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default"), String::from("-v"), String::from("/test/testdir:/test/testdir")]
                     ),
-                env: HashMap::new(),
+                env,
                 shell: true,
             }))
             .once()
@@ -762,6 +766,8 @@ mod tests {
         "#;
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
+        let mut env: HashMap<String, String> = HashMap::new();
+        env.insert(String::from("HOME"), Helper::env_home());
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
@@ -775,7 +781,7 @@ mod tests {
                         &DockerImage::new("test-registry/test-image:0.1"),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default"), String::from("--interactive=false")]
                     ),
-                env: HashMap::new(),
+                env,
                 shell: true,
             }))
             .once()
@@ -833,6 +839,8 @@ mod tests {
         "#;
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
+        let mut env: HashMap<String, String> = HashMap::new();
+        env.insert(String::from("HOME"), Helper::env_home());
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
@@ -846,7 +854,7 @@ mod tests {
                         &DockerImage::new("test-registry/test-image:0.1"),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default")]
                     ),
-                env: HashMap::new(),
+                env,
                 shell: true,
             }))
             .once()

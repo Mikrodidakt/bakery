@@ -9,7 +9,6 @@ use crate::executers::{
     NonBitbakeExecuter,
 };
 
-use super::DeployExecuter;
 
 pub struct ExecuterFactory {}
 
