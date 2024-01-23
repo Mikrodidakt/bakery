@@ -1,6 +1,5 @@
 pub mod docker;
 pub mod recipe;
-pub mod factory;
 pub mod bitbake;
 pub mod nonbitbake;
 pub mod deploy;
@@ -9,9 +8,8 @@ pub mod upload;
 pub use docker::Docker;
 pub use docker::DockerImage;
 pub use recipe::Recipe;
-pub use factory::ExecuterFactory;
-pub use bitbake::BitbakeExecuter;
-pub use nonbitbake::NonBitbakeExecuter;
+pub use bitbake::{BBBuildExecuter, BBCleanExecuter};
+pub use nonbitbake::{NonBBBuildExecuter, NonBBCleanExecuter};
 pub use deploy::DeployExecuter;
 pub use upload::UploadExecuter;
 
