@@ -886,6 +886,7 @@ mod tests {
         mocked_system
             .expect_rmdir_all()
             .with(mockall::predicate::eq(data.bitbake().build_dir()))
+            .once()
             .returning(|_x| Ok(()));
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger

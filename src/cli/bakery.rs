@@ -23,7 +23,7 @@ impl Bakery {
         let cli: Cli = Cli::new(Box::new(BLogger::new()),
             Box::new(BSystem::new()),
             Command::new("bakery")
-                .version("0.1.29")
+                .version("1.0.30")
                 .subcommand_required(true)
                 .arg_required_else_help(true)
                 .about("Build engine for the Yocto/OE")
