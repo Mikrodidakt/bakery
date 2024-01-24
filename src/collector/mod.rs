@@ -3,12 +3,14 @@ pub mod file;
 pub mod directory;
 pub mod manifest;
 pub mod archive;
+pub mod link;
 
 pub use factory::CollectorFactory;
 pub use file::FileCollector;
 pub use directory::DirectoryCollector;
 pub use manifest::ManifestCollector;
 pub use archive::ArchiveCollector;
+pub use link::LinkCollector;
 
 use crate::error::BError;
 use crate::cli::Cli;
