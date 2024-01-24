@@ -31,6 +31,10 @@ impl WsBuildConfigHandler {
         let deploy: WsDeployHandler = WsDeployHandler::new(data)?;
         let upload: WsUploadHandler = WsUploadHandler::new(data)?;
 
+        if build_data.version() != "4" {
+            return Err(BError::InvalidBuildConfigError(build_data.version().to_string()));
+        }
+
         Ok(WsBuildConfigHandler {
             data: build_data,
             deploy,
@@ -450,5 +454,32 @@ mod tests {
             });
             i += 1;
         });
+    }
+
+    #[test]
+    fn test_ws_config_incompatible_version() {
+        let json_settings = r#"
+        {
+            "version": "4"
+        }"#;
+        let json_build_config = r#"
+        {
+            "version": "3",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch"
+        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let result: Result<WsBuildConfigHandler, BError> = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings);
+        match result {
+            Ok(_cfg) => {
+                assert!(false, "Expected an error");
+            }
+            Err(err) => {
+                assert_eq!("The build config version '3' is not compatible with current bakery version. \
+                    Update config to match the format of version '4'", err.to_string());
+            }
+        }
     }
 }
