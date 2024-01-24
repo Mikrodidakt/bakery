@@ -58,7 +58,7 @@ mod tests {
         Collected
     };
     use crate::configs::Context;
-    
+
     use tempdir::TempDir;
     use std::path::PathBuf;
     use indexmap::{indexmap, IndexMap};
@@ -174,21 +174,21 @@ mod tests {
         let json_artifacts_config: &str = r#"
         {
             "type": "directory",
-            "name": "${DIR1}",
+            "name": "$#[DIR1]",
             "artifacts": [
                 {
                     "source": "file1.txt"
                 },
                 {
                     "source": "file2.txt",
-                    "dest": "dest/${DEST_FILE}"
+                    "dest": "dest/$#[DEST_FILE]"
                 },
                 {
                     "type": "directory",
-                    "name": "${DIR2}",
+                    "name": "$#[DIR2]",
                     "artifacts": [
                         {
-                            "source": "${SRC_FILE}"
+                            "source": "$#[SRC_FILE]"
                         }
                     ]
                 }

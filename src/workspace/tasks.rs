@@ -327,7 +327,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -337,7 +337,7 @@ mod tests {
                 "FILE_NAME=file2.txt",
                 "BITBAKE_IMAGE=test-image",
                 "DEST_NAME=file-dest.txt",
-                "DEST_FILE_NAME=${DEST_NAME}",
+                "DEST_FILE_NAME=$#[DEST_NAME]",
                 "MANIFEST_FILE=test-manifest.json",
                 "KEY_CONTEXT1=VAR1",
                 "KEY_CONTEXT2=VAR2",
@@ -351,12 +351,12 @@ mod tests {
             "name": "task-name",
             "type": "bitbake",
             "recipes": [
-                "${BITBAKE_IMAGE}"
+                "$#[BITBAKE_IMAGE]"
             ],
             "artifacts": [
                 {
                     "type": "archive",
-                    "name": "${ARCHIVE_NAME}",
+                    "name": "$#[ARCHIVE_NAME]",
                     "artifacts": [
                         {
                             "source": "file3.txt",
@@ -364,31 +364,31 @@ mod tests {
                         },
                         {
                             "type": "manifest",
-                            "name": "${MANIFEST_FILE}",
+                            "name": "$#[MANIFEST_FILE]",
                             "content": {
-                                "${KEY_CONTEXT1}": "value1",
-                                "${KEY_CONTEXT2}": "value2",
-                                "${KEY_CONTEXT3}": "value3",
+                                "$#[KEY_CONTEXT1]": "value1",
+                                "$#[KEY_CONTEXT2]": "value2",
+                                "$#[KEY_CONTEXT3]": "value3",
                                 "data": {
-                                    "${KEY_CONTEXT4}": "value4"
+                                    "$#[KEY_CONTEXT4]": "value4"
                                 }
                             }
                         },
                         {
                             "type": "directory",
-                            "name": "${DIR_NAME}",
+                            "name": "$#[DIR_NAME]",
                             "artifacts": [
                                 {
                                     "source": "file1.txt",
-                                    "dest": "${DEST_NAME}"
+                                    "dest": "$#[DEST_NAME]"
                                 },
                                 {
-                                    "source": "${FILE_NAME}",
-                                    "dest": "${DEST_NAME}"
+                                    "source": "$#[FILE_NAME]",
+                                    "dest": "$#[DEST_NAME]"
                                 },
                                 {
                                     "source": "file3.txt",
-                                    "dest": "${DEST_NAME}"
+                                    "dest": "$#[DEST_NAME]"
                                 }
                             ]
                         }

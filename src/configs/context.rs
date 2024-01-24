@@ -13,14 +13,19 @@ impl Context {
             .into_iter()
             .map(|(key, value)|(key.to_lowercase(), value.clone()))
             .collect();
-        // Using this results in an error message. The reason is regex pattern
-        // that we are trying to use contains look-around assertions, specifically
-        // a negative look-behind assertion (?<!\\). In Rust's regex crate, certain
-        // look-around assertions are not supported. We added this negative look-behind
-        // assertion to try and skip \${VARIABLE} let us see if we can manage without
-        // or we will have figure something out.
-        // let regexp = Regex::new(r"(?<!\\)\$\{(\w+|\{([^}]+)\})\}").unwrap();
-        let regexp = Regex::new(r"\$\{(\w+|\{([^}]+)\})\}").unwrap();
+        /*
+         * Using
+         *
+         * let regexp = Regex::new(r"(?<!\\)\$\#\{(\w+|\{([^}]+)\})\}").unwrap();
+         *
+         * results in an error message. The reason is regex pattern
+         * that we are trying to use contains look-around assertions, specifically
+         * a negative look-behind assertion (?<!\\). In Rust's regex crate, certain
+         * look-around assertions are not supported. We added this negative look-behind
+         * assertion to try and skip \$#{VARIABLE} let us see if we can manage without
+         * or we will have figure something out.
+         */
+        let regexp = Regex::new(r"\$\#\[(\w+|\{([^}]+)\})\]").unwrap();
         Context {
             regexp,
             variables: v,
@@ -101,13 +106,13 @@ mod tests {
             "VAR1".to_string() => "var1".to_string(),
             "VAR2".to_string() => "var2".to_string(),
             "VAR3".to_string() => "var3".to_string(),
-            "VAR4".to_string() => "${VAR1}".to_string()
+            "VAR4".to_string() => "$#[VAR1]".to_string()
         };
         let ctx: Context = Context::new(&variables);
         assert_eq!(ctx.value("VAR1"), "var1");
         assert_eq!(ctx.value("VAR2"), "var2");
         assert_eq!(ctx.value("VAR3"), "var3");
-        assert_eq!(ctx.value("VAR4"), "${VAR1}");
+        assert_eq!(ctx.value("VAR4"), "$#[VAR1]");
         assert!(ctx.value("VAR5").is_empty());
     }
 
@@ -139,25 +144,25 @@ mod tests {
             "VAR3".to_string() => "var3".to_string()
         };
         let ctx: Context = Context::new(&variables);
-        assert_eq!(ctx.expand_str("Testing ${VAR1} expansion"), "Testing var1 expansion");
-        assert_eq!(ctx.expand_str("Testing ${VAR2} expansion"), "Testing var2 expansion");
-        assert_eq!(ctx.expand_str("Testing ${VAR3} expansion"), "Testing var3 expansion");
-        assert_eq!(ctx.expand_str("Testing ${VAR1} ${VAR2} ${VAR3} expansion"), "Testing var1 var2 var3 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR1] expansion"), "Testing var1 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR2] expansion"), "Testing var2 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR3] expansion"), "Testing var3 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR1] $#[VAR2] $#[VAR3] expansion"), "Testing var1 var2 var3 expansion");
     }
 
     #[test]
     fn test_task_context_nested_expand_str() {
         let variables: IndexMap<String, String> = indexmap! {
-            "VAR1".to_string() => "${VAR4}".to_string(),
+            "VAR1".to_string() => "$#[VAR4]".to_string(),
             "VAR2".to_string() => "var2".to_string(),
             "VAR3".to_string() => "var3".to_string(),
             "VAR4".to_string() => "var4".to_string()
         };
         let ctx: Context = Context::new(&variables);
-        assert_eq!(ctx.expand_str("Testing ${VAR1} expansion"), "Testing var4 expansion");
-        assert_eq!(ctx.expand_str("Testing ${VAR2} expansion"), "Testing var2 expansion");
-        assert_eq!(ctx.expand_str("Testing ${VAR3} expansion"), "Testing var3 expansion");
-        assert_eq!(ctx.expand_str("Testing ${VAR1} ${VAR2} ${VAR3} expansion"), "Testing var4 var2 var3 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR1] expansion"), "Testing var4 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR2] expansion"), "Testing var2 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR3] expansion"), "Testing var3 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR1] $#[VAR2] $#[VAR3] expansion"), "Testing var4 var2 var3 expansion");
     }
 
     #[test]
@@ -169,12 +174,12 @@ mod tests {
         };
         let mut ctx: Context = Context::new(&variables1);
         let variables2: IndexMap<String, String> = indexmap! {
-            "NEWDIR1".to_string() => "${DIR1}/newdir1".to_string(),
-            "NEWDIR2".to_string() => "${DIR2}/newdir2".to_string()
+            "NEWDIR1".to_string() => "$#[DIR1]/newdir1".to_string(),
+            "NEWDIR2".to_string() => "$#[DIR2]/newdir2".to_string()
         };
         ctx.update(&variables2);
-        assert_eq!(ctx.expand_str("/dir/${NEWDIR1}/file1.txt"), "/dir/dir1/newdir1/file1.txt");
-        assert_eq!(ctx.expand_str("/dir/${NEWDIR2}/file2.txt"), "/dir/dir2/newdir2/file2.txt");
+        assert_eq!(ctx.expand_str("/dir/$#[NEWDIR1]/file1.txt"), "/dir/dir1/newdir1/file1.txt");
+        assert_eq!(ctx.expand_str("/dir/$#[NEWDIR2]/file2.txt"), "/dir/dir2/newdir2/file2.txt");
     }
 
     #[test]
@@ -185,7 +190,7 @@ mod tests {
             "VAR3".to_string() => "var3".to_string()
         };
         let ctx: Context = Context::new(&variables);
-        let path: PathBuf = PathBuf::from("/dir1/${VAR1}/${VAR2}/${VAR3}/file1.txt");
+        let path: PathBuf = PathBuf::from("/dir1/$#[VAR1]/$#[VAR2]/$#[VAR3]/file1.txt");
         assert_eq!(ctx.expand_path(&path), PathBuf::from("/dir1/var1/var2/var3/file1.txt"));
     }
 }

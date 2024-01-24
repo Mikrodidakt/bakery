@@ -50,7 +50,7 @@ impl WsConfigFileHandler {
          */
         let default_settings: &str  = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         return WsSettingsHandler::from_str(&self.work_dir, default_settings);
     }
@@ -95,8 +95,8 @@ impl WsConfigFileHandler {
         /* TODO: we should remove this and most likely refactor the code so that the sub-commands are responsible for the build config */
         if build_config.display().to_string() == "NA.json".to_string() {
             let dummy_config_json: &str = r#"
-                {                                                                                                                   
-                    "version": "4",
+                {
+                    "version": "5",
                     "name": "all",
                     "description": "Dummy build config to be able to handle 'list' sub-command",
                     "arch": "NA"
@@ -124,9 +124,9 @@ mod tests {
         if let Some(parent_dir) = path.parent() {
             std::fs::create_dir_all(parent_dir).expect("Failed create parent dir");
         }
-    
+
         let mut file: File = File::create(&path).expect("Failed to create file");
-    
+
         // Write the JSON string to the file.
         file.write_all(json_str.as_bytes()).expect("Failed to write json to file");
     }
@@ -166,7 +166,7 @@ mod tests {
         Helper::setup_test_ws_default_dirs(&work_dir);
         let ws_settings_1: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "workspace": {
                 "configsdir": "work_dir"
             }
@@ -174,7 +174,7 @@ mod tests {
         write_json_conf(&work_dir.clone().join("workspace.json"), ws_settings_1);
         let ws_settings_2: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "workspace": {
                 "configsdir": "home_dir"
             }
@@ -197,7 +197,7 @@ mod tests {
         Helper::setup_test_ws_default_dirs(&work_dir);
         let ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "workspace": {
                 "configsdir": "work_dir"
             }
@@ -244,16 +244,16 @@ mod tests {
         let settings: WsSettingsHandler = cfg_handler.ws_settings().expect("Failed parse workspace settings");
         Helper::setup_test_ws_default_dirs(&work_dir);
         let build_conf_ws_root_dir = r#"
-        {                                                                                                                   
-            "version": "4",
+        {
+            "version": "5",
             "name": "ws-root-build-config",
             "description": "Test Description",
             "arch": "test-arch"
         }"#;
         write_json_conf(&settings.work_dir().join("test.json"),  build_conf_ws_root_dir);
         let build_conf_configs_dir = r#"
-        {                                                                                                                   
-            "version": "4",
+        {
+            "version": "5",
             "name": "ws-configs-build-config",
             "description": "Test Description",
             "arch": "test-arch"
@@ -276,8 +276,8 @@ mod tests {
         let settings: WsSettingsHandler = cfg_handler.ws_settings().expect("Failed parse workspace settings");
         Helper::setup_test_ws_default_dirs(&work_dir);
         let build_conf_configs_dir = r#"
-        {                                                                                                                   
-            "version": "4",
+        {
+            "version": "5",
             "name": "ws-configs-build-config",
             "description": "Test Description",
             "arch": "test-arch"

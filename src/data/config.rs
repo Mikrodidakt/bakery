@@ -41,23 +41,23 @@ mod tests {
     #[test]
     fn test_ws_config_data_default() {
         let json_build_config = r#"
-        {                                                                                                                   
-            "version": "4"
+        {
+            "version": "5"
         }"#;
         let data: WsConfigData = WsConfigData::from_str(json_build_config).expect("Failed to parse config data");
-        assert_eq!(data.version(), "4");
+        assert_eq!(data.version(), "5");
         assert_eq!(data.name(), "NA");
     }
 
     #[test]
     fn test_ws_config_data() {
         let json_build_config = r#"
-        {                                                                                                                   
-            "version": "4",
+        {
+            "version": "5",
             "name": "test-name"
         }"#;
         let data: WsConfigData = WsConfigData::from_str(json_build_config).expect("Failed to parse config data");
-        assert_eq!(data.version(), "4");
+        assert_eq!(data.version(), "5");
         assert_eq!(data.name(), "test-name");
     }
 }

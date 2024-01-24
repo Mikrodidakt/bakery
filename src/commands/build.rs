@@ -361,7 +361,7 @@ mod tests {
         cmd_line.append(args);
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -370,7 +370,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -476,7 +476,7 @@ mod tests {
     fn test_cmd_build_bitbake() {
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -485,7 +485,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -534,7 +534,7 @@ mod tests {
     fn test_cmd_build_non_bitbake() {
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -543,7 +543,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -593,7 +593,7 @@ mod tests {
     fn test_cmd_build_docker_bitbake() {
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -605,7 +605,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -663,7 +663,7 @@ mod tests {
     fn test_cmd_build_docker_volumes() {
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -675,7 +675,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -733,7 +733,7 @@ mod tests {
     fn test_cmd_build_docker_interactive() {
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -745,7 +745,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -803,7 +803,7 @@ mod tests {
     fn test_cmd_build_docker_args() {
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -818,7 +818,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -876,7 +876,7 @@ mod tests {
     fn test_cmd_build_task() {
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -885,7 +885,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -935,7 +935,7 @@ mod tests {
     fn test_cmd_build_tasks() {
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -944,7 +944,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -1080,7 +1080,7 @@ mod tests {
     fn test_cmd_build_context() {
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -1089,13 +1089,13 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
             "context": [
                 "DIR1=dir1",
-                "DIR2=${DIR1}/dir2",
+                "DIR2=$#[DIR1]/dir2",
                 "PROJECT=all"
             ],
             "tasks": {
@@ -1103,9 +1103,9 @@ mod tests {
                     "index": "1",
                     "name": "task-name",
                     "type": "non-bitbake",
-                    "builddir": "build/${DIR2}",
-                    "build": "test.sh build ${PROJECT}",
-                    "clean": "test.sh clean ${PROJECT}"
+                    "builddir": "build/$#[DIR2]",
+                    "build": "test.sh build $#[PROJECT]",
+                    "clean": "test.sh clean $#[PROJECT]"
                 }
             }
         }"#;
@@ -1143,7 +1143,7 @@ mod tests {
     fn test_cmd_build_env() {
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -1152,7 +1152,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",

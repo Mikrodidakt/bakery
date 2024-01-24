@@ -19,7 +19,7 @@ impl<'a> Collector for ManifestCollector<'a> {
         let manifest_file: &str = self.artifact.data().name();
         let manifest_path: PathBuf = dest.join(PathBuf::from(manifest_file));
         let manifest: Manifest = Manifest::new(&manifest_path)?;
-        
+
         self.info(self.cli, format!("Creating manifest file '{}'", manifest_file));
         manifest.write(self.artifact.data().manifest())?;
         self.info(self.cli, format!("Manifest file '{}' available at {}", manifest_file, manifest_path.display()));
@@ -114,15 +114,15 @@ mod tests {
         let json_artifacts_config: &str = r#"
         {
             "type": "manifest",
-            "name": "${MANIFEST_FILE}",
+            "name": "$#[MANIFEST_FILE]",
             "content": {
-                "test1": "${TEST_VALUE1}",
+                "test1": "$#[TEST_VALUE1]",
                 "test2": "value2",
-                "test3": "${TEST_VALUE3}",
+                "test3": "$#[TEST_VALUE3]",
                 "data": {
                     "test4": "value4",
                     "test5": "value5",
-                    "test6": "${TEST_VALUE6}"
+                    "test6": "$#[TEST_VALUE6]"
                 }
             }
         }"#;
