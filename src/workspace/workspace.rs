@@ -176,19 +176,6 @@ impl Workspace {
     pub fn expand_ctx(&mut self) {
         self.config.expand_ctx();
     }
-
-    /*
-    pub fn collect(&self, build: &str) -> bool {}
-
-    pub fn extend_build_env(&self, variables: Vec<String>) {}
-
-    pub fn set_recipes(&self, recipes: Vec<String>) {}
-
-    pub fn bb_build_env(&self, build: Option<String>) {}
-
-    // Returns a ordered list of the builds
-    pub fn builds(&self) -> IndexSet<String> {}
-    */
 }
 
 #[cfg(test)]

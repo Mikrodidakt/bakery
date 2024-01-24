@@ -62,6 +62,7 @@ impl WsBuildData {
             context::CTX_KEY_BUILDS_DIR.to_string() => settings.builds_dir().to_string_lossy().to_string(),
             context::CTX_KEY_WORK_DIR.to_string() => settings.work_dir().to_string_lossy().to_string(),
         };
+
         context.update(&ctx_built_in_variables);
         // Update the "built-in" bitbake paths in the context variables
         let bb_build_dir: PathBuf = settings.builds_dir().clone().join(PathBuf::from(product.name().to_string()));
