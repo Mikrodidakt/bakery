@@ -29,6 +29,7 @@ pub const CTX_KEY_VARIANT: &str = "VARIANT";
 pub const CTX_KEY_RELEASE_BUILD: &str = "RELEASE_BUILD";
 pub const CTX_KEY_ARCHIVER: &str = "ARCHIVER";
 pub const CTX_KEY_DEBUG_SYMBOLS: &str = "DEBUG_SYMBOLS";
+pub const CTX_KEY_DEVICE: &str = "DEVICE";
 
 impl Config for WsContextData {}
 
@@ -44,6 +45,7 @@ impl WsContextData {
             CTX_KEY_VARIANT |
             CTX_KEY_RELEASE_BUILD |
             CTX_KEY_ARCHIVER |
+            CTX_KEY_DEVICE |
             CTX_KEY_DEBUG_SYMBOLS => true,
             CTX_KEY_MACHINE |
             CTX_KEY_ARCH |
@@ -68,6 +70,18 @@ impl WsContextData {
     }
 
     pub fn new(variables: &IndexMap<String, String>) -> Result<Self, BError> {
+        /*
+         * TODO: If any of these variables are set to anything but an empty string
+         * they risk overwritting any context variable from the build config.
+         * The reason for this is because we load the context variables first
+         * from the build config and then we update the context with these
+         * built-in variables. The problem is that many of these built-in variables
+         * are getting there values from settings while others are not. Any empty
+         * string will be ignored when updating the context but if the default
+         * value is set here they will overwrite any values coming from the
+         * build config. We should potentially switch the order need to look into
+         * this in more details
+         */
         let ctx_default_variables: IndexMap<String, String> = indexmap! {
             CTX_KEY_MACHINE.to_string() => "".to_string(),
             CTX_KEY_ARCH.to_string() => "".to_string(),
@@ -87,6 +101,7 @@ impl WsContextData {
             CTX_KEY_VARIANT.to_string() => "".to_string(),
             CTX_KEY_ARCHIVER.to_string() => "".to_string(),
             CTX_KEY_DEBUG_SYMBOLS.to_string() => "".to_string(),
+            CTX_KEY_DEVICE.to_string() => "".to_string(),
         };
         let mut ctx: Context = Context::new(&ctx_default_variables);
         ctx.update(&variables);
@@ -110,8 +125,8 @@ impl WsContextData {
          */
         let mut v: IndexMap<String, String> = IndexMap::new();
         for (key, value) in variables {
+            //println!("key: {}, value: {}", key, value);
             if !value.is_empty() {
-                //println!("key: {}, value: {}", key, value);
                 v.insert(key.to_owned(), value.to_owned());
             }
         }
@@ -153,7 +168,9 @@ mod tests {
         CTX_KEY_BUILD_SHA,
         CTX_KEY_RELEASE_BUILD,
         CTX_KEY_ARCHIVER,
-        CTX_KEY_DEBUG_SYMBOLS, CTX_KEY_PLATFORM_RELEASE,
+        CTX_KEY_DEBUG_SYMBOLS,
+        CTX_KEY_PLATFORM_RELEASE,
+        CTX_KEY_DEVICE,
     };
     use crate::workspace::WsSettingsHandler;
     use crate::data::WsContextData;
@@ -170,6 +187,7 @@ mod tests {
         assert!(data.get_ctx_value(CTX_KEY_DISTRO).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_VARIANT).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_PRODUCT_NAME).is_empty());
+        assert!(data.get_ctx_value(CTX_KEY_DEVICE).is_empty());
         assert_eq!(
             data.get_ctx_path(CTX_KEY_BB_BUILD_DIR),
             PathBuf::from("")
