@@ -85,10 +85,10 @@ mod tests {
         let ctx: Context = Context::new(&variables);
         let json_build_config = r#"
         {
-            "cmd": "${SCRIPTS_DIR}/script.sh ${ARG1} ${ARG2} ${ARG3}"
+            "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
         }"#;
         let mut data: WsDeployData = WsDeployData::from_str(json_build_config).expect("Failed to parse config data");
-        assert_eq!(data.cmd(), "${SCRIPTS_DIR}/script.sh ${ARG1} ${ARG2} ${ARG3}");
+        assert_eq!(data.cmd(), "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]");
         data.expand_ctx(&ctx);
         assert_eq!(data.cmd(), "/path/to/deploy/script.sh arg1 arg2 arg3");
     }

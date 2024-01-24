@@ -162,7 +162,7 @@ mod tests {
     fn test_ws_context_data_default() {
         let json_default_build_config = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let data: WsContextData = WsContextData::from_str(json_default_build_config).expect("Failed to parse context data");
         assert!(data.get_ctx_value(CTX_KEY_MACHINE).is_empty());
@@ -204,11 +204,11 @@ mod tests {
     fn test_ws_context_data() {
         let json_settings: &str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let json_build_config = r#"
         {
-            "version": "4",
+            "version": "5",
             "context": [
                 "KEY1=value1",
                 "KEY2=value2",

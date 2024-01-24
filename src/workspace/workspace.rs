@@ -71,7 +71,7 @@ impl Workspace {
                 // the tests.
                 let default_config: &str = r#"
                 {
-                    "version": "4",
+                    "version": "5",
                     "name": "default",
                     "description": "Default build config",
                     "arch": "NA"
@@ -232,7 +232,7 @@ mod tests {
         let mut configs: IndexMap<PathBuf, String> = IndexMap::new();
         let config1_str: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name1",
             "description": "Test1 Description",
             "arch": "test-arch",
@@ -240,7 +240,7 @@ mod tests {
         }"#;
         let config2_str: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name2",
             "description": "Test2 Description",
             "arch": "test-arch",
@@ -259,8 +259,6 @@ mod tests {
         assert!(!ws.build_configs().is_empty());
         ws.build_configs().iter().for_each(|(config, description)| {
             // We cannot garanty the order
-            println!("{}", config.display());
-            println!("{}", description.to_string());
             if config.file_name().unwrap() == "test-name1.json" {
                 assert_eq!(config.as_path(), test_work_dir.join("configs/test-name1.json"));
                 assert_eq!(description.to_string(), "Test1 Description");
@@ -285,7 +283,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -313,7 +311,7 @@ mod tests {
         let mut configs: IndexMap<PathBuf, String> = IndexMap::new();
         let config_str: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",

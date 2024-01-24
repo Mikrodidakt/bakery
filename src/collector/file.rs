@@ -55,7 +55,7 @@ impl<'a> Collector for FileCollector<'a> {
 impl<'a> FileCollector<'a> {
     fn is_dir(&self, dest_path: &PathBuf, dest_str: &str) -> bool {
         let file_name = dest_path.file_name();
-        
+
         if dest_str.is_empty() {
             return true;
         }
@@ -115,7 +115,7 @@ mod tests {
     use crate::helper::Helper;
     use crate::collector::{FileCollector, Collector, Collected};
     use crate::configs::Context;
-    
+
     use tempdir::TempDir;
     use std::path::PathBuf;
     use indexmap::{indexmap, IndexMap};
@@ -299,8 +299,8 @@ mod tests {
         ];
         let json_artifacts_config: &str = r#"
         {
-            "source": "src/${DIR1}/${DIR2}/${SRC_FILE}",
-            "dest": "dest/${DIR3}/${DEST_FILE}"
+            "source": "src/$#[DIR1]/$#[DIR2]/$#[SRC_FILE]",
+            "dest": "dest/$#[DIR3]/$#[DEST_FILE]"
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let mut artifacts: WsArtifactsHandler = Helper::setup_collector_test_ws(

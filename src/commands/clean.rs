@@ -150,8 +150,6 @@ mod tests {
     use crate::commands::{BCommand, CleanCommand};
     use crate::error::BError;
     use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
-    use crate::helper::Helper;
-    use crate::executers::DockerImage;
 
     fn helper_test_clean_subcommand(json_ws_settings: &str, json_build_config: &str,
             work_dir: &PathBuf, logger: Box<dyn Logger>, system: Box<dyn System>, cmd_line: Vec<&str>) -> Result<(), BError> {
@@ -174,7 +172,7 @@ mod tests {
     fn test_cmd_clean_nonbitbake() {
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -183,7 +181,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",

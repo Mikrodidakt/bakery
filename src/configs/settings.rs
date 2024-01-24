@@ -2,7 +2,7 @@
 The settings file named settings.json or workspace.json should be placed
 in the root of the workspace. The current format is
         {
-            "version": 4,
+            "version": "5",
             "workspace": {
               "configsdir": "configs_test", // Location for build configs default is ${BAKERY_WORKSPACE}/configs
               "buildsdir": "builds_test", // This is the bitbake build directory default is ${BAKERY_WORKSPACE}/builds
@@ -155,7 +155,7 @@ mod tests {
     fn test_settings_config_workspace_dirs() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "workspace": {
               "configsdir": "configs_test",
               "includedir": "include_test",
@@ -181,7 +181,7 @@ mod tests {
     fn test_settings_config_default_workspace_dirs() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.configs_dir,  "configs");
@@ -197,7 +197,7 @@ mod tests {
     fn test_settings_config_no_configs_workspace_node() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.configs_dir, "configs");
@@ -207,7 +207,7 @@ mod tests {
     fn test_settings_config_no_builds_dir() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "workspace": {
               "artifactsdir": "artifacts_test"
             }
@@ -220,7 +220,7 @@ mod tests {
     fn test_settings_config_no_builds_workspace_node() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.builds_dir,  "builds");
@@ -230,7 +230,7 @@ mod tests {
     fn test_settings_config_no_artifacts_dir() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "workspace": {
               "buildsdir": "builds_test"
             }
@@ -243,7 +243,7 @@ mod tests {
     fn test_settings_config_no_artifacts_workspace_node() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.artifacts_dir, "artifacts");
@@ -253,7 +253,7 @@ mod tests {
     fn test_settings_config_no_scripts_dir() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "workspace": {
               "buildsdir": "builds_test"
             }
@@ -266,7 +266,7 @@ mod tests {
     fn test_settings_config_no_scripts_workspace_node() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.scripts_dir, "scripts");
@@ -276,7 +276,7 @@ mod tests {
     fn test_settings_config_no_docker_dir() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "workspace": {
               "buildsdir": "builds_test"
             }
@@ -289,7 +289,7 @@ mod tests {
     fn test_settings_config_no_docker_workspace_node() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_dir, "docker");
@@ -299,7 +299,7 @@ mod tests {
     fn test_settings_config_no_cache_dir() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "workspace": {
               "buildsdir": "builds_test"
             }
@@ -312,7 +312,7 @@ mod tests {
     fn test_settings_config_no_cache_workspace_node() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.cache_dir, ".cache");
@@ -322,7 +322,7 @@ mod tests {
     fn test_settings_config_docker_image() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "docker": {
                 "image": "test-workspace"
             }
@@ -335,7 +335,7 @@ mod tests {
     fn test_settings_config_no_docker_image() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "docker": {
                 "tag": "0.1"
             }
@@ -348,7 +348,7 @@ mod tests {
     fn test_settings_config_no_docker_image_node() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_image, "bakery-workspace");
@@ -358,7 +358,7 @@ mod tests {
     fn test_settings_config_docker_tag() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "docker": {
                 "tag": "0.1"
             }
@@ -371,7 +371,7 @@ mod tests {
     fn test_settings_config_no_docker_tag() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "docker": {
                 "image": "test-workspace"
             }
@@ -384,7 +384,7 @@ mod tests {
     fn test_settings_config_no_docker_tag_node() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_tag, "0.68");
@@ -394,7 +394,7 @@ mod tests {
     fn test_settings_config_no_docker_enabled() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_enabled, "false");
@@ -404,7 +404,7 @@ mod tests {
     fn test_settings_config_docker_enabled() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "docker": {
                 "enabled": "true"
             }
@@ -417,7 +417,7 @@ mod tests {
     fn test_settings_config_docker_registry() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "docker": {
                 "registry": "test-registry"
             }
@@ -430,7 +430,7 @@ mod tests {
     fn test_settings_config_no_docker_registry() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "docker": {
                 "image": "test-workspace"
             }
@@ -443,7 +443,7 @@ mod tests {
     fn test_settings_config_no_docker_registry_node() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_registry, "strixos");
@@ -453,7 +453,7 @@ mod tests {
     fn test_settings_config_docker_args() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "docker": {
                 "args": [
                   "--rm=true",
@@ -470,7 +470,7 @@ mod tests {
     fn test_settings_config_no_docker_args() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "docker": {
                 "image": "test-workspace"
             }
@@ -483,7 +483,7 @@ mod tests {
     fn test_settings_config_no_docker_args_node() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(&settings.docker_args, &vec![String::from("--rm=true"), String::from("-t")]);
@@ -493,7 +493,7 @@ mod tests {
     fn test_settings_config_build_configs() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                   "machine1-test",
@@ -514,7 +514,7 @@ mod tests {
     fn test_settings_config_no_supported_build_configs() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
             }
         }"#;
@@ -526,7 +526,7 @@ mod tests {
     fn test_settings_config_no_build_node() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
         assert_eq!(settings.supported.is_empty(), true);

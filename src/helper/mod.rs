@@ -221,7 +221,7 @@ impl Helper {
         }"#;
         let json_default_build_config = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(
             &work_dir,

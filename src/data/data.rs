@@ -190,7 +190,7 @@ mod tests {
     fn test_ws_build_data_default() {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
-        assert_eq!(data.version(), "4");
+        assert_eq!(data.version(), "5");
         assert_eq!(data.name(), "NA");
     }
 
@@ -198,7 +198,7 @@ mod tests {
     fn test_ws_build_data_no_tasks() {
         let json_build_config = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch"
@@ -216,7 +216,7 @@ mod tests {
     fn test_ws_build_data_tasks_error() {
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -253,7 +253,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch"
@@ -274,12 +274,12 @@ mod tests {
             "name": "task-name",
             "type": "bitbake",
             "recipes": [
-                "${RECIPE_NAME}"
+                "$#[RECIPE_NAME]"
             ]
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -299,7 +299,7 @@ mod tests {
     fn test_ws_build_tasks() {
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -390,7 +390,7 @@ mod tests {
     fn test_ws_build_data_expand_artifact() {
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -401,7 +401,7 @@ mod tests {
         let json_artifact_config: &str = r#"
         {
             "type": "manifest",
-            "name": "${MANIFEST_FILE_NAME}",
+            "name": "$#[MANIFEST_FILE_NAME]",
             "content": {
                 "key1": "value1",
                 "key2": "value2",

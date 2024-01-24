@@ -31,7 +31,7 @@ impl WsBuildConfigHandler {
         let deploy: WsDeployHandler = WsDeployHandler::new(data)?;
         let upload: WsUploadHandler = WsUploadHandler::new(data)?;
 
-        if build_data.version() != "4" {
+        if build_data.version() != "5" {
             return Err(BError::InvalidBuildConfigError(build_data.version().to_string()));
         }
 
@@ -107,7 +107,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch"
@@ -115,7 +115,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
         let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
-        assert_eq!(ws_config.build_data().version(), "4".to_string());
+        assert_eq!(ws_config.build_data().version(), "5".to_string());
         assert_eq!(ws_config.build_data().name(), "test-name".to_string());
         assert_eq!(ws_config.build_data().product().name(), "test-name".to_string());
         assert_eq!(ws_config.build_data().product().arch(), "test-arch".to_string());
@@ -151,7 +151,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -161,7 +161,7 @@ mod tests {
                 "DOCKER_IMAGE=test-image"
             ],
             "bb": {
-                "docker": "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}"
+                "docker": "$#[DOCKER_REGISTRY]/$#[DOCKER_IMAGE]:$#[DOCKER_TAG]"
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
@@ -179,7 +179,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch"
@@ -198,7 +198,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -218,55 +218,55 @@ mod tests {
                     "index": "1",
                     "name": "task1",
                     "type": "non-bitbake",
-                    "condition": "${TASK1_CONDITION}"
+                    "condition": "$#[TASK1_CONDITION]"
                 },
                 "task2": {
                     "index": "2",
                     "name": "task2",
                     "type": "non-bitbake",
-                    "condition": "${TASK2_CONDITION}"
+                    "condition": "$#[TASK2_CONDITION]"
                 },
                 "task3": {
                     "index": "3",
                     "name": "task3",
                     "type": "non-bitbake",
-                    "condition": "${TASK3_CONDITION}"
+                    "condition": "$#[TASK3_CONDITION]"
                 },
                 "task4": {
                     "index": "4",
                     "name": "task4",
                     "type": "non-bitbake",
-                    "condition": "${TASK4_CONDITION}"
+                    "condition": "$#[TASK4_CONDITION]"
                 },
                 "task5": {
                     "index": "5",
                     "name": "task5",
                     "type": "non-bitbake",
-                    "condition": "${TASK5_CONDITION}"
+                    "condition": "$#[TASK5_CONDITION]"
                 },
                 "task6": {
                     "index": "6",
                     "name": "task6",
                     "type": "non-bitbake",
-                    "condition": "${TASK6_CONDITION}"
+                    "condition": "$#[TASK6_CONDITION]"
                 },
                 "task7": {
                     "index": "7",
                     "name": "task7",
                     "type": "non-bitbake",
-                    "condition": "${TASK7_CONDITION}"
+                    "condition": "$#[TASK7_CONDITION]"
                 },
                 "task8": {
                     "index": "8",
                     "name": "task8",
                     "type": "non-bitbake",
-                    "condition": "${TASK8_CONDITION}"
+                    "condition": "$#[TASK8_CONDITION]"
                 },
                 "task9": {
                     "index": "9",
                     "name": "task9",
                     "type": "non-bitbake",
-                    "condition": "${TASK8_CONDITION}"
+                    "condition": "$#[TASK8_CONDITION]"
                 }
             }
         }"#;
@@ -298,7 +298,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -310,7 +310,7 @@ mod tests {
                     "index": "1",
                     "name": "task1",
                     "type": "non-bitbake",
-                    "builddir": "${TASK1_BUILD_DIR}/dir/"
+                    "builddir": "$#[TASK1_BUILD_DIR]/dir/"
                 },
                 "task2": {
                     "index": "2",
@@ -338,7 +338,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -350,7 +350,7 @@ mod tests {
                     "index": "0",
                     "name": "task1-name",
                     "type": "non-bitbake",
-                    "builddir": "test/${TASK1_BUILD_DIR}",
+                    "builddir": "test/$#[TASK1_BUILD_DIR]",
                     "build": "build-cmd",
                     "clean": "clean-cmd",
                     "artifacts": []
@@ -393,7 +393,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -464,7 +464,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "3",
+            "version": "4",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch"
@@ -477,8 +477,8 @@ mod tests {
                 assert!(false, "Expected an error");
             }
             Err(err) => {
-                assert_eq!("The build config version '3' is not compatible with current bakery version. \
-                    Update config to match the format of version '4'", err.to_string());
+                assert_eq!("The build config version '4' is not compatible with current bakery version. \
+                    Update config to match the format of version '5'", err.to_string());
             }
         }
     }

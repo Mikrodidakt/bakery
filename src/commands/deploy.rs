@@ -110,7 +110,7 @@ mod tests {
         let work_dir: &PathBuf = &temp_dir.into_path();
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -119,7 +119,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -130,7 +130,7 @@ mod tests {
                 "ARG3=arg3"
             ],
             "deploy": {
-                "cmd": "${SCRIPTS_DIR}/script.sh ${ARG1} ${ARG2} ${ARG3}"
+                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
             }
         }
         "#;
@@ -169,7 +169,7 @@ mod tests {
         let work_dir: &PathBuf = &temp_dir.into_path();
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -178,7 +178,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -189,7 +189,7 @@ mod tests {
                 "ARG3=arg3"
             ],
             "deploy": {
-                "cmd": "${SCRIPTS_DIR}/script.sh ${ARG1} ${ARG2} ${ARG3}"
+                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
             }
         }
         "#;

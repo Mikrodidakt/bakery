@@ -20,7 +20,7 @@ impl BCommand for ListCommand {
                 }
             }
         }
-        
+
         return String::from("default");
     }
 
@@ -126,7 +126,7 @@ mod tests {
     fn test_cmd_list_no_build_config() {
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -135,7 +135,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -163,7 +163,7 @@ mod tests {
     fn test_cmd_list_build_config() {
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -172,12 +172,12 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
             "bb": {},
-            "tasks": { 
+            "tasks": {
                 "task1": {
                     "index": "1",
                     "name": "task1",
@@ -215,7 +215,7 @@ mod tests {
     fn test_cmd_list_invalid_build_config() {
         let json_ws_settings: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "builds": {
                 "supported": [
                     "default"
@@ -224,12 +224,12 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
             "bb": {},
-            "tasks": { 
+            "tasks": {
                 "task1": {
                     "index": "1",
                     "name": "task1",

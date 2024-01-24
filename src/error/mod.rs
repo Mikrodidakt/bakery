@@ -15,7 +15,7 @@ pub enum BError {
   ParseManifestError(String),
   #[error("Failed to parse JSON. '{0}'")]
   JsonParseError(String),
-  #[error("The build config version '{0}' is not compatible with current bakery version. Update config to match the format of version '4'")]
+  #[error("The build config version '{0}' is not compatible with current bakery version. Update config to match the format of version '5'")]
   InvalidBuildConfigError(String),
   #[error("{0}")]
   IOError(String),

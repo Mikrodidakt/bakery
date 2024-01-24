@@ -129,7 +129,7 @@ impl WsBitbakeData {
 
     pub fn deploy_dir(&self) -> PathBuf {
         self.build_dir().join(PathBuf::from(self.deploy_dir.clone()))
-    }    
+    }
 
     pub fn sstate_dir(&self) -> PathBuf {
         self.settings.cache_dir().clone().join(&self.arch).join("sstate-cache".to_string())
@@ -157,11 +157,11 @@ mod tests {
     fn test_ws_bitbake_data_default() {
         let json_settings: &str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let json_build_config = r#"
-        {                                                                                                                   
-            "version": "4"
+        {
+            "version": "5"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
@@ -185,15 +185,15 @@ mod tests {
     fn test_ws_bitbake_data() {
         let json_settings: &str = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let json_build_config = r#"
-        {                                                                                                                   
-            "version": "4",
+        {
+            "version": "5",
             "name": "test-name",
             "arch": "test-arch",
             "bb": {
-                "machine": "test-machine",                                                                                           
+                "machine": "test-machine",
                 "distro": "test-distro",
                 "deploydir": "tmp/test/deploy",
                 "docker": "test-registry/test-image:0.1",

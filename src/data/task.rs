@@ -100,7 +100,7 @@ impl WsTaskData {
             env,
         })
     }
-    
+
     pub fn expand_ctx(&mut self, ctx: &Context) {
         self.name = ctx.expand_str(&self.name);
         self.build_dir = ctx.expand_path(&self.build_dir);
@@ -178,11 +178,11 @@ mod tests {
     use crate::error::BError;
     use crate::helper::Helper;
     use crate::data::{
-        WsTaskData, 
+        WsTaskData,
         TType,
     };
     use crate::configs::Context;
-    
+
     #[test]
     fn test_ws_task_data_nonbitbake() {
         let json_task_config: &str = r#"
@@ -243,10 +243,10 @@ mod tests {
         let json_task_config: &str = r#"
         {
             "index": "0",
-            "name": "${TASK_NAME}",
+            "name": "$#[TASK_NAME]",
             "recipes": [
-                "${IMAGE_RECIPE}",
-                "${IMAGE_RECIPE_SDK}"
+                "$#[IMAGE_RECIPE]",
+                "$#[IMAGE_RECIPE_SDK]"
             ]
         }"#;
         let ctx_variables: IndexMap<String, String> = indexmap! {
@@ -353,8 +353,8 @@ mod tests {
             "type": "non-bitbake",
             "builddir": "test/builddir",
             "env": [
-                "KEY1=${CTX_VALUE1}",
-                "KEY2=${CTX_VALUE2}",
+                "KEY1=$#[CTX_VALUE1]",
+                "KEY2=$#[CTX_VALUE2]",
                 "KEY3=VALUE3"
             ],
             "build": "build-cmd",
@@ -362,7 +362,7 @@ mod tests {
         }"#;
         let ctx_variables: IndexMap<String, String> = indexmap! {
             "CTX_VALUE1".to_string() => "ctx-value1".to_string(),
-            "CTX_VALUE2".to_string() => "${CTX_VALUE3}-value2".to_string(),
+            "CTX_VALUE2".to_string() => "$#[CTX_VALUE3]-value2".to_string(),
             "CTX_VALUE3".to_string() => "ctx".to_string(),
         };
         let work_dir: PathBuf = PathBuf::from("/workspace");

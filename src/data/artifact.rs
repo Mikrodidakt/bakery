@@ -283,17 +283,17 @@ mod tests {
         let json_artifact_config: &str = r#"
         {
             "type": "archive",
-            "name": "${ARCHIVE_FILE}",
+            "name": "$#[ARCHIVE_FILE]",
             "artifacts": [
                 {
                     "type": "directory",
-                    "name": "${DIR1}/test-dir",
+                    "name": "$#[DIR1]/test-dir",
                     "artifacts": [
                         {
-                            "source": "${DIR2}/file2.txt"
+                            "source": "$#[DIR2]/file2.txt"
                         },
                         {
-                            "source": "${DIR3}/file3.txt"
+                            "source": "$#[DIR3]/file3.txt"
                         }
                     ]
                 }
@@ -319,13 +319,13 @@ mod tests {
         let json_artifact_config: &str = r#"
         {
             "type": "manifest",
-            "name": "${MANIFEST_FILE}",
+            "name": "$#[MANIFEST_FILE]",
             "content": {
-                "${KEY_CONTEXT1}": "value1",
-                "${KEY_CONTEXT2}": "value2",
-                "${KEY_CONTEXT3}": "value3",
+                "$#[KEY_CONTEXT1]": "value1",
+                "$#[KEY_CONTEXT2]": "value2",
+                "$#[KEY_CONTEXT3]": "value3",
                 "data": {
-                    "${KEY_CONTEXT4}": "value4"
+                    "$#[KEY_CONTEXT4]": "value4"
                 }
             }
         }
@@ -347,7 +347,7 @@ mod tests {
         let json_artifact_config: &str = r#"
         {
             "type": "manifest",
-            "name": "${MANIFEST_FILE}"
+            "name": "$#[MANIFEST_FILE]"
         }
         "#;
         let context: Context = Context::new(&ctx_variables);
