@@ -47,14 +47,14 @@ mod tests {
     fn test_ws_deploy_handler() {
         let json_build_config = r#"
         {
-            "cmd": "${SCRIPTS_DIR}/script.sh ${ARG1} ${ARG2} ${ARG3}"
+            "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
         }"#;
         let handler: WsDeployHandler = WsDeployHandler::from_str(json_build_config).expect("Failed to parse build config");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["${SCRIPTS_DIR}/script.sh", "${ARG1}", "${ARG2}", "${ARG3}"]
+                cmd_line: vec!["$#[SCRIPTS_DIR]/script.sh", "$#[ARG1]", "$#[ARG2]", "$#[ARG3]"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
