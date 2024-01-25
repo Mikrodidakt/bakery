@@ -72,7 +72,7 @@ impl WsContextData {
     pub fn new(variables: &IndexMap<String, String>) -> Result<Self, BError> {
         /*
          * TODO: If any of these variables are set to anything but an empty string
-         * they risk overwritting any context variable from the build config.
+         * they risk over write any context variable from the build config.
          * The reason for this is because we load the context variables first
          * from the build config and then we update the context with these
          * built-in variables. The problem is that many of these built-in variables
