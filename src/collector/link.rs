@@ -16,12 +16,19 @@ pub struct LinkCollector<'a> {
 
 impl<'a> Collector for LinkCollector<'a> {
     fn collect(&self, src: &PathBuf, dest: &PathBuf) -> Result<Vec<Collected>, BError> {
-        let mut collected: Vec<Collected> = vec![];
-        let dest_str: &str = self.artifact.data().dest();
+        let link_name: &str = self.artifact.data().name();
         let src_path: PathBuf = src.join(PathBuf::from(self.artifact.data().source()));
-        let dest_path: PathBuf = dest.join(PathBuf::from(dest_str));
+        let link_path: PathBuf = dest.join(PathBuf::from(link_name));
+        let mut collected: Vec<Collected> = vec![];
 
-        fs::symlink(src_path, dest_path)?;
+        if !src_path.exists() {
+            return Err(BError::IOError(format!("File '{}' dose not exists", src_path.display())));
+        }
+
+        self.info(self.cli, format!("Link file {} => {}", link_path.display(), src_path.display()));
+        std::fs::create_dir_all(link_path.parent().unwrap())?;
+        fs::symlink(&src_path, &link_path)?;
+        collected.push(Collected { src: src_path.clone(), dest: link_path.clone() });
 
         Ok(collected)
     }
@@ -44,6 +51,136 @@ impl<'a> LinkCollector<'a> {
         LinkCollector {
             artifact,
             cli,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::workspace::WsArtifactsHandler;
+    use crate::data::WsBuildData;
+    use crate::helper::Helper;
+    use crate::collector::{LinkCollector, Collector, Collected};
+    use crate::configs::Context;
+
+    use tempdir::TempDir;
+    use std::path::PathBuf;
+    use indexmap::{indexmap, IndexMap};
+
+    #[test]
+    fn test_link_collector_source() {
+        let src_file_name: &str = "file.txt";
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = PathBuf::from(temp_dir.path());
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
+        let files: Vec<PathBuf> = vec![
+            task_build_dir.clone().join(src_file_name),
+        ];
+        let json_artifacts_config: &str = r#"
+        {
+            "type": "link",
+            "name": "link.txt",
+            "source": "file.txt"
+        }"#;
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
+        let artifacts: WsArtifactsHandler = Helper::setup_collector_test_ws(
+            &work_dir,
+            &task_build_dir,
+            &files,
+            &build_data,
+            json_artifacts_config);
+        let collector: LinkCollector = LinkCollector::new(&artifacts, None);
+        let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
+        let dest: PathBuf = build_data.settings().artifacts_dir().clone().join("link.txt");
+        assert_eq!(collected, vec![
+            Collected { src: task_build_dir.join(src_file_name), dest: dest.clone() }
+        ]);
+        assert!(dest.exists());
+    }
+
+    #[test]
+    fn test_link_collector_context() {
+        let src_file_name: &str = "src/dir1/dir2/src-file.txt";
+        let link_file_name: &str = "link-ctx1-ctx2.txt";
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = PathBuf::from(temp_dir.path());
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
+        let files: Vec<PathBuf> = vec![
+            task_build_dir.clone().join(src_file_name)
+        ];
+        let json_artifacts_config: &str = r#"
+        {
+            "type": "link",
+            "name": "$#[LINK_FILE]",
+            "source": "src/$#[DIR1]/$#[DIR2]/$#[SRC_FILE]"
+        }"#;
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
+        let mut artifacts: WsArtifactsHandler = Helper::setup_collector_test_ws(
+            &work_dir,
+            &task_build_dir,
+            &files,
+            &build_data,
+            json_artifacts_config);
+        let variables: IndexMap<String, String> = indexmap! {
+                "DIR1".to_string() => "dir1".to_string(),
+                "DIR2".to_string() => "dir2".to_string(),
+                "DIR3".to_string() => "dir3".to_string(),
+                "CTX1".to_string() => "ctx1".to_string(),
+                "CTX2".to_string() => "ctx2".to_string(),
+                "LINK_FILE".to_string() => "link-$#[CTX1]-$#[CTX2].txt".to_string(),
+                "SRC_FILE".to_string() => "src-file.txt".to_string(),
+        };
+        let context: Context = Context::new(&variables);
+        artifacts.expand_ctx(&context);
+        let collector: LinkCollector = LinkCollector::new(&artifacts, None);
+        let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
+        let dest: PathBuf = build_data.settings().artifacts_dir().clone().join(link_file_name);
+        assert_eq!(collected, vec![
+            Collected { src: task_build_dir.join(src_file_name), dest: dest.clone() },
+        ]);
+        assert!(dest.exists());
+    }
+
+    #[test]
+    fn test_link_collector_no_source() {
+        let src_file_name: &str = "file.txt";
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = PathBuf::from(temp_dir.path());
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
+        /*
+         * No source file will be created so we can make sure that
+         * we catches that and aborts
+         */
+        let files: Vec<PathBuf> = vec![];
+        let json_artifacts_config: &str = r#"
+        {
+            "type": "link",
+            "name": "link.txt",
+            "source": "file.txt"
+        }"#;
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
+        let artifacts: WsArtifactsHandler = Helper::setup_collector_test_ws(
+            &work_dir,
+            &task_build_dir,
+            &files,
+            &build_data,
+            json_artifacts_config);
+        let collector: LinkCollector = LinkCollector::new(&artifacts, None);
+        assert!(!task_build_dir.join(src_file_name).exists());
+        let result: Result<Vec<Collected>, crate::error::BError> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir());
+        match result {
+            Ok(_status) => {
+                panic!("We should have recived an error because the source is missing!");
+            }
+            Err(e) => {
+                assert_eq!(
+                    e.to_string(),
+                    format!("File '{}' dose not exists", task_build_dir.join(src_file_name).display())
+                );
+            }
         }
     }
 }

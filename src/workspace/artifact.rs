@@ -331,4 +331,26 @@ mod tests {
             i += 1;
         });
     }
+
+    #[test]
+    fn test_ws_artifacts_link() {
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
+        let json_artifacts_config: &str = r#"
+        {
+            "type": "link",
+            "name": "link.txt",
+            "source": "test/file0-1.txt"
+        }"#;
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
+        let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
+            json_artifacts_config,
+            &task_build_dir,
+            &build_data
+        ).expect("Failed to parse config");
+        assert_eq!(artifacts.data().atype(), &AType::Link);
+        assert_eq!(artifacts.data().name(), "link.txt");
+        assert_eq!(artifacts.data().source(), "test/file0-1.txt");
+        assert!(artifacts.children().is_empty());
+    }
 }

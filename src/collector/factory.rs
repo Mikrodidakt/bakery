@@ -4,6 +4,7 @@ use crate::collector::{
     DirectoryCollector,
     ManifestCollector,
     ArchiveCollector,
+    LinkCollector,
 };
 use crate::data::AType;
 use crate::workspace::WsArtifactsHandler;
@@ -27,6 +28,9 @@ impl CollectorFactory {
             },
             AType::Manifest => {
                 collector = Box::new(ManifestCollector::new(artifact, cli));
+            },
+            AType::Link => {
+                collector = Box::new(LinkCollector::new(artifact, cli));
             }
         }
         collector.verify_attributes()?;
