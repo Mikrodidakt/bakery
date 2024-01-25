@@ -62,6 +62,7 @@ impl BCommand for UploadCommand {
       }
 
       workspace.update_ctx(&context);
+
       let upload: &WsUploadHandler = workspace.config().upload();
       upload.run(cli, &HashMap::new(), false, self.cmd.interactive)
   }
