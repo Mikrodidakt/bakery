@@ -10,6 +10,7 @@ pub enum AType {
     Directory,
     Archive,
     Manifest,
+    Link,
 }
 
 // TODO: we should consider using IndexSet instead of vector to make sure we
@@ -42,7 +43,7 @@ impl WsArtifactData {
         let dest: String = Self::get_str_value("dest", &data, Some(String::from("")))?;
         let manifest: String = Self::get_str_manifest("content", &data, Some(String::from("{}")))?;
 
-        if ttype != "file" && ttype != "directory" && ttype != "archive" && ttype != "manifest" {
+        if ttype != "file" && ttype != "directory" && ttype != "archive" && ttype != "manifest" && ttype != "link" {
             return Err(BError::ParseArtifactsError(format!("Invalid type '{}'", ttype)));
         }
         if ttype == "file" && source.is_empty() {
@@ -56,6 +57,9 @@ impl WsArtifactData {
         }
         if ttype == "manifest" && name.is_empty() {
             return Err(BError::ParseArtifactsError(format!("The 'manifest' type requires a 'name'")));
+        }
+        if ttype == "link" && (name.is_empty() || source.is_empty()) {
+            return Err(BError::ParseArtifactsError(format!("The 'link' type requires a 'name' and 'source'")));
         }
 
         let enum_ttype: AType;
@@ -71,6 +75,9 @@ impl WsArtifactData {
             },
             "manifest" => {
                 enum_ttype = AType::Manifest;
+            },
+            "link" => {
+                enum_ttype = AType::Link;
             },
             _ => {
                 return Err(BError::ParseArtifactsError(format!("Invalid type '{}'", ttype)));
@@ -105,6 +112,10 @@ impl WsArtifactData {
             AType::Manifest => {
                 self.name = ctx.expand_str(&self.name);
                 self.manifest = ctx.expand_str(&self.manifest);
+            },
+            AType::Link => {
+                self.name = ctx.expand_str(&self.name);
+                self.source = ctx.expand_str(&self.source);
             },
             _ => {
                 panic!("Invalid 'artifact' format in build config. Invalid type '{:?}'", self.atype);
@@ -357,5 +368,83 @@ mod tests {
         assert_eq!(data.name(), "test-manifest.json");
         assert!(!data.manifest().is_empty());
         assert_eq!(data.manifest(), "{}");
+    }
+
+    #[test]
+    fn test_ws_artifact_data_link_type() {
+        let json_artifact_config: &str = r#"
+        {
+            "type": "link",
+            "name": "link.txt",
+            "source": "file.txt"
+        }
+        "#;
+        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        assert!(data.dest().is_empty());
+        assert_eq!(data.atype(), &AType::Link);
+        assert_eq!(data.source(), "file.txt");
+        assert_eq!(data.name(), "link.txt");
+    }
+
+    #[test]
+    fn test_ws_artifact_data_link_ctx() {
+        let ctx_variables: IndexMap<String, String> = indexmap! {
+            "LINK_NAME".to_string() => "ctx-link.txt".to_string()
+        };
+        let json_artifact_config: &str = r#"
+        {
+            "type": "link",
+            "name": "$#[LINK_NAME]",
+            "source": "file.txt"
+        }
+        "#;
+        let context: Context = Context::new(&ctx_variables);
+        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        data.expand_ctx(&context);
+        assert!(data.dest().is_empty());
+        assert_eq!(data.atype(), &AType::Link);
+        assert_eq!(data.source(), "file.txt");
+        assert_eq!(data.name(), "ctx-link.txt");
+    }
+
+    #[test]
+    fn test_ws_artifact_data_error_no_link_name() {
+        let json_artifact_config: &str = r#"
+        {
+            "type": "link"
+        }
+        "#;
+        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value);
+        match result {
+            Ok(_rconfig) => {
+                panic!("We should have recived an error because the type is invalid!");
+            }
+            Err(e) => {
+                assert_eq!(e.to_string(), String::from("Invalid 'artifact' node in build config. The 'link' type requires a 'name' and 'source'"));
+            }
+        }
+    }
+
+    #[test]
+    fn test_ws_artifact_data_error_no_link_source() {
+        let json_artifact_config: &str = r#"
+        {
+            "type": "link",
+            "name": "link.txt"
+        }
+        "#;
+        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value);
+        match result {
+            Ok(_rconfig) => {
+                panic!("We should have recived an error because the type is invalid!");
+            }
+            Err(e) => {
+                assert_eq!(e.to_string(), String::from("Invalid 'artifact' node in build config. The 'link' type requires a 'name' and 'source'"));
+            }
+        }
     }
 }
