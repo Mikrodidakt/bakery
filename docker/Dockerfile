@@ -15,11 +15,11 @@ RUN apt-get update && \
         gcc-multilib \
         build-essential \
         gcc-11 \
-	    gcc-11-base \
-	    chrpath \
+	gcc-11-base \
+	chrpath \
         socat \
         file \
-	    python-is-python3 \
+	python-is-python3 \
         python3-pip \
         xz-utils  \
         locales \
@@ -89,11 +89,15 @@ RUN set -eux; \
     cargo --version; \
     rustc --version;
 
-WORKDIR bakery
+WORKDIR /bakery
 COPY ../../Cargo.lock .
 COPY ../../Cargo.toml .
 COPY ../../src src
-RUN cargo install --path .
+RUN cargo install --path . && rm -rf /bakery
+
+# We want this to exec last to make sure that the the other
+# scripts is over write PATH
+COPY ../../scripts/profile-bakery.sh /etc/profile.d/zz-99-bakery.sh
 
 RUN rm /bin/sh && \
     ln -s /bin/bash /bin/sh
