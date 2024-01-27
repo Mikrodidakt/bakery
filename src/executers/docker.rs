@@ -81,6 +81,8 @@ impl Docker {
             format!("{}/.ssh:{}/.ssh:ro", self.env_home(), self.env_home()),
             String::from("-v"),
             format!("{}/.docker:{}/.docker", self.env_home(), self.env_home()),
+            String::from("-v"),
+            format!("{}/.bakery:{}/.bakery", self.env_home(), self.env_home()),
         ]
     }
 
