@@ -95,9 +95,10 @@ COPY ../../Cargo.toml .
 COPY ../../src src
 RUN cargo install --path . && rm -rf /bakery
 
-# We want this to exec last to make sure that the the other
-# scripts is over write PATH
-COPY ../../scripts/profile-bakery.sh /etc/profile.d/zz-99-bakery.sh
+# Setting up a bakery specific bash env pulled in by /etc/bash.bashrc 
+RUN mkdir -p /etc/bakery && \
+     echo "source /etc/bakery/bakery.bashrc" >> /etc/bash.bashrc
+COPY ../../scripts/bakery.bashrc /etc/bakery/bakery.bashrc
 
 RUN rm /bin/sh && \
     ln -s /bin/bash /bin/sh

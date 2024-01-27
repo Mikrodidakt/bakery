@@ -221,7 +221,7 @@ impl ShellCommand {
     pub fn run_bitbake_shell(&self, cli: &Cli, workspace: &Workspace, args_env_variables: &HashMap<String, String>, docker: &String) -> Result<(), BError> {
         let cmd_line: Vec<String> = vec![
             String::from("/bin/bash"),
-            String::from("-l"),
+            String::from("-i"),
         ];
 
         let mut env: HashMap<String, String> = self.bb_build_env(cli, workspace, args_env_variables)?;
@@ -266,7 +266,7 @@ impl ShellCommand {
     pub fn run_shell(&self, cli: &Cli, workspace: &Workspace, docker: &String) -> Result<(), BError> {
         let cmd_line: Vec<String> = vec![
             String::from("/bin/bash"),
-            String::from("-l"),
+            String::from("-i"),
         ];
 
         cli.info(String::from("Starting shell"));

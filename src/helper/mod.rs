@@ -317,8 +317,6 @@ impl Helper {
             String::from("-v"),
             format!("{}/.ssh:{}/.ssh:ro", Helper::env_home(), Helper::env_home()),
             String::from("-v"),
-            format!("{}/.bashrc:{}/.bashrc", Helper::env_home(), Helper::env_home()),
-            String::from("-v"),
             format!("{}/.docker:{}/.docker", Helper::env_home(), Helper::env_home()),
             String::from("-v"),
             String::from("/var/run/docker.sock:/var/run/docker.sock"),
