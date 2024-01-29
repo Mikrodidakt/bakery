@@ -4,6 +4,8 @@ set -eux
 
 # For now lets install rust in the default
 # location which is the home directory
+# so it doesn't end up getting in conflict
+# with an already existing installation
 #export RUSTUP_HOME=/usr/local/rustup
 #export CARGO_HOME=/usr/local/cargo
 #export PATH=$HOME/.cargo/bin:$PATH
