@@ -2,9 +2,11 @@
 #
 set -eux
 
-export RUSTUP_HOME=/usr/local/rustup
-export CARGO_HOME=/usr/local/cargo
-export PATH=/usr/local/cargo/bin:$PATH
+# For now lets install rust in the default
+# location which is the home directory
+#export RUSTUP_HOME=/usr/local/rustup
+#export CARGO_HOME=/usr/local/cargo
+#export PATH=$HOME/.cargo/bin:$PATH
 RUST_VERSION=1.71.1
 
 dpkgArch="$(dpkg --print-architecture)"
