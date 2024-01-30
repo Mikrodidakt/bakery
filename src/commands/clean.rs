@@ -1,6 +1,5 @@
-use indexmap::{IndexMap, indexmap};
+use indexmap::IndexMap;
 use std::collections::HashMap;
-use std::hash::Hash;
 
 use crate::commands::{BCommand, BBaseCommand};
 use crate::data::WsContextData;

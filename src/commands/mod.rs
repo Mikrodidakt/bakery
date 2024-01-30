@@ -8,13 +8,13 @@ pub mod deploy;
 pub mod upload;
 
 use std::collections::HashMap;
-use std::hash::Hash;
-use indexmap::{IndexMap, indexmap};
+use indexmap::IndexMap;
+use std::path::PathBuf;
 
 use crate::error::BError;
 use crate::cli::Cli;
 use crate::workspace::Workspace;
-use crate::executers::docker::{Docker, DockerImage};
+use crate::executers::docker::Docker;
 
 // Bakery SubCommand
 pub trait BCommand {
@@ -46,6 +46,10 @@ pub trait BCommand {
         let env: HashMap<String, String> = cli.env();
 
         cli.info(format!("Bootstrap bakery into docker"));
+
+        if !PathBuf::from("/usr/bin/docker").exists() {
+            return Err(BError::DockerError());
+        }
 
         return docker.bootstrap_bakery(cmd_line, cli, &workspace.settings().docker_top_dir(),
             &workspace.settings().work_dir(), workspace.settings().docker_args(), volumes, &env);
