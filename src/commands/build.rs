@@ -609,9 +609,6 @@ mod tests {
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
-            "bb": {
-                "docker": "test-registry/test-image:0.1"
-            },
             "tasks": {
                 "task-name": {
                     "index": "1",
@@ -626,8 +623,6 @@ mod tests {
         "#;
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
-        let mut env: HashMap<String, String> = HashMap::new();
-        env.insert(String::from("HOME"), Helper::env_home());
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
@@ -638,10 +633,10 @@ mod tests {
                         &vec![],
                         &work_dir.clone(),
                         &work_dir,
-                        &DockerImage::new("test-registry/test-image:0.1"),
+                        &DockerImage::new("strixos/bakery-workspace:0.68"),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default")]
                     ),
-                env,
+                env: HashMap::new(),
                 shell: true,
             }))
             .once()
@@ -649,6 +644,9 @@ mod tests {
         mocked_system
             .expect_init_env_file()
             .returning(|_x, _y| Ok(HashMap::new()));
+        mocked_system
+            .expect_env()
+            .returning(||HashMap::new());
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,
@@ -679,9 +677,6 @@ mod tests {
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
-            "bb": {
-                "docker": "test-registry/test-image:0.1"
-            },
             "tasks": {
                 "task-name": {
                     "index": "1",
@@ -696,8 +691,6 @@ mod tests {
         "#;
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
-        let mut env: HashMap<String, String> = HashMap::new();
-        env.insert(String::from("HOME"), Helper::env_home());
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
@@ -708,10 +701,10 @@ mod tests {
                         &vec![String::from("/test/testdir:/test/testdir")],
                         &work_dir.clone(),
                         &work_dir,
-                        &DockerImage::new("test-registry/test-image:0.1"),
+                        &DockerImage::new("strixos/bakery-workspace:0.68"),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default"), String::from("-v"), String::from("/test/testdir:/test/testdir")]
                     ),
-                env,
+                env: HashMap::new(),
                 shell: true,
             }))
             .once()
@@ -719,6 +712,9 @@ mod tests {
         mocked_system
             .expect_init_env_file()
             .returning(|_x, _y| Ok(HashMap::new()));
+        mocked_system
+            .expect_env()
+            .returning(||HashMap::new());
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,
@@ -749,9 +745,6 @@ mod tests {
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
-            "bb": {
-                "docker": "test-registry/test-image:0.1"
-            },
             "tasks": {
                 "task-name": {
                     "index": "1",
@@ -766,8 +759,6 @@ mod tests {
         "#;
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
-        let mut env: HashMap<String, String> = HashMap::new();
-        env.insert(String::from("HOME"), Helper::env_home());
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
@@ -778,10 +769,10 @@ mod tests {
                         &vec![],
                         &work_dir.clone(),
                         &work_dir,
-                        &DockerImage::new("test-registry/test-image:0.1"),
+                        &DockerImage::new("strixos/bakery-workspace:0.68"),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default"), String::from("--interactive=false")]
                     ),
-                env,
+                env: HashMap::new(),
                 shell: true,
             }))
             .once()
@@ -789,6 +780,9 @@ mod tests {
         mocked_system
             .expect_init_env_file()
             .returning(|_x, _y| Ok(HashMap::new()));
+        mocked_system
+            .expect_env()
+            .returning(||HashMap::new());
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,
@@ -822,9 +816,6 @@ mod tests {
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
-            "bb": {
-                "docker": "test-registry/test-image:0.1"
-            },
             "tasks": {
                 "task-name": {
                     "index": "1",
@@ -839,8 +830,6 @@ mod tests {
         "#;
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
-        let mut env: HashMap<String, String> = HashMap::new();
-        env.insert(String::from("HOME"), Helper::env_home());
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
@@ -851,10 +840,10 @@ mod tests {
                         &vec![],
                         &work_dir.clone(),
                         &work_dir,
-                        &DockerImage::new("test-registry/test-image:0.1"),
+                        &DockerImage::new("strixos/bakery-workspace:0.68"),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default")]
                     ),
-                env,
+                env: HashMap::new(),
                 shell: true,
             }))
             .once()
@@ -862,6 +851,9 @@ mod tests {
         mocked_system
             .expect_init_env_file()
             .returning(|_x, _y| Ok(HashMap::new()));
+        mocked_system
+            .expect_env()
+            .returning(||HashMap::new());
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,

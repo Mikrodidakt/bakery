@@ -40,6 +40,8 @@ pub trait System {
     fn check_call(&self, params: &CallParams) -> Result<(), BError>;
     fn init_env_file(&self, init_file: &PathBuf, build_dir: &PathBuf) -> Result<HashMap<String, String>, BError>;
     fn rmdir_all(&self, path: &PathBuf) -> Result<(), BError>;
+    fn env(&self) -> HashMap<String, String>;
+
 }
 
 pub struct BSystem {}
@@ -135,6 +137,21 @@ impl System for BSystem {
     fn rmdir_all(&self, path: &PathBuf) -> Result<(), BError> {
         std::fs::remove_dir_all(path)?;
         Ok(())
+    }
+
+    fn env(&self) -> HashMap<String, String> {
+        let env_vars: std::env::Vars = std::env::vars();
+        let mut env: HashMap<String, String> = HashMap::new();
+
+        /*
+         * When we bootstrap bakery into docker we should make sure that we pull
+         * in the entire env from the parent
+         */
+        for (k, v) in env_vars {
+            env.insert(k, v);
+        }
+
+        env
     }
 }
 
