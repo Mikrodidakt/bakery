@@ -207,7 +207,7 @@ mod tests {
         assert_eq!(ws.settings().include_dir(), test_work_dir.join("configs/include"));
         let docker_image: DockerImage = ws.settings().docker_image();
         assert_eq!(format!("{}", docker_image), "strixos/bakery-workspace:0.68");
-        assert_eq!(ws.settings().docker_args(), &vec!["--rm=true".to_string(), "-t".to_string()]);
+        assert!(ws.settings().docker_args().is_empty());
         assert!(ws.settings().supported_builds().is_empty());
     }
 
@@ -286,7 +286,7 @@ mod tests {
         assert_eq!(ws.settings().include_dir(), PathBuf::from("/test_work_dir/configs/include"));
         let docker_image: DockerImage = ws.settings().docker_image();
         assert_eq!(format!("{}", docker_image), "strixos/bakery-workspace:0.68");
-        assert_eq!(ws.settings().docker_args(), &vec!["--rm=true".to_string(), "-t".to_string()]);
+        assert!(ws.settings().docker_args().is_empty());
         assert_eq!(ws.settings().supported_builds(), &vec!["default".to_string()]);
     }
 

@@ -18,7 +18,7 @@ in the root of the workspace. The current format is
               ]
             },
             "docker": {
-              "enabled": "true",
+              "disabled": "true",
               "registry": "test",
               "image": "test-workspace",
               "tag": "0.1",
@@ -66,7 +66,7 @@ pub struct WsSettings {
     pub docker_image: String,
     pub docker_registry: String,
     pub docker_args: Vec<String>,
-    pub docker_enabled: String,
+    pub docker_disabled: String,
     pub docker_top_dir: String,
 }
 
@@ -88,8 +88,8 @@ impl WsSettings {
         let mut docker_image: String = String::from(BAKERY_DOCKER_IMAGE);
         let mut docker_tag: String = String::from(BAKERY_DOCKER_TAG);
         let mut docker_registry: String = String::from(BAKERY_DOCKER_REGISTRY);
-        let mut docker_args: Vec<String> = vec![String::from("--rm=true"), String::from("-t")];
-        let mut docker_enabled: String = String::from("false");
+        let mut docker_args: Vec<String> = vec![];
+        let mut docker_disabled: String = String::from("false");
         let mut docker_top_dir: String = String::from("");
 
         match Self::get_value("workspace", &data) {
@@ -117,7 +117,7 @@ impl WsSettings {
 
         match Self::get_value("docker", &data) {
             Ok(docker_data) => {
-                docker_enabled = Self::get_str_value("enabled", docker_data, Some(String::from("false")))?;
+                docker_disabled = Self::get_str_value("disabled", docker_data, Some(String::from("false")))?;
                 docker_image = Self::get_str_value("image", docker_data, Some(String::from(BAKERY_DOCKER_IMAGE)))?;
                 docker_tag = Self::get_str_value("tag", docker_data, Some(String::from(BAKERY_DOCKER_TAG)))?;
                 docker_registry = Self::get_str_value("registry", docker_data, Some(String::from(BAKERY_DOCKER_REGISTRY)))?;
@@ -141,7 +141,7 @@ impl WsSettings {
             docker_image,
             docker_registry,
             docker_args,
-            docker_enabled,
+            docker_disabled,
             docker_top_dir,
         })
     }
@@ -391,26 +391,26 @@ mod tests {
     }
 
     #[test]
-    fn test_settings_config_no_docker_enabled() {
+    fn test_settings_config_default_docker_enabled() {
         let json_test_str = r#"
         {
             "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.docker_enabled, "false");
+        assert_eq!(&settings.docker_disabled, "false");
     }
 
     #[test]
-    fn test_settings_config_docker_enabled() {
+    fn test_settings_config_docker_disabled() {
         let json_test_str = r#"
         {
             "version": "5",
             "docker": {
-                "enabled": "true"
+                "disabled": "true"
             }
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.docker_enabled, "true");
+        assert_eq!(&settings.docker_disabled, "true");
     }
 
     #[test]
@@ -470,23 +470,10 @@ mod tests {
     fn test_settings_config_no_docker_args() {
         let json_test_str = r#"
         {
-            "version": "5",
-            "docker": {
-                "image": "test-workspace"
-            }
-        }"#;
-        let settings = Helper::setup_ws_settings(json_test_str);
-        assert!(&settings.docker_args.is_empty());
-    }
-
-    #[test]
-    fn test_settings_config_no_docker_args_node() {
-        let json_test_str = r#"
-        {
             "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.docker_args, &vec![String::from("--rm=true"), String::from("-t")]);
+        assert!(&settings.docker_args.is_empty());
     }
 
     #[test]

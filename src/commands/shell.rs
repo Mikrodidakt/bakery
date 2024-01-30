@@ -51,7 +51,7 @@ impl BCommand for ShellCommand {
          * be run inside of docker and if we are already inside docker we should not try and bootstrap into a
          * second docker container.
          */
-        if workspace.settings().docker_enabled() && self.is_docker_required() && !Docker::inside_docker() {
+        if !workspace.settings().docker_disabled() && self.is_docker_required() && !Docker::inside_docker() {
             let mut cmd_line: Vec<String> = vec![
                 String::from("bakery"),
                 String::from("shell"),
