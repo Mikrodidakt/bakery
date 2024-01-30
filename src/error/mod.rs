@@ -33,6 +33,8 @@ pub enum BError {
   CtxKeyError(String),
   #[error("{0}")]
   CollectorError(String),
+  #[error("Docker is enabled for the workspace but cannot locate /usr/bin/docker")]
+  DockerError(),
 }
 
 impl std::convert::From<serde_json::Error> for BError {
