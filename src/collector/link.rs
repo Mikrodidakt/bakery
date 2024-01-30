@@ -27,6 +27,9 @@ impl<'a> Collector for LinkCollector<'a> {
 
         self.info(self.cli, format!("Link file {} => {}", link_path.display(), src_path.display()));
         std::fs::create_dir_all(link_path.parent().unwrap())?;
+        if link_path.exists() {
+            std::fs::remove_file(link_path.clone())?;
+        }
         fs::symlink(&src_path, &link_path)?;
         collected.push(Collected { src: src_path.clone(), dest: link_path.clone() });
 
@@ -38,8 +41,8 @@ impl<'a> Collector for LinkCollector<'a> {
             return Err(BError::ValueError(String::from("Link node requires source attribute!")));
         }
 
-        if self.artifact.data().dest().is_empty() {
-            return Err(BError::ValueError(String::from("Link node requires dest attribute!")));
+        if self.artifact.data().name().is_empty() {
+            return Err(BError::ValueError(String::from("Link node requires name attribute!")));
         }
 
         Ok(())
