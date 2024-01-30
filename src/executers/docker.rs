@@ -212,13 +212,7 @@ impl Docker {
         Ok(env_file_path)
     }
 
-    pub fn bootstrap_bakery(&self, cmd_line: &Vec<String>, cli: &Cli, docker_top_dir: &PathBuf, work_dir: &PathBuf, docker_args: &Vec<String>, volumes: &Vec<String>) -> Result<(), BError> {
-        /*
-         * TODO: we need to handel the shell environment variables in a better way
-         * for now we are simply adding HOME to it when bootstraping into docker
-         */
-        let mut env: HashMap<String, String> = HashMap::new();
-        env.insert(String::from("HOME"), self.env_home());
+    pub fn bootstrap_bakery(&self, cmd_line: &Vec<String>, cli: &Cli, docker_top_dir: &PathBuf, work_dir: &PathBuf, docker_args: &Vec<String>, volumes: &Vec<String>, env: &HashMap<String, String>) -> Result<(), BError> {
         cli.check_call(&self.bootstrap_cmd_line(cmd_line, docker_top_dir, work_dir, docker_args, volumes), &env, true)?;
         Ok(())
     }

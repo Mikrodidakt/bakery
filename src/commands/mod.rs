@@ -8,6 +8,7 @@ pub mod deploy;
 pub mod upload;
 
 use std::collections::HashMap;
+use std::hash::Hash;
 use indexmap::{IndexMap, indexmap};
 
 use crate::error::BError;
@@ -34,15 +35,20 @@ pub trait BCommand {
         false
     }
 
-    fn bootstrap(&self, cmd_line: &Vec<String>, cli: &Cli, workspace: &Workspace, volumes: &Vec<String>, interactive: bool) -> Result<(), BError> {
-        let mut docker: Docker = Docker::new(workspace.settings().docker_image(), interactive);
+    fn bootstrap(&self, cmd_line: &Vec<String>, cli: &Cli, workspace: &Workspace,
+            volumes: &Vec<String>, interactive: bool) -> Result<(), BError> {
+        let docker: Docker = Docker::new(workspace.settings().docker_image(), interactive);
 
-        if workspace.config().build_data().bitbake().docker_image() != "NA" {
-            docker = Docker::new(DockerImage::new(workspace.config().build_data().bitbake().docker_image()), interactive);
-        }
+        /*
+         * When we bootstrap bakery into docker we should make sure that we pull
+         * in the entire env from the parent
+         */
+        let env: HashMap<String, String> = cli.env();
 
         cli.info(format!("Bootstrap bakery into docker"));
-        return docker.bootstrap_bakery(cmd_line, cli, &workspace.settings().docker_top_dir(), &workspace.settings().work_dir(), workspace.settings().docker_args(), volumes);
+
+        return docker.bootstrap_bakery(cmd_line, cli, &workspace.settings().docker_top_dir(),
+            &workspace.settings().work_dir(), workspace.settings().docker_args(), volumes, &env);
     }
 
     fn get_config_name(&self, cli: &Cli) -> String {

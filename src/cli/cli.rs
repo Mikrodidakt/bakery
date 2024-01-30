@@ -60,6 +60,10 @@ impl Cli {
         Ok(())
     }
 
+    pub fn env(&self) -> HashMap<String, String> {
+        self.system.env()
+    }
+
     pub fn source_init_env(&self, init_file: &PathBuf, build_dir: &PathBuf) -> Result<HashMap<String, String>, BError> {
         self.system.init_env_file(init_file, build_dir)
     }
