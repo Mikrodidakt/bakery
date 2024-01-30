@@ -64,15 +64,21 @@ impl WsBitbakeData {
         })
     }
 
+    pub fn expand_bblayers(&self, ctx: &Context) -> Vec<String> {
+        let mut layers: Vec<String> = Vec::new();
+        for l in self.bblayers_conf.clone() {
+            layers.push(ctx.expand_str(&l));
+        }
+
+        layers
+    }
+
     pub fn expand_ctx(&mut self, ctx: &Context) {
         self.machine = ctx.expand_str(&self.machine);
         self.distro = ctx.expand_str(&self.distro);
         self.docker = ctx.expand_str(&self.docker);
         self.deploy_dir = ctx.expand_str(&self.deploy_dir);
-        // We should never expand context in the bblayers_conf and local_conf since these
-        // files will handle it's own context using the bitbake variables with the same format ${}
-        // we should potentially consider to have some other format for bakery context variables
-        // it would make it possible to use context inside the bitbake config files.
+        self.bblayers_conf = self.expand_bblayers(ctx);
     }
 
     pub fn bblayers_conf(&self) -> String {
@@ -149,9 +155,11 @@ impl WsBitbakeData {
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
+    use indexmap::{indexmap, IndexMap};
 
     use crate::workspace::WsSettingsHandler;
     use crate::data::WsBitbakeData;
+    use crate::configs::Context;
 
     #[test]
     fn test_ws_bitbake_data_default() {
@@ -242,5 +250,47 @@ mod tests {
         assert_eq!(data.sstate_dir(), PathBuf::from(String::from("/workspace/.cache/test-arch/sstate-cache")));
         assert_eq!(data.dl_dir(), PathBuf::from(String::from("/workspace/.cache/download")));
         assert_eq!(data.init_env_file(), PathBuf::from(String::from("/workspace/layers/test/oe-my-init-env")));
+    }
+
+    #[test]
+    fn test_ws_bitbake_ctx_bblayers_conf() {
+        let json_settings: &str = r#"
+        {
+            "version": "5"
+        }"#;
+        let json_build_config = r#"
+        {
+            "version": "5",
+            "name": "test-name",
+            "arch": "test-arch",
+            "bb": {
+                "machine": "test-machine",
+                "distro": "test-distro",
+                "deploydir": "tmp/test/deploy",
+                "docker": "test-registry/test-image:0.1",
+                "initenv": "layers/test/oe-my-init-env",
+                "bblayersconf": [
+                    "BAKERY_WORKDIR=\"${TOPDIR}/../..\"",
+                    "BBLAYERS ?= \" \\",
+                    "       ${BAKERY_WORKDIR}/meta-test \\",
+                    "       $#[BUILDS_DIR]/workspace \\",
+                    "\""
+                ],
+                "localconf": [
+                    "BB_LOCAL_CONF_TEST_LINE_1",
+                    "BB_LOCAL_CONF_TEST_LINE_2",
+                    "BB_LOCAL_CONF_TEST_LINE_3"
+                ]
+            }
+        }"#;
+        let work_dir: PathBuf = PathBuf::from("/bakery-ws");
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
+        let mut data: WsBitbakeData = WsBitbakeData::from_str(json_build_config, &settings).expect("Failed to parse product data");
+        let variables: IndexMap<String, String> = indexmap! {
+            "BUILDS_DIR".to_string() => settings.builds_dir().to_string_lossy().to_string()
+        };
+        let context: Context = Context::new(&variables);
+        data.expand_ctx(&context);
+        assert_eq!(data.bblayers_conf(), "BAKERY_WORKDIR=\"${TOPDIR}/../..\"\nBBLAYERS ?= \" \\\n       ${BAKERY_WORKDIR}/meta-test \\\n       /bakery-ws/builds/workspace \\\n\"\n");
     }
 }
