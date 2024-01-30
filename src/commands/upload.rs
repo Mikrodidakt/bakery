@@ -57,7 +57,7 @@ impl BCommand for UploadCommand {
        * be run inside of docker and if we are already inside docker we should not try and bootstrap into a
        * second docker container.
        */
-      if workspace.settings().docker_enabled() && self.is_docker_required() && !Docker::inside_docker() {
+      if !workspace.settings().docker_disabled() && self.is_docker_required() && !Docker::inside_docker() {
           return self.bootstrap(&cli.get_cmd_line(), cli, workspace, &volumes, self.cmd.interactive);
       }
 

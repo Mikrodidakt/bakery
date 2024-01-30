@@ -20,7 +20,7 @@ impl WsSettingsHandler {
             }
             Err(e) => {
                 Err(e)
-            } 
+            }
         }
     }
 
@@ -121,8 +121,8 @@ impl WsSettingsHandler {
         &self.ws_settings.docker_args
     }
 
-    pub fn docker_enabled(&self) -> bool {
-        match self.ws_settings.docker_enabled.as_str() {
+    pub fn docker_disabled(&self) -> bool {
+        match self.ws_settings.docker_disabled.as_str() {
             "true" => {
                 return true;
             },
