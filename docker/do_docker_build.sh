@@ -2,11 +2,12 @@
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . $SCRIPT_DIR/lib_docker.sh
+. ${SCRIPT_DIR}/../scripts/lib.sh
 NP_DOCKER_ARGS="$1"
 DOCKER_REGISTRY=$(get_docker_registry $WORKSPACE/settings.json)
 DOCKER_IMAGE=$(get_docker_image $WORKSPACE/settings.json)
 DOCKER_DIR=$(get_docker_dir $WORKSPACE/settings.json)
-DOCKER_TAG=$(get_docker_tag $WORKSPACE/settings.json)
+DOCKER_TAG=$(get_bakery_version $WORKSPACE/Cargo.toml)
 
 help()
 {
