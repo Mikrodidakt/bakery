@@ -248,7 +248,7 @@ impl Helper {
     }
 
     pub fn setup_collector_test_ws(
-            work_dir: &PathBuf,
+            _work_dir: &PathBuf,
             task_build_dir: &PathBuf,
             files: &Vec<PathBuf>,
             build_data: &WsBuildData,
