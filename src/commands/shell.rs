@@ -114,7 +114,7 @@ impl BCommand for ShellCommand {
             return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
         }
 
-        workspace.expand_ctx();
+        workspace.expand_ctx()?;
 
         if cmd.is_empty() {
             return self.run_bitbake_shell(cli, workspace, &self.setup_env(env), &docker);

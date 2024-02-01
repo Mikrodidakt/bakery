@@ -138,7 +138,7 @@ impl BCommand for BuildCommand {
         // Update the config context with the context from the args
         let mut context: WsContextData = WsContextData::new(&args_context)?;
         context.update(&extra_ctx);
-        workspace.update_ctx(&context);
+        workspace.update_ctx(&context)?;
 
         if tasks.len() > 1 {
             // More then one task was specified on the command line

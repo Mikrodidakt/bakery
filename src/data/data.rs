@@ -154,10 +154,11 @@ impl WsBuildData {
         self.context.update_ctx(context);
     }
 
-    pub fn expand_ctx(&mut self) {
+    pub fn expand_ctx(&mut self) -> Result<(), BError> {
         //self.config.expand_ctx(self.context.ctx());
         //self.product.expand_ctx(self.context.ctx());
-        self.bitbake.expand_ctx(self.context.ctx());
+        self.bitbake.expand_ctx(self.context.ctx())?;
+        Ok(())
     }
 
     pub fn product(&self) -> &WsProductData {
@@ -292,7 +293,7 @@ mod tests {
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let json_data: Value = JsonFileReader::parse(json_task_str).expect("Failed to parse json");
         let mut task: WsTaskHandler = data.get_task(&json_data).expect("Failed to parse task");
-        task.expand_ctx(data.context().ctx());
+        task.expand_ctx(data.context().ctx()).unwrap();
         assert_eq!(task.data().recipes(), &vec!["test-image"]);
     }
 
@@ -419,7 +420,7 @@ mod tests {
         let mut artifact: WsArtifactsHandler = data
             .get_artifact(&json_data, &task_build_dir)
             .expect("Failed to parse artifacts");
-        artifact.expand_ctx(data.context().ctx());
+        artifact.expand_ctx(data.context().ctx()).unwrap();
         assert_eq!(artifact.data().atype(), &AType::Manifest);
         assert_eq!(artifact.data().name(), "test-manifest");
     }

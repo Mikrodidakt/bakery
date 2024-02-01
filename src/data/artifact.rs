@@ -96,31 +96,32 @@ impl WsArtifactData {
         })
     }
 
-    pub fn expand_ctx(&mut self, ctx: &Context) {
+    pub fn expand_ctx(&mut self, ctx: &Context) -> Result<(), BError> {
         match self.atype {
             AType::File => {
-                self.name = ctx.expand_str(&self.name);
-                self.source = ctx.expand_str(&self.source);
-                self.dest = ctx.expand_str(&self.dest);
+                self.name = ctx.expand_str(&self.name)?;
+                self.source = ctx.expand_str(&self.source)?;
+                self.dest = ctx.expand_str(&self.dest)?;
             },
             AType::Directory => {
-                self.name = ctx.expand_str(&self.name);
+                self.name = ctx.expand_str(&self.name)?;
             },
             AType::Archive => {
-                self.name = ctx.expand_str(&self.name);
+                self.name = ctx.expand_str(&self.name)?;
             },
             AType::Manifest => {
-                self.name = ctx.expand_str(&self.name);
-                self.manifest = ctx.expand_str(&self.manifest);
+                self.name = ctx.expand_str(&self.name)?;
+                self.manifest = ctx.expand_str(&self.manifest)?;
             },
             AType::Link => {
-                self.name = ctx.expand_str(&self.name);
-                self.source = ctx.expand_str(&self.source);
+                self.name = ctx.expand_str(&self.name)?;
+                self.source = ctx.expand_str(&self.source)?;
             },
             _ => {
                 panic!("Invalid 'artifact' format in build config. Invalid type '{:?}'", self.atype);
             },
         }
+        Ok(())
     }
 
     pub fn name(&self) -> &str {
@@ -314,7 +315,7 @@ mod tests {
         let context: Context = Context::new(&ctx_variables);
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
         let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
-        data.expand_ctx(&context);
+        data.expand_ctx(&context).unwrap();
         assert_eq!(data.name(), "test-archive.zip");
     }
 
@@ -344,7 +345,7 @@ mod tests {
         let context: Context = Context::new(&ctx_variables);
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
         let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
-        data.expand_ctx(&context);
+        data.expand_ctx(&context).unwrap();
         assert_eq!(data.name(), "test-manifest.json");
         assert!(!data.manifest().is_empty());
         assert_eq!(data.manifest(), "{\"VAR1\":\"value1\",\"VAR2\":\"value2\",\"VAR3\":\"value3\",\"data\":{\"VAR4\":\"value4\"}}");
@@ -364,7 +365,7 @@ mod tests {
         let context: Context = Context::new(&ctx_variables);
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
         let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
-        data.expand_ctx(&context);
+        data.expand_ctx(&context).unwrap();
         assert_eq!(data.name(), "test-manifest.json");
         assert!(!data.manifest().is_empty());
         assert_eq!(data.manifest(), "{}");
@@ -402,7 +403,7 @@ mod tests {
         let context: Context = Context::new(&ctx_variables);
         let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
         let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
-        data.expand_ctx(&context);
+        data.expand_ctx(&context).unwrap();
         assert!(data.dest().is_empty());
         assert_eq!(data.atype(), &AType::Link);
         assert_eq!(data.source(), "file.txt");

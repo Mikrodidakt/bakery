@@ -53,6 +53,7 @@ impl BCommand for ListCommand {
         } else {
             // List all tasks for a build config
             if workspace.valid_config(config.as_str()) {
+                //cli.info(format!("The following tasks are supported by '{}'", config.as_str()));
                 workspace.config().tasks().iter().for_each(|(_name, task)| {
                     cli.stdout(format!("{}", task.data().name()));
                 });

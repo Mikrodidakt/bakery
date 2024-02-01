@@ -26,8 +26,9 @@ impl WsDeployHandler {
         })
     }
 
-    pub fn expand_ctx(&mut self, ctx: &Context) {
-        self.data.expand_ctx(ctx);
+    pub fn expand_ctx(&mut self, ctx: &Context) -> Result<(), BError> {
+        self.data.expand_ctx(ctx)?;
+        Ok(())
     }
 
     pub fn run<'a>(&self, cli: &'a Cli, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {

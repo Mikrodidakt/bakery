@@ -51,13 +51,14 @@ impl WsBuildConfigHandler {
         self.data.update_ctx(context);
     }
 
-    pub fn expand_ctx(&mut self) {
-        self.data.expand_ctx();
+    pub fn expand_ctx(&mut self) -> Result<(), BError> {
+        self.data.expand_ctx()?;
         for (_name, task) in self.tasks.iter_mut() {
-            task.expand_ctx(self.data.context().ctx());
+            task.expand_ctx(self.data.context().ctx())?;
         }
-        self.deploy.expand_ctx(self.data.context().ctx());
-        self.upload.expand_ctx(self.data.context().ctx());
+        self.deploy.expand_ctx(self.data.context().ctx())?;
+        self.upload.expand_ctx(self.data.context().ctx())?;
+        Ok(())
     }
 
     pub fn task(&self, task: &str) -> Result<&WsTaskHandler, BError> {
@@ -167,7 +168,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
         let mut ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
-        ws_config.expand_ctx();
+        ws_config.expand_ctx().unwrap();
         assert_eq!(ws_config.build_data().bitbake().docker_image(), "test-registry/test-image:0.1");
     }
 
@@ -273,7 +274,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
         let mut ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
-        ws_config.expand_ctx();
+        ws_config.expand_ctx().unwrap();
         for mut i in 1..9 {
             let result: Result<&WsTaskHandler, BError> = ws_config.task(format!("task{}", i).as_str());
             match result {
@@ -325,7 +326,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
         let mut ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
-        ws_config.expand_ctx();
+        ws_config.expand_ctx().unwrap();
         assert_eq!(ws_config.task("task1").unwrap().data().build_dir(), &PathBuf::from("/workspace/task1/build/dir"));
         assert_eq!(ws_config.task("task2").unwrap().data().build_dir(), &PathBuf::from("/workspace/builds/test-name"));
     }
@@ -369,7 +370,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
         let mut ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
-        ws_config.expand_ctx();
+        ws_config.expand_ctx().unwrap();
         assert_eq!(ws_config.task("task1").unwrap().data().build_dir(), &PathBuf::from("/workspace/test/task1/build/dir"));
         assert_eq!(ws_config.task("task2").unwrap().data().build_dir(), &PathBuf::from("/workspace/builds/test-name"));
         {

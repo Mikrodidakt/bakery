@@ -59,7 +59,7 @@ impl BCommand for DeployCommand {
          * We will update the context with the variables from the cli
          * and then expand the context variables in the config
          */
-        workspace.update_ctx(&context);
+        workspace.update_ctx(&context)?;
 
         let deploy: &WsDeployHandler = workspace.config().deploy();
         deploy.run(cli, &HashMap::new(), false, self.cmd.interactive)

@@ -168,13 +168,15 @@ impl Workspace {
         self.build_configs().contains_key(&self.settings.configs_dir().join(format!("{}.json", config)))
     }
 
-    pub fn update_ctx(&mut self, context: &WsContextData) {
+    pub fn update_ctx(&mut self, context: &WsContextData) -> Result<(), BError> {
         self.config.update_ctx(context.ctx());
-        self.expand_ctx()
+        self.expand_ctx()?;
+        Ok(())
     }
 
-    pub fn expand_ctx(&mut self) {
-        self.config.expand_ctx();
+    pub fn expand_ctx(&mut self) -> Result<(), BError> {
+        self.config.expand_ctx()?;
+        Ok(())
     }
 }
 

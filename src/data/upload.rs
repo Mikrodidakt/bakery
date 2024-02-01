@@ -39,9 +39,10 @@ impl WsUploadData {
         })
     }
 
-    pub fn expand_ctx(&mut self, ctx: &Context) {
-        self.cmd = ctx.expand_str(&self.cmd);
-        self.docker = ctx.expand_str(&self.docker);
+    pub fn expand_ctx(&mut self, ctx: &Context) -> Result<(), BError> {
+        self.cmd = ctx.expand_str(&self.cmd)?;
+        self.docker = ctx.expand_str(&self.docker)?;
+        Ok(())
     }
 
     pub fn deploy_cmd(&self) -> &String {
