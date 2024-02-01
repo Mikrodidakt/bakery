@@ -11,7 +11,7 @@ TEMP_WORK_DIR=$(mktemp -d --suffix=-bakery-deb)
 mkdir -p ${TEMP_WORK_DIR}/bakery
 TEMP_WORK_DIR=${TEMP_WORK_DIR}/bakery
 mkdir -p ${TEMP_WORK_DIR}/usr/bin
-cp ${SCRIPT_DIR}/../target/release/bakery ${TEMP_WORK_DIR}/usr/bin/
+cp ${ARTIFACTS_DIR}/bakery ${TEMP_WORK_DIR}/usr/bin/
 
 mkdir -p ${TEMP_WORK_DIR}/DEBIAN
 touch ${TEMP_WORK_DIR}/DEBIAN/control
