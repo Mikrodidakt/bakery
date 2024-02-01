@@ -2,6 +2,8 @@ use indexmap::IndexMap;
 use regex::Regex;
 use std::path::PathBuf;
 
+use crate::error::BError;
+
 pub struct Context {
     regexp: Regex,
     variables: IndexMap<String, String>,
@@ -45,23 +47,23 @@ impl Context {
         replaced.to_string()
     }
 
-    pub fn expand_str(&self, s: &str) -> String {
+    pub fn expand_str(&self, s: &str) -> Result<String, BError> {
         let mut counter = 0;
         let mut expanded_string: String = s.to_string();
         while self.regexp.is_match(expanded_string.as_str()) {
             expanded_string = self.__expand_str(expanded_string.as_str());
             if counter > 10 {
                 // TODO not sure we should panic. If we don't find a context should we panic then?
-                panic!("Failed to expand context in string '{}'", expanded_string);
+                return Err(BError::CtxKeyError(format!("Failed to expand context in string '{}'", expanded_string)));
             }
             counter += 1;
         }
-        expanded_string
+        Ok(expanded_string)
     }
 
-    pub fn expand_path(&self, p: &PathBuf) -> PathBuf {
-        let p_str: String = self.expand_str(p.to_str().unwrap());
-        PathBuf::from(p_str)
+    pub fn expand_path(&self, p: &PathBuf) -> Result<PathBuf, BError> {
+        let p_str: String = self.expand_str(p.to_str().unwrap())?;
+        Ok(PathBuf::from(p_str))
     }
 
     pub fn value(&self, key: &str) -> String {
@@ -99,6 +101,7 @@ mod tests {
     use std::path::PathBuf;
 
     use crate::configs::Context;
+    use crate::error::BError;
 
     #[test]
     fn test_task_context_variables() {
@@ -144,10 +147,10 @@ mod tests {
             "VAR3".to_string() => "var3".to_string()
         };
         let ctx: Context = Context::new(&variables);
-        assert_eq!(ctx.expand_str("Testing $#[VAR1] expansion"), "Testing var1 expansion");
-        assert_eq!(ctx.expand_str("Testing $#[VAR2] expansion"), "Testing var2 expansion");
-        assert_eq!(ctx.expand_str("Testing $#[VAR3] expansion"), "Testing var3 expansion");
-        assert_eq!(ctx.expand_str("Testing $#[VAR1] $#[VAR2] $#[VAR3] expansion"), "Testing var1 var2 var3 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR1] expansion").unwrap(), "Testing var1 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR2] expansion").unwrap(), "Testing var2 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR3] expansion").unwrap(), "Testing var3 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR1] $#[VAR2] $#[VAR3] expansion").unwrap(), "Testing var1 var2 var3 expansion");
     }
 
     #[test]
@@ -159,10 +162,10 @@ mod tests {
             "VAR4".to_string() => "var4".to_string()
         };
         let ctx: Context = Context::new(&variables);
-        assert_eq!(ctx.expand_str("Testing $#[VAR1] expansion"), "Testing var4 expansion");
-        assert_eq!(ctx.expand_str("Testing $#[VAR2] expansion"), "Testing var2 expansion");
-        assert_eq!(ctx.expand_str("Testing $#[VAR3] expansion"), "Testing var3 expansion");
-        assert_eq!(ctx.expand_str("Testing $#[VAR1] $#[VAR2] $#[VAR3] expansion"), "Testing var4 var2 var3 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR1] expansion").unwrap(), "Testing var4 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR2] expansion").unwrap(), "Testing var2 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR3] expansion").unwrap(), "Testing var3 expansion");
+        assert_eq!(ctx.expand_str("Testing $#[VAR1] $#[VAR2] $#[VAR3] expansion").unwrap(), "Testing var4 var2 var3 expansion");
     }
 
     #[test]
@@ -178,8 +181,8 @@ mod tests {
             "NEWDIR2".to_string() => "$#[DIR2]/newdir2".to_string()
         };
         ctx.update(&variables2);
-        assert_eq!(ctx.expand_str("/dir/$#[NEWDIR1]/file1.txt"), "/dir/dir1/newdir1/file1.txt");
-        assert_eq!(ctx.expand_str("/dir/$#[NEWDIR2]/file2.txt"), "/dir/dir2/newdir2/file2.txt");
+        assert_eq!(ctx.expand_str("/dir/$#[NEWDIR1]/file1.txt").unwrap(), "/dir/dir1/newdir1/file1.txt");
+        assert_eq!(ctx.expand_str("/dir/$#[NEWDIR2]/file2.txt").unwrap(), "/dir/dir2/newdir2/file2.txt");
     }
 
     #[test]
@@ -191,7 +194,26 @@ mod tests {
         };
         let ctx: Context = Context::new(&variables);
         let path: PathBuf = PathBuf::from("/dir1/$#[VAR1]/$#[VAR2]/$#[VAR3]/file1.txt");
-        assert_eq!(ctx.expand_path(&path), PathBuf::from("/dir1/var1/var2/var3/file1.txt"));
+        assert_eq!(ctx.expand_path(&path).unwrap(), PathBuf::from("/dir1/var1/var2/var3/file1.txt"));
+    }
+
+    #[test]
+    fn test_task_context_expand_invalid() {
+        let variables: IndexMap<String, String> = indexmap! {
+            "VAR1".to_string() => "var1".to_string()
+        };
+        let ctx: Context = Context::new(&variables);
+        let path: PathBuf = PathBuf::from("/dir1/$#[VAR1]/$#[VAR2]/file1.txt");
+        let result: Result<PathBuf, BError> = ctx.expand_path(&path);
+
+        match result {
+            Ok(path) => {
+                assert!(false, "Expected an error, but got an path '{}'", path.display());
+            }
+            Err(err_msg) => {
+                assert_eq!(String::from("Failed to expand context in string '/dir1/var1/$#[VAR2]/file1.txt'"), err_msg.to_string());
+            }
+        }
     }
 }
 

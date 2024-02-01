@@ -65,7 +65,7 @@ impl BCommand for CleanCommand {
          * We will update the context with the variables from the cli
          * and then expand the context variables in the config
          */
-        workspace.update_ctx(&context);
+        workspace.update_ctx(&context)?;
 
         /*
          * TODO: we should handle env variables but for now we will just

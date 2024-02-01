@@ -140,7 +140,7 @@ mod tests {
                 "TEST_VALUE6".to_string() => "var3".to_string(),
         };
         let context: Context = Context::new(&variables);
-        artifacts.expand_ctx(&context);
+        artifacts.expand_ctx(&context).unwrap();
         let collector: ManifestCollector = ManifestCollector::new(&artifacts, None);
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         let manifest_file: PathBuf = build_data.settings().artifacts_dir().clone().join("ctxmanifest.json");

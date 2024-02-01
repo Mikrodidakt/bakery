@@ -128,11 +128,12 @@ impl WsTaskHandler {
         Ok(collected)
     }
 
-    pub fn expand_ctx(&mut self, ctx: &Context) {
-        self.data.expand_ctx(ctx);
-        for artifact in self.artifacts.iter_mut() {
-            artifact.expand_ctx(ctx);
+    pub fn expand_ctx(&mut self, ctx: &Context) -> Result<(), BError> {
+        self.data.expand_ctx(ctx)?;
+        for a in self.artifacts.iter_mut() {
+            a.expand_ctx(ctx)?;
         }
+        Ok(())
     }
 
     pub fn data(&self) -> &WsTaskData {
@@ -398,7 +399,7 @@ mod tests {
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let mut task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
-        task.expand_ctx(build_data.context().ctx());
+        task.expand_ctx(build_data.context().ctx()).unwrap();
         assert_eq!(task.data().build_dir(), &PathBuf::from("/workspace/builds/test-name"));
         assert!(task.data().condition());
         assert_eq!(task.data().name(), "task-name");

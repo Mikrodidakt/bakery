@@ -39,9 +39,10 @@ impl WsDeployData {
         })
     }
 
-    pub fn expand_ctx(&mut self, ctx: &Context) {
-        self.cmd = ctx.expand_str(&self.cmd);
-        self.docker = ctx.expand_str(&self.docker);
+    pub fn expand_ctx(&mut self, ctx: &Context) -> Result<(), BError> {
+        self.cmd = ctx.expand_str(&self.cmd)?;
+        self.docker = ctx.expand_str(&self.docker)?;
+        Ok(())
     }
 
     pub fn cmd(&self) -> &String {
@@ -89,7 +90,7 @@ mod tests {
         }"#;
         let mut data: WsDeployData = WsDeployData::from_str(json_build_config).expect("Failed to parse config data");
         assert_eq!(data.cmd(), "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]");
-        data.expand_ctx(&ctx);
+        data.expand_ctx(&ctx).unwrap();
         assert_eq!(data.cmd(), "/path/to/deploy/script.sh arg1 arg2 arg3");
     }
 }

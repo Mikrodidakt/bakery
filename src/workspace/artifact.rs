@@ -3,7 +3,7 @@ use crate::error::BError;
 use crate::fs::JsonFileReader;
 use crate::data::{
     WsArtifactData,
-    WsBuildData,
+    WsBuildData, artifact,
 };
 
 use std::path::PathBuf;
@@ -29,11 +29,12 @@ impl WsArtifactsHandler {
         })
     }
 
-    pub fn expand_ctx(&mut self, ctx: &Context) {
-        self.data.expand_ctx(ctx);
-        self.children.iter_mut().for_each(|artifact| {
-            artifact.expand_ctx(ctx);
-        });
+    pub fn expand_ctx(&mut self, ctx: &Context) -> Result<(), BError> {
+        self.data.expand_ctx(ctx)?;
+        for c in self.children.iter_mut() {
+            c.expand_ctx(ctx)?;
+        }
+        Ok(())
     }
 
     pub fn data(&self) -> &WsArtifactData {
@@ -309,7 +310,7 @@ mod tests {
             &task_build_dir,
             &build_data
         ).expect("Failed to parse config");
-        artifacts.expand_ctx(build_data.context().ctx());
+        artifacts.expand_ctx(build_data.context().ctx()).unwrap();
         assert_eq!(artifacts.data().atype(), &AType::Archive);
         assert_eq!(artifacts.data().name(), "test.zip");
         assert!(!artifacts.children().is_empty());

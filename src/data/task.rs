@@ -101,14 +101,19 @@ impl WsTaskData {
         })
     }
 
-    pub fn expand_ctx(&mut self, ctx: &Context) {
-        self.name = ctx.expand_str(&self.name);
-        self.build_dir = ctx.expand_path(&self.build_dir);
-        self.build = ctx.expand_str(&self.build);
-        self.clean = ctx.expand_str(&self.clean);
-        self.condition = ctx.expand_str(&self.condition);
-        self.recipes.iter_mut().for_each(|r: &mut String| *r = ctx.expand_str(r));
-        self.env.iter_mut().for_each(|(_key, value)| *value = ctx.expand_str(value));
+    pub fn expand_ctx(&mut self, ctx: &Context) -> Result<(), BError>{
+        self.name = ctx.expand_str(&self.name)?;
+        self.build_dir = ctx.expand_path(&self.build_dir)?;
+        self.build = ctx.expand_str(&self.build)?;
+        self.clean = ctx.expand_str(&self.clean)?;
+        self.condition = ctx.expand_str(&self.condition)?;
+        for r in self.recipes.iter_mut() {
+            *r = ctx.expand_str(r)?;
+        }
+        for (_key, value) in self.env.iter_mut() {
+            *value = ctx.expand_str(value)?;
+        }
+        Ok(())
     }
 
     pub fn index(&self) -> u32 {
@@ -259,7 +264,7 @@ mod tests {
         let context: Context = Context::new(&ctx_variables);
         let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
         let mut task: WsTaskData = WsTaskData::new(&data, &work_dir, &bb_build_dir).expect("Failed parsing task data");
-        task.expand_ctx(&context);
+        task.expand_ctx(&context).unwrap();
         assert_eq!(task.index(), 1);
         assert_eq!(task.name(), "task1-name");
         assert_eq!(task.disabled(), false);
@@ -370,7 +375,7 @@ mod tests {
         let context: Context = Context::new(&ctx_variables);
         let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
         let mut task: WsTaskData = WsTaskData::new(&data, &work_dir, &bb_build_dir).expect("Failed parsing task data");
-        task.expand_ctx(&context);
+        task.expand_ctx(&context).unwrap();
         assert_eq!(task.env(), &indexmap! {
             "KEY1".to_string() => "ctx-value1".to_string(),
             "KEY2".to_string() => "ctx-value2".to_string(),

@@ -136,7 +136,7 @@ mod tests {
                 "SRC_FILE".to_string() => "src-file.txt".to_string(),
         };
         let context: Context = Context::new(&variables);
-        artifacts.expand_ctx(&context);
+        artifacts.expand_ctx(&context).unwrap();
         let collector: LinkCollector = LinkCollector::new(&artifacts, None);
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         let dest: PathBuf = build_data.settings().artifacts_dir().clone().join(link_file_name);

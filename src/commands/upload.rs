@@ -61,7 +61,7 @@ impl BCommand for UploadCommand {
           return self.bootstrap(&cli.get_cmd_line(), cli, workspace, &volumes, self.cmd.interactive);
       }
 
-      workspace.update_ctx(&context);
+      workspace.update_ctx(&context)?;
 
       let upload: &WsUploadHandler = workspace.config().upload();
       upload.run(cli, &HashMap::new(), false, self.cmd.interactive)

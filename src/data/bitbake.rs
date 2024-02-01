@@ -64,21 +64,23 @@ impl WsBitbakeData {
         })
     }
 
-    pub fn expand_bblayers(&self, ctx: &Context) -> Vec<String> {
+    pub fn expand_bblayers(&self, ctx: &Context) -> Result<Vec<String>, BError> {
         let mut layers: Vec<String> = Vec::new();
-        for l in self.bblayers_conf.clone() {
-            layers.push(ctx.expand_str(&l));
+        for line in self.bblayers_conf.clone() {
+            let l: String = ctx.expand_str(&line)?;
+            layers.push(l);
         }
 
-        layers
+        Ok(layers)
     }
 
-    pub fn expand_ctx(&mut self, ctx: &Context) {
-        self.machine = ctx.expand_str(&self.machine);
-        self.distro = ctx.expand_str(&self.distro);
-        self.docker = ctx.expand_str(&self.docker);
-        self.deploy_dir = ctx.expand_str(&self.deploy_dir);
-        self.bblayers_conf = self.expand_bblayers(ctx);
+    pub fn expand_ctx(&mut self, ctx: &Context) -> Result<(), BError> {
+        self.machine = ctx.expand_str(&self.machine)?;
+        self.distro = ctx.expand_str(&self.distro)?;
+        self.docker = ctx.expand_str(&self.docker)?;
+        self.deploy_dir = ctx.expand_str(&self.deploy_dir)?;
+        self.bblayers_conf = self.expand_bblayers(ctx)?;
+        Ok(())
     }
 
     pub fn bblayers_conf(&self) -> String {
@@ -290,7 +292,7 @@ mod tests {
             "BUILDS_DIR".to_string() => settings.builds_dir().to_string_lossy().to_string()
         };
         let context: Context = Context::new(&variables);
-        data.expand_ctx(&context);
+        data.expand_ctx(&context).unwrap();
         assert_eq!(data.bblayers_conf(), "BAKERY_WORKDIR=\"${TOPDIR}/../..\"\nBBLAYERS ?= \" \\\n       ${BAKERY_WORKDIR}/meta-test \\\n       /bakery-ws/builds/workspace \\\n\"\n");
     }
 }
