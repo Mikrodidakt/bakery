@@ -3,7 +3,7 @@ use crate::error::BError;
 use crate::fs::JsonFileReader;
 use crate::data::{
     WsArtifactData,
-    WsBuildData, artifact,
+    WsBuildData,
 };
 
 use std::path::PathBuf;

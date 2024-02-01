@@ -11,7 +11,7 @@ pub struct DeployExecuter<'a> {
 }
 
 impl<'a> TaskExecuter for DeployExecuter<'a> {
-    fn exec(&self, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+    fn exec(&self, env_variables: &HashMap<String, String>, dry_run: bool, _interactive: bool) -> Result<(), BError> {
         let cmd: Vec<String> = self.data.cmd().split(' ').map(|c| c.to_string()).collect();
 
         if dry_run {

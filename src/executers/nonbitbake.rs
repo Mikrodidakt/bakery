@@ -15,7 +15,7 @@ pub struct NonBBCleanExecuter<'a> {
 }
 
 impl<'a> TaskExecuter for NonBBCleanExecuter<'a> {
-    fn exec(&self, args_env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+    fn exec(&self, args_env_variables: &HashMap<String, String>, _dry_run: bool, interactive: bool) -> Result<(), BError> {
         self.cli.info(format!("execute bitbake clean task '{}'", self.task_data.name()));
         let mut cmd_line: Vec<String> = vec![];
         let cmd: String = self.task_data.clean_cmd().to_owned();

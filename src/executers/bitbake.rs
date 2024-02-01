@@ -19,7 +19,7 @@ pub struct BBCleanExecuter<'a> {
 }
 
 impl<'a> TaskExecuter for BBCleanExecuter<'a> {
-    fn exec(&self, args_env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+    fn exec(&self, _args_env_variables: &HashMap<String, String>, _dry_run: bool, _interactive: bool) -> Result<(), BError> {
         let mut note: String = String::from("Please note that the sstate cache is not cleaned!\n");
         note.push_str(&format!("The sstate cache is located at '{}'\n", self.bb_data.sstate_dir().display()));
         note.push_str("The sstate cache might be used by multiple builds\n");

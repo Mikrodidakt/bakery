@@ -55,7 +55,7 @@ pub trait BCommand {
             &workspace.settings().work_dir(), workspace.settings().docker_args(), volumes, &env);
     }
 
-    fn get_config_name(&self, cli: &Cli) -> String {
+    fn get_config_name(&self, _cli: &Cli) -> String {
         String::from("default")
     }
 

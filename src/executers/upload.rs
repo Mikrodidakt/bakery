@@ -3,8 +3,6 @@ use crate::error::BError;
 use crate::data::WsUploadData;
 use crate::executers::{
     TaskExecuter,
-    Docker,
-    DockerImage,
 };
 
 use std::collections::HashMap;
@@ -15,7 +13,7 @@ pub struct UploadExecuter<'a> {
 }
 
 impl<'a> TaskExecuter for UploadExecuter<'a> {
-    fn exec(&self, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+    fn exec(&self, env_variables: &HashMap<String, String>, dry_run: bool, _interactive: bool) -> Result<(), BError> {
         let cmd: Vec<String> = self.data.deploy_cmd().split(' ').map(|c| c.to_string()).collect();
 
         if dry_run {

@@ -18,7 +18,7 @@ use crate::error::BError;
 use std::collections::HashMap;
 
 pub trait TaskExecuter {
-    fn exec(&self, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+    fn exec(&self, _env_variables: &HashMap<String, String>, _dry_run: bool, _interactive: bool) -> Result<(), BError> {
         Ok(())
     }
 }
