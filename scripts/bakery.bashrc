@@ -1,7 +1,6 @@
 # /etc/bakery/bakery.bashrc sourced in by /etc/bash.bashrc
 # when running a bakery-workspace
 BAKERY_BIN_DIR="/usr/local/cargo/bin"
-PATH=${BAKERY_BIN_DIR}:${PATH}
 BAKERY_VERSION=$(${BAKERY_BIN_DIR}/bakery --version)
 BAKERY_VERSION=${BAKERY_VERSION##* }
 
@@ -119,6 +118,7 @@ if ! shopt -oq posix; then
   fi
 fi
 
+PATH=${BAKERY_BIN_DIR}:${PATH}
 # The BAKERY_CURRENT_BUILD_CONFIG will be set by
 # bakery when initializing a workspace shell
 alias build="${BAKERY_BIN_DIR}/bakery build -c ${BAKERY_CURRENT_BUILD_CONFIG}"
@@ -126,6 +126,6 @@ alias clean="${BAKERY_BIN_DIR}/bakery clean -c ${BAKERY_CURRENT_BUILD_CONFIG}"
 alias deploy="${BAKERY_BIN_DIR}/bakery deploy -c ${BAKERY_CURRENT_BUILD_CONFIG}"
 alias upload="${BAKERY_BIN_DIR}/bakery upload -c ${BAKERY_CURRENT_BUILD_CONFIG}"
 alias help="${BAKERY_BIN_DIR}/bakery help"
-alias list="${BAKERY_BIN_DIR}/bakery list"
+alias list="${BAKERY_BIN_DIR}/bakery list -c ${BAKERY_CURRENT_BUILD_CONFIG}"
 alias shell="${BAKERY_BIN_DIR}/bakery shell"
 alias version="${BAKERY_BIN_DIR}/bakery --version"
