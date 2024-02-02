@@ -212,6 +212,16 @@ impl Docker {
         Ok(env_file_path)
     }
 
+    pub fn pull(&self, cli: &Cli) -> Result<(), BError> {
+        let cmd_line: Vec<String> = vec![
+            "docker".to_string(),
+            "pull".to_string(),
+            format!("{}", self.image)
+        ];
+        cli.check_call(&cmd_line, &HashMap::new(), true)?;
+        Ok(())
+    }
+
     pub fn bootstrap_bakery(&self, cmd_line: &Vec<String>, cli: &Cli, docker_top_dir: &PathBuf, work_dir: &PathBuf, docker_args: &Vec<String>, volumes: &Vec<String>, env: &HashMap<String, String>) -> Result<(), BError> {
         cli.check_call(&self.bootstrap_cmd_line(cmd_line, docker_top_dir, work_dir, docker_args, volumes), &env, true)?;
         Ok(())
