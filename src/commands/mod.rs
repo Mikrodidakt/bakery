@@ -51,6 +51,18 @@ pub trait BCommand {
             return Err(BError::DockerError());
         }
 
+        /*
+         * The docker pull expects that there is a registry available and it will
+         * check if there is a newer image in the registry and fail if it cannot
+         * find the registry even if there is an image locally available.
+         * Ideally it should only pull the image if it cannot find a local image.
+         * I get the logic but in this case the image could only be available
+         * as a local image and we don't want to fail because of that. It might
+         * be that this is a bit to much of logic and we should migrate our current
+         * docker implemmentation to rust docker API.
+         */
+        // docker.pull(cli)?;
+
         return docker.bootstrap_bakery(cmd_line, cli, &workspace.settings().docker_top_dir(),
             &workspace.settings().work_dir(), workspace.settings().docker_args(), volumes, &env);
     }
