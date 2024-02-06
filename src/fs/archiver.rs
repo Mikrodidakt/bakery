@@ -149,7 +149,8 @@ impl Archiver {
 
             let mut zip: ZipWriter<File> = zip::write::ZipWriter::new(archive_file);
 
-            let options: FileOptions = zip::write::FileOptions::default().unix_permissions(0o755);
+            let mut options: FileOptions = zip::write::FileOptions::default().unix_permissions(0o755);
+            options = options.large_file(true);
 
             for path in files {
                 //println!("{}", path.display());
