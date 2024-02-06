@@ -26,6 +26,7 @@ echo "${rustupSha256} *rustup-init" | sha256sum -c -
 chmod +x rustup-init
 ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host ${rustArch}
 rm rustup-init
+source "$HOME/.cargo/env"
 rustup --version
 cargo --version
 rustc --version
