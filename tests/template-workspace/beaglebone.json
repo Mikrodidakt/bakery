@@ -1,0 +1,60 @@
+{
+	"version": "5",
+	"name": "beaglebone",
+	"description": "beaglebone black",
+	"arch": "cortexa8hf",
+	"bb": {
+		"machine": "beaglebone-yocto",
+		"distro": "poky",
+		"deploydir": "tmp/deploy",
+		"initenv": "$#[LAYERS_DIR]/poky/oe-init-build-env",
+		"localconf": [
+			"EXTRA_IMAGE_FEATURES ?= \"debug-tweaks\"",
+			"USER_CLASSES ?= \"buildstats\"",
+			"PATCHRESOLVE = \"noop\"",
+			"BB_DISKMON_DIRS ??= \"\\",
+			"    STOPTASKS,${TMPDIR},1G,100K \\",
+			"    STOPTASKS,${DL_DIR},1G,100K \\",
+			"    STOPTASKS,${SSTATE_DIR},1G,100K \\",
+			"    STOPTASKS,/tmp,100M,100K \\",
+			"    HALT,${TMPDIR},100M,1K \\",
+			"    HALT,${DL_DIR},100M,1K \\",
+			"    HALT,${SSTATE_DIR},100M,1K \\",
+			"    HALT,/tmp,10M,1K\"",
+			"PACKAGECONFIG:append:pn-qemu-system-native = \" sdl\"",
+			"CONF_VERSION = \"2\""
+		],
+		"bblayersconf": [
+			"POKY_BBLAYERS_CONF_VERSION = \"2\"",
+			"BBPATH = \"${TOPDIR}\"",
+			"BBFILES ?= \"\"",
+			"BBLAYERS ?= \" \\",
+			"       $#[LAYERS_DIR]/poky/meta-poky \\",
+			"       $#[LAYERS_DIR]/poky/meta \\",
+			"       $#[LAYERS_DIR]/poky/meta-yocto-bsp \\",
+			"\""
+		]
+	},
+	"tasks": {
+		"image": {
+			"index": "0",
+			"name": "image",
+			"recipes": [
+				"core-image-minimal"
+			],
+			"artifacts": [
+				{
+					"source": "$#[BB_DEPLOY_DIR]/images/$#[MACHINE]/*.dtb"
+				},
+				{
+					"type": "link",
+					"name": "core-image-minimak-beaglebone.wic",
+					"source": "$#[BB_DEPLOY_DIR]/images/$#[MACHINE]/core-image-minimal-beaglebone-yocto.rootfs.wic"
+				},
+				{
+					"source": "$#[BB_DEPLOY_DIR]/images/$#[MACHINE]/core-image-minimal.env"
+				}
+			]
+		}
+	}
+}

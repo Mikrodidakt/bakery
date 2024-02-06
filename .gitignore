@@ -2,3 +2,6 @@
 .vscode
 *.deb
 /artifacts
+tests/template-workspace/builds
+tests/template-workspace/.cache
+tests/template-workspace/artifacts
