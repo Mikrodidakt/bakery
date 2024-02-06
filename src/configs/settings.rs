@@ -377,7 +377,7 @@ mod tests {
             }
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.docker_tag,  "0.68");
+        assert_eq!(&settings.docker_tag, env!("CARGO_PKG_VERSION"));
     }
 
     #[test]
@@ -387,7 +387,7 @@ mod tests {
             "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.docker_tag, "0.68");
+        assert_eq!(&settings.docker_tag, env!("CARGO_PKG_VERSION"));
     }
 
     #[test]

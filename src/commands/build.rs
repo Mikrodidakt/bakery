@@ -642,7 +642,7 @@ mod tests {
                         &vec![],
                         &work_dir.clone(),
                         &work_dir,
-                        &DockerImage::new("strixos/bakery-workspace:0.68"),
+                        &DockerImage::new(&format!("strixos/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default")]
                     ),
                 env: HashMap::new(),
@@ -707,7 +707,7 @@ mod tests {
                         &vec![String::from("/test/testdir:/test/testdir")],
                         &work_dir.clone(),
                         &work_dir,
-                        &DockerImage::new("strixos/bakery-workspace:0.68"),
+                        &DockerImage::new(&format!("strixos/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default"), String::from("-v"), String::from("/test/testdir:/test/testdir")]
                     ),
                 env: HashMap::new(),
@@ -772,7 +772,7 @@ mod tests {
                         &vec![],
                         &work_dir.clone(),
                         &work_dir,
-                        &DockerImage::new("strixos/bakery-workspace:0.68"),
+                        &DockerImage::new(&format!("strixos/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default"), String::from("--interactive=false")]
                     ),
                 env: HashMap::new(),
@@ -842,7 +842,7 @@ mod tests {
                         &vec![],
                         &work_dir.clone(),
                         &work_dir,
-                        &DockerImage::new("strixos/bakery-workspace:0.68"),
+                        &DockerImage::new(&format!("strixos/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))),
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default")]
                     ),
                 env: HashMap::new(),

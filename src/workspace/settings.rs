@@ -210,7 +210,7 @@ mod tests {
             Helper::setup_ws_settings(json_test_str),
         );
         let docker_image: DockerImage = settings.docker_image();
-        assert_eq!(format!("{}", docker_image), "strixos/bakery-workspace:0.68");
+        assert_eq!(format!("{}", docker_image), format!("strixos/bakery-workspace:{}", env!("CARGO_PKG_VERSION")));
     }
 
     #[test]
