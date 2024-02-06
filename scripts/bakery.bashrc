@@ -1,6 +1,6 @@
 # /etc/bakery/bakery.bashrc sourced in by /etc/bash.bashrc
 # when running a bakery-workspace
-BAKERY_BIN_DIR="/usr/local/cargo/bin"
+BAKERY_BIN_DIR="/usr/bin"
 BAKERY_VERSION=$(${BAKERY_BIN_DIR}/bakery --version)
 BAKERY_VERSION=${BAKERY_VERSION##* }
 
