@@ -64,14 +64,14 @@ impl WsBitbakeData {
         })
     }
 
-    pub fn expand_bblayers(&self, ctx: &Context) -> Result<Vec<String>, BError> {
-        let mut layers: Vec<String> = Vec::new();
-        for line in self.bblayers_conf.clone() {
-            let l: String = ctx.expand_str(&line)?;
-            layers.push(l);
+    pub fn expand_conf(&self, ctx: &Context, conf: &Vec<String>) -> Result<Vec<String>, BError> {
+        let mut config: Vec<String> = Vec::new();
+        for line in conf.clone() {
+            let expanded: String = ctx.expand_str(&line)?;
+            config.push(expanded);
         }
 
-        Ok(layers)
+        Ok(config)
     }
 
     pub fn expand_ctx(&mut self, ctx: &Context) -> Result<(), BError> {
@@ -79,7 +79,8 @@ impl WsBitbakeData {
         self.distro = ctx.expand_str(&self.distro)?;
         self.docker = ctx.expand_str(&self.docker)?;
         self.deploy_dir = ctx.expand_str(&self.deploy_dir)?;
-        self.bblayers_conf = self.expand_bblayers(ctx)?;
+        self.bblayers_conf = self.expand_conf(ctx, &self.bblayers_conf)?;
+        self.local_conf = self.expand_conf(ctx, &self.local_conf)?;
         Ok(())
     }
 
@@ -255,7 +256,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ws_bitbake_ctx_bblayers_conf() {
+    fn test_ws_bitbake_ctx_conf() {
         let json_settings: &str = r#"
         {
             "version": "5"
@@ -279,9 +280,13 @@ mod tests {
                     "\""
                 ],
                 "localconf": [
-                    "BB_LOCAL_CONF_TEST_LINE_1",
-                    "BB_LOCAL_CONF_TEST_LINE_2",
-                    "BB_LOCAL_CONF_TEST_LINE_3"
+                    "BAKERY_WORKSPACE_DIR ?= \"$#[BUILDS_DIR]/workspace\"",
+                    "PACKAGE_CLASSES ?= \"package_rpm\"",
+                    "BB_DISKMON_DIRS ?= \"\\",
+                    "    STOPTASKS,${TMPDIR},1G,100K \\",
+                    "    HALT,${SSTATE_DIR},100M,1K \\",
+                    "    HALT,/tmp,10M,1K\"",
+                    "CONF_VERSION = \"2\""
                 ]
             }
         }"#;
@@ -294,5 +299,6 @@ mod tests {
         let context: Context = Context::new(&variables);
         data.expand_ctx(&context).unwrap();
         assert_eq!(data.bblayers_conf(), "BAKERY_WORKDIR=\"${TOPDIR}/../..\"\nBBLAYERS ?= \" \\\n       ${BAKERY_WORKDIR}/meta-test \\\n       /bakery-ws/builds/workspace \\\n\"\n");
+        assert_eq!(data.local_conf(), "BAKERY_WORKSPACE_DIR ?= \"/bakery-ws/builds/workspace\"\nPACKAGE_CLASSES ?= \"package_rpm\"\nBB_DISKMON_DIRS ?= \"\\\n    STOPTASKS,${TMPDIR},1G,100K \\\n    HALT,${SSTATE_DIR},100M,1K \\\n    HALT,/tmp,10M,1K\"\nCONF_VERSION = \"2\"\nMACHINE ?= \"test-machine\"\nVARIANT ?= \"dev\"\nPRODUCT_NAME ?= \"test-name\"\nDISTRO ?= \"test-distro\"\nSSTATE_DIR ?= \"/bakery-ws/.cache/test-arch/sstate-cache\"\nDL_DIR ?= \"/bakery-ws/.cache/download\"\n");
     }
 }
