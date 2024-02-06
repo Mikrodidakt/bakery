@@ -79,6 +79,7 @@ impl WsBitbakeData {
         self.distro = ctx.expand_str(&self.distro)?;
         self.docker = ctx.expand_str(&self.docker)?;
         self.deploy_dir = ctx.expand_str(&self.deploy_dir)?;
+        self.init_env = ctx.expand_str(&self.init_env)?;
         self.bblayers_conf = self.expand_conf(ctx, &self.bblayers_conf)?;
         self.local_conf = self.expand_conf(ctx, &self.local_conf)?;
         Ok(())
@@ -271,11 +272,11 @@ mod tests {
                 "distro": "test-distro",
                 "deploydir": "tmp/test/deploy",
                 "docker": "test-registry/test-image:0.1",
-                "initenv": "layers/test/oe-my-init-env",
+                "initenv": "$#[LAYERS_DIR]/meta-test/oe-my-init-env",
                 "bblayersconf": [
                     "BAKERY_WORKDIR=\"${TOPDIR}/../..\"",
                     "BBLAYERS ?= \" \\",
-                    "       ${BAKERY_WORKDIR}/meta-test \\",
+                    "       $#[LAYERS_DIR]/meta-test \\",
                     "       $#[BUILDS_DIR]/workspace \\",
                     "\""
                 ],
@@ -294,11 +295,12 @@ mod tests {
         let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
         let mut data: WsBitbakeData = WsBitbakeData::from_str(json_build_config, &settings).expect("Failed to parse product data");
         let variables: IndexMap<String, String> = indexmap! {
-            "BUILDS_DIR".to_string() => settings.builds_dir().to_string_lossy().to_string()
+            "BUILDS_DIR".to_string() => settings.builds_dir().to_string_lossy().to_string(),
+            "LAYERS_DIR".to_string() => settings.layers_dir().to_string_lossy().to_string()
         };
         let context: Context = Context::new(&variables);
         data.expand_ctx(&context).unwrap();
-        assert_eq!(data.bblayers_conf(), "BAKERY_WORKDIR=\"${TOPDIR}/../..\"\nBBLAYERS ?= \" \\\n       ${BAKERY_WORKDIR}/meta-test \\\n       /bakery-ws/builds/workspace \\\n\"\n");
+        assert_eq!(data.bblayers_conf(), "BAKERY_WORKDIR=\"${TOPDIR}/../..\"\nBBLAYERS ?= \" \\\n       /bakery-ws/layers/meta-test \\\n       /bakery-ws/builds/workspace \\\n\"\n");
         assert_eq!(data.local_conf(), "BAKERY_WORKSPACE_DIR ?= \"/bakery-ws/builds/workspace\"\nPACKAGE_CLASSES ?= \"package_rpm\"\nBB_DISKMON_DIRS ?= \"\\\n    STOPTASKS,${TMPDIR},1G,100K \\\n    HALT,${SSTATE_DIR},100M,1K \\\n    HALT,/tmp,10M,1K\"\nCONF_VERSION = \"2\"\nMACHINE ?= \"test-machine\"\nVARIANT ?= \"dev\"\nPRODUCT_NAME ?= \"test-name\"\nDISTRO ?= \"test-distro\"\nSSTATE_DIR ?= \"/bakery-ws/.cache/test-arch/sstate-cache\"\nDL_DIR ?= \"/bakery-ws/.cache/download\"\n");
     }
 }

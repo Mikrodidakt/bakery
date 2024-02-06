@@ -18,6 +18,7 @@ pub const CTX_KEY_BB_BUILD_DIR: &str = "BB_BUILD_DIR";
 pub const CTX_KEY_BB_DEPLOY_DIR: &str = "BB_DEPLOY_DIR";
 pub const CTX_KEY_PRODUCT_NAME: &str = "PRODUCT_NAME";
 pub const CTX_KEY_ARTIFACTS_DIR: &str = "ARTIFACTS_DIR";
+pub const CTX_KEY_LAYERS_DIR: &str = "LAYERS_DIR";
 pub const CTX_KEY_SCRIPTS_DIR: &str = "SCRIPTS_DIR";
 pub const CTX_KEY_BUILDS_DIR: &str = "BUILDS_DIR";
 pub const CTX_KEY_WORK_DIR: &str = "WORK_DIR";
@@ -54,6 +55,7 @@ impl WsContextData {
             CTX_KEY_BB_DEPLOY_DIR |
             CTX_KEY_PRODUCT_NAME |
             CTX_KEY_WORK_DIR |
+            CTX_KEY_LAYERS_DIR |
             CTX_KEY_BUILDS_DIR => false,
             _ => false,
         }
@@ -90,6 +92,7 @@ impl WsContextData {
             CTX_KEY_BB_BUILD_DIR.to_string() => "".to_string(),
             CTX_KEY_BB_DEPLOY_DIR.to_string() => "".to_string(),
             CTX_KEY_ARTIFACTS_DIR.to_string() => "".to_string(),
+            CTX_KEY_LAYERS_DIR.to_string() => "".to_string(),
             CTX_KEY_SCRIPTS_DIR.to_string() => "".to_string(),
             CTX_KEY_BUILDS_DIR.to_string() => "".to_string(),
             CTX_KEY_WORK_DIR.to_string() => "".to_string(),
@@ -160,6 +163,7 @@ mod tests {
         CTX_KEY_BB_BUILD_DIR,
         CTX_KEY_BB_DEPLOY_DIR,
         CTX_KEY_ARTIFACTS_DIR,
+        CTX_KEY_LAYERS_DIR,
         CTX_KEY_SCRIPTS_DIR,
         CTX_KEY_BUILDS_DIR,
         CTX_KEY_WORK_DIR,
@@ -198,6 +202,10 @@ mod tests {
         );
         assert_eq!(
             data.get_ctx_path(CTX_KEY_ARTIFACTS_DIR),
+            PathBuf::from("")
+        );
+        assert_eq!(
+            data.get_ctx_path(CTX_KEY_LAYERS_DIR),
             PathBuf::from("")
         );
         assert_eq!(

@@ -82,6 +82,12 @@ impl WsSettingsHandler {
         path_buf
     }
 
+    pub fn layers_dir(&self) -> PathBuf {
+        let mut path_buf = self.work_dir();
+        path_buf.push(&self.ws_settings.layers_dir);
+        path_buf
+    }
+
     pub fn configs_dir(&self) -> PathBuf {
         let mut path_buf = self.work_dir();
         path_buf.push(&self.ws_settings.configs_dir);
@@ -162,6 +168,7 @@ mod tests {
         assert_eq!(settings.builds_dir(), PathBuf::from("/workspace/builds"));
         assert_eq!(settings.cache_dir(), PathBuf::from("/workspace/.cache"));
         assert_eq!(settings.artifacts_dir(), PathBuf::from("/workspace/artifacts"));
+        assert_eq!(settings.layers_dir(), PathBuf::from("/workspace/layers"));
         assert_eq!(settings.scripts_dir(), PathBuf::from("/workspace/scripts"));
         assert_eq!(settings.docker_dir(), PathBuf::from("/workspace/docker"));
         assert_eq!(settings.configs_dir(), PathBuf::from("/workspace/configs"));
@@ -177,6 +184,7 @@ mod tests {
               "configsdir": "configs_test",
               "includedir": "include_test",
               "artifactsdir": "artifacts_test",
+              "layersdir": "layers_test",
               "buildsdir": "builds_test",
               "artifactsdir": "artifacts_test",
               "scriptsdir": "scripts_test",
@@ -192,6 +200,7 @@ mod tests {
         assert_eq!(settings.builds_dir(), PathBuf::from("/workspace/builds_test"));
         assert_eq!(settings.cache_dir(), PathBuf::from("/workspace/cache_test"));
         assert_eq!(settings.artifacts_dir(), PathBuf::from("/workspace/artifacts_test"));
+        assert_eq!(settings.layers_dir(), PathBuf::from("/workspace/layers_test"));
         assert_eq!(settings.scripts_dir(), PathBuf::from("/workspace/scripts_test"));
         assert_eq!(settings.docker_dir(), PathBuf::from("/workspace/docker_test"));
         assert_eq!(settings.configs_dir(), PathBuf::from("/workspace/configs_test"));
