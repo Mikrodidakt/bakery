@@ -58,6 +58,7 @@ impl WsBuildData {
             context::CTX_KEY_DISTRO.to_string() => bitbake.distro().to_string(),
             context::CTX_KEY_PRODUCT_NAME.to_string() => product.name().to_string(),
             context::CTX_KEY_ARTIFACTS_DIR.to_string() => settings.artifacts_dir().to_string_lossy().to_string(),
+            context::CTX_KEY_LAYERS_DIR.to_string() => settings.layers_dir().to_string_lossy().to_string(),
             context::CTX_KEY_SCRIPTS_DIR.to_string() => settings.scripts_dir().to_string_lossy().to_string(),
             context::CTX_KEY_BUILDS_DIR.to_string() => settings.builds_dir().to_string_lossy().to_string(),
             context::CTX_KEY_WORK_DIR.to_string() => settings.work_dir().to_string_lossy().to_string(),
@@ -183,8 +184,7 @@ mod tests {
         WsTaskHandler,
     };
     use crate::data::{
-        WsBuildData,
-        AType
+        AType, WsBitbakeData, WsBuildData
     };
     use crate::helper::Helper;
 
@@ -455,5 +455,54 @@ mod tests {
             assert_eq!(a.data().source(), &format!("file{}.txt", i));
             i += 1;
         });
+    }
+
+    #[test]
+    fn test_ws_build_data_built_in_ctx() {
+        let json_task_str: &str = r#"
+        {
+            "index": "2",
+            "name": "task-name",
+            "type": "bitbake",
+            "recipes": [
+                "$#[RECIPE_NAME]"
+            ]
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "5",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {
+                "machine": "test-machine",
+                "distro": "test-distro",
+                "deploydir": "tmp/test/deploy",
+                "docker": "test-registry/test-image:0.1",
+                "initenv": "$#[LAYERS_DIR]/meta-test/oe-my-init-env",
+                "bblayersconf": [
+                    "BAKERY_WORKDIR=\"${TOPDIR}/../..\"",
+                    "BBLAYERS ?= \" \\",
+                    "       $#[LAYERS_DIR]/meta-test \\",
+                    "       $#[BUILDS_DIR]/workspace \\",
+                    "\""
+                ],
+                "localconf": [
+                    "ARTIFACTS_DIR ?= $#[ARTIFACTS_DIR]",
+                    "LAYERS_DIR ?= $#[LAYERS_DIR]",
+                    "SCRIPTS_DIR ?= $#[SCRIPTS_DIR]",
+                    "BUILD_DIR ?= $#[BUILDS_DIR]",
+                    "WORK_DIR ?= $#[WORK_DIR]"
+                ]
+            }
+
+        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let mut data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
+        data.expand_ctx().unwrap();
+        let bitbake: &WsBitbakeData = data.bitbake();
+        assert_eq!(bitbake.local_conf(), "ARTIFACTS_DIR ?= /workspace/artifacts\nLAYERS_DIR ?= /workspace/layers\nSCRIPTS_DIR ?= /workspace/scripts\nBUILD_DIR ?= /workspace/builds\nWORK_DIR ?= /workspace\nMACHINE ?= \"test-machine\"\nVARIANT ?= \"dev\"\nPRODUCT_NAME ?= \"test-name\"\nDISTRO ?= \"test-distro\"\nSSTATE_DIR ?= \"/workspace/.cache/test-arch/sstate-cache\"\nDL_DIR ?= \"/workspace/.cache/download\"\n");
+        assert_eq!(bitbake.bblayers_conf(), "BAKERY_WORKDIR=\"${TOPDIR}/../..\"\nBBLAYERS ?= \" \\\n       /workspace/layers/meta-test \\\n       /workspace/builds/workspace \\\n\"\n");
+        assert_eq!(bitbake.init_env_file(), PathBuf::from("/workspace/layers/meta-test/oe-my-init-env"));
     }
 }

@@ -57,6 +57,7 @@ pub struct WsSettings {
     pub configs_dir: String,
     pub builds_dir: String,
     pub artifacts_dir: String,
+    pub layers_dir: String,
     pub include_dir: String,
     pub scripts_dir: String,
     pub docker_dir: String,
@@ -81,6 +82,7 @@ impl WsSettings {
         let mut include_dir: String = String::from("configs/include");
         let mut builds_dir: String = String::from("builds");
         let mut artifacts_dir: String = String::from("artifacts");
+        let mut layers_dir: String = String::from("layers");
         let mut scripts_dir: String = String::from("scripts");
         let mut docker_dir: String = String::from("docker");
         let mut cache_dir: String = String::from(".cache");
@@ -98,7 +100,7 @@ impl WsSettings {
                 include_dir = Self::get_str_value("includedir", ws_data, Some(String::from("configs/include")))?;
                 builds_dir = Self::get_str_value("buildsdir", ws_data, Some(String::from("builds")))?;
                 artifacts_dir = Self::get_str_value("artifactsdir", ws_data, Some(String::from("artifacts")))?;
-
+                layers_dir = Self::get_str_value("layersdir", ws_data, Some(String::from("layers")))?;
                 scripts_dir = Self::get_str_value("scriptsdir", ws_data, Some(String::from("scripts")))?;
                 docker_dir = Self::get_str_value("dockerdir", ws_data, Some(String::from("docker")))?;
                 cache_dir = Self::get_str_value("cachedir", ws_data, Some(String::from(".cache")))?;
@@ -133,6 +135,7 @@ impl WsSettings {
             include_dir,
             builds_dir,
             artifacts_dir,
+            layers_dir,
             scripts_dir,
             docker_dir,
             cache_dir,
@@ -160,6 +163,7 @@ mod tests {
               "configsdir": "configs_test",
               "includedir": "include_test",
               "artifactsdir": "artifacts_test",
+              "layersdir": "layers_test",
               "buildsdir": "builds_test",
               "artifactsdir": "artifacts_test",
               "scriptsdir": "scripts_test",
@@ -171,6 +175,7 @@ mod tests {
         assert_eq!(&settings.configs_dir,  "configs_test");
         assert_eq!(&settings.include_dir,  "include_test");
         assert_eq!(&settings.artifacts_dir,  "artifacts_test");
+        assert_eq!(&settings.layers_dir,  "layers_test");
         assert_eq!(&settings.builds_dir,  "builds_test");
         assert_eq!(&settings.scripts_dir,  "scripts_test");
         assert_eq!(&settings.docker_dir,  "docker_test");
@@ -187,6 +192,7 @@ mod tests {
         assert_eq!(&settings.configs_dir,  "configs");
         assert_eq!(&settings.include_dir,  "configs/include");
         assert_eq!(&settings.artifacts_dir,  "artifacts");
+        assert_eq!(&settings.layers_dir,  "layers");
         assert_eq!(&settings.builds_dir,  "builds");
         assert_eq!(&settings.scripts_dir,  "scripts");
         assert_eq!(&settings.docker_dir,  "docker");
