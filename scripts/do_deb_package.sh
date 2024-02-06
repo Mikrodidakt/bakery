@@ -28,5 +28,5 @@ EOT
 dpkg-deb --root-owner-group --build ${TEMP_WORK_DIR}
 
 cp ${TEMP_WORK_DIR}/../bakery.deb ${ARTIFACTS_DIR}/bakery-${VERSION}.deb
-
+cp ${TEMP_WORK_DIR}/../bakery.deb ${ARTIFACTS_DIR}/bakery.deb
 
