@@ -1,0 +1,13 @@
+{
+	"version": "5",
+	"workspace": {
+		"configsdir": ""
+	},
+	"docker": {
+		"args": [
+			"-v ${HOME}/.openembedded:${HOME}/.openembedded:rw",
+			"-v ${HOME}/bin:${HOME}/bin:ro",
+			"-v ${HOME}/.bashrc:${HOME}/.bashrc"
+		]
+	}
+}
