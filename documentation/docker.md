@@ -10,25 +10,26 @@ There are multiple ways to install docker on your system and bakery has currentl
 
 It is a requirement that Docker is installed and setup correctly where each user belongs to the docker group to prevent running docker as root. For more information please refer to https://docs.docker.com/engine/install/linux-postinstall/. After Docker has been setup check that user belongs to the group by running
 
-    ```bash
-    groups
-    ```
+```bash
+user@node:/dir$ groups
+user adm cdrom sudo dip plugdev docker
+```
 
 # Docker Pull
 
 Currently bakery will not automatically pull down any Docker image this is in the backlog to change but currently this is a manual step. This is done by running
 
-    ```bash
-    BVERSION=$(bakery --version)
-    BVERSION=${BAKERY_VERSION##* }
-    docker pull strixos/bakery-workspace:${BVERSION}
-    ```
+```bash
+user@node:/dir$ BVERSION=$(bakery --version)
+user@node:/dir$ BVERSION=${BAKERY_VERSION##* }
+user@node:/dir$ docker pull strixos/bakery-workspace:${BVERSION}
+```
 
 # Bakery Workspace
 
 By default the Docker image bakery-workspace is used by bakery and is uploaded to Docker hub. For some reason a Docker hub account is sometimes required to pull down even a public image. It is not clear why but if bakery-workspace cannot be pulled then your local user might be required to log into Docker hub by running
 
-    ```bash
-    docker login 
-    ```
+```bash
+user@node:/dir$ docker login 
+```
 
