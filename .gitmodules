@@ -1,0 +1,3 @@
+[submodule "tests/template-workspace/layers/poky"]
+	path = tests/template-workspace/layers/poky
+	url = https://git.yoctoproject.org/git/poky
