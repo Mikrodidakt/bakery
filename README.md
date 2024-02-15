@@ -4,7 +4,7 @@
 
 ## Introduction
 
-Bakery is a versatile command-line tool designed to simplify and streamline the process of building Yocto Project or OpenEmbedded projects. It serves as a wrapper around the powerful BitBake tool, leveraging Docker to ensure consistent environments across local and CI (Continuous Integration) builds.
+Bakery is a versatile command-line tool designed to simplify and streamline the process of building Yocto Project or OpenEmbedded projects. It serves as a wrapper around the powerful bitbake tool, leveraging Docker to ensure consistent environments across local and CI (Continuous Integration) builds.
 
 ### Why Bakery?
 
@@ -24,47 +24,13 @@ Download one of the deb-packages releases.
 
 Because bakery is written in Rust bakery is a single binary depending only on libc. It will be installed under /usr/bin.
 
-### Build Source
+### Build Source Code
 
-If you are not running a Debian distribution then bakery can be built from source
-by setting up rust. Follow these steps:
+Please see [build source code](documentation/build-bakery.md) for information on how to build bakery.
 
-1. Clone the Bakery repository:
+## Docker
 
-    ```bash
-    git clone git@github.com:Mikrodidakt/bakery.git
-    cd bakery
-    ```
-
-2. Run the setup script to install Rust devtools:
-
-    ```bash
-    ./scripts/setup-rust.sh
-    ```
-
-3. Setup cargo env:
-
-    ```bash
-    source $HOME/.cargo/env
-    ```
-
-4. Include path to PATH env
-
-    ```bash
-    export PATH=$HOME/.cargo/bin:$PATH
-    ```
-
-4. Install Bakery using Cargo:
-
-    ```bash
-    cargo install --path .
-    ```
-
-   If you want to install Bakery to a different system directory, change the `CARGO_HOME` variable before reinstalling:
-
-    ```bash
-    CARGO_HOME=/usr/local/cargo; cargo install --path .
-    ```
+By default bakery will use Docker. Please see [how to setup docker](documentation/docker.md) for more information on setup docker. Please see [how to disable docker](documentation/workspace-config.md#Disable-Docker) for information on how to run bakery without docker. 
 
 ## Usage
 
@@ -75,30 +41,7 @@ To try bakery out the easiest way is to use the template workspace under tests/t
     git submodule init
 ```
 
-This will pull down poky and together with the workspace and build config beaglebone black can be built using the bakery workspace shell covered by [Shell](###Shell)
-
-### Setting Up Workspace
-
-To use Bakery, you need to set up the build config and workspace config files. These files describe the build configuration and the tree structure of the Bakery workspace, respectively. The default tree structure of the Bakery workspace would be something like
-
-
-```bash
-    ├── artifacts
-    ├── beaglebone.json
-    ├── builds
-    ├── docker
-    ├── layers
-    ├── scripts
-    └── workspace.json
-
-```
-
-The builds directory and the artifacts directory will be created as part of the build while the other directories are setup as part of the project setup. How the content of the directories are setup is not defined by Bakery normally there are two way git submodules or repo android tool. The layers directory is where the meta data used to describe the OE/Yocto project is placed. The layers directory is required while the reset is up to the project. The important is that Bakery is aware of the directories and that is where the workspace config comes in which will be covered more in detail [Workspace Config File](##Workspace-Config-File)
-
-### Docker
-
-By default Bakery will use docker and by default it will use the bakery-workspace image. The bakery-workspace will contain a Bakery version matching the version of the image. When running a Bakery subcommand Bakery will be bootstrapped into docker and will execute the subcommand inside the docker container. It is a requirement that docker
-is installed and setup correctly where each user belongs to the docker group to prevent running docker as root. For reference on how to setup docker please see https://github.com/Mikrodidakt/bakery/blob/main/scripts/setup-docker.sh which could be used as a reference.
+This will pull down poky and together with the workspace and the build config beaglebone black can be built using the bakery workspace shell covered by [Shell](#Shell)
 
 ### List
 
@@ -112,8 +55,7 @@ This will list all available builds in the Bakery workspace including a short de
 
 ### Shell
 
-The prefered way of working with Bakery is to start a shell this will setup the env for using Bakery but also to make it possible to run any OE/Yocto bitbake
-command.
+The prefered way of working with Bakery is to start a shell this will setup the env for using Bakery but also to make it possible to run any tools available by OE/Yocto.
 
 ```bash
     bakery shell -c <config>
@@ -137,21 +79,30 @@ To start a build run
     <user>@bakery-v<version>[<config>]:~/$ build
 ```
 
-## Workspace Config File
+## Sub-Commands
 
-If the default workspace config is acceptable, the most basic workspace config is:
+For a detailed description of what sub-commands bakery offers please run
 
-```json
-    {
-        "version": "5"
-    }
+```bash
+    <user>@bakery-v<version>[<config>]:~/$ bakery help
 ```
 
-This simple configuration will use the default directory structure and the default Bakery Docker image (strixos/bakery-workspace:latest). For more details on the workspace config format please see [link]
+For information on each sub-command and what flags it supports run
 
-## Build Config File
+```bash
+    <user>@bakery-v<version>[<config>]:~/$ bakery <sub-command> --help
+```
 
-For a simple build config please see tests/template-workspace/beaglebone.json. The details for how to setup a build config can be found at [link]
+For more information on how to use each sub-command please refere to [sub-commands](documentation/sub-commands.md).
+
+## Setup A Project
+
+To setup a project from scratch mainly four things are required
+
+* bakery - the bakery tool. Please see [Installation](#Installation)
+* workspace - the workspace config defining the workspace structure. Please see [Setup Workspace](documentation/workspace-config.md).
+* build config - the build config defining how to build a product. Please see [Build Config](documentation/build-config.md).
+* meta layers - the meta data used by bitbake when producing the artifacts needed by the product. Please see [Meta Layers](documentation/meta-layers.md).
 
 ## Key Features
 
