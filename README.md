@@ -79,6 +79,8 @@ To start a build run
     <user>@bakery-v<version>[<config>]:~/$ build
 ```
 
+For more information on how to use each shell sub-command please refere to [shell](documentation/sub-commands.md#shell).
+
 ## Sub-Commands
 
 For a detailed description of what sub-commands bakery offers please run
