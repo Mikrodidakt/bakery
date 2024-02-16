@@ -30,7 +30,7 @@ Please see [build source code](documentation/build-bakery.md) for information on
 
 ## Docker
 
-By default bakery will use Docker. Please see [how to setup docker](documentation/docker.md) for more information on setup docker. Please see [how to disable docker](documentation/workspace-config.md#disabled) for information on how to run bakery without docker. 
+By default bakery will use Docker. Please see [how to setup docker](documentation/docker.md) for more information on setup docker. Please see [how to disable docker](documentation/workspace-config.md#disabled) for information on how to run bakery without docker.
 
 ## Usage
 
@@ -38,36 +38,43 @@ To try bakery out the easiest way is to use the template workspace under tests/t
 
 ```bash
 user@node:/dir$ cd tests/template-workspace
-user@node:/dir$ git submodule init
+user@node:/dir$ git submodule update
 ```
 
 This will pull down poky and together with the workspace and the build config beaglebone black can be built using the bakery workspace shell covered by [Shell](#Shell)
 
-### List
+### List Products
 
-To list what builds are supported in a workspace run
+To list what products are supported in a workspace run
 
 ```bash
 user@node:/dir$ bakery list
 ```
 
-This will list all available builds in the Bakery workspace including a short description.
+This will list all available products in the Bakery workspace including a short description.
 
-### Shell
+### Build
 
-The prefered way of working with Bakery is to start a shell this will setup the env for using Bakery but also to make it possible to run any tools available by OE/Yocto.
+The recommended way of working with Bakery is to start a shell this will setup the env for using Bakery but also to make it possible to run any tools available by OE/Yocto.
 
 ```bash
 user@node:/dir$ bakery shell -c <config>
 ```
 
-When starting a Bakery shell the config will be set and a couple of aliases will be available inside the shell to prevent from having to specify the build config everytime. The terminal will present the following information
+When starting a Bakery shell the config will be selected and used inside the shell. The terminal will present the following information
 
 ```bash
 <user>@bakery-v<version>[<config>]:~/$
 ```
 
+for example in the template-workspace something like this would be presented
+
+```bash
+user@bakery-vx.y.z[beaglebone]:~/$
+```
+
 Each subcommand will be available as an alias with the build config predefined. Simply type the subcommand to run it. To get a list of the current subcommands run
+
 
 ```bash
 <user>@bakery-v<version>[<config>]:~/$ help
@@ -79,7 +86,8 @@ To start a build run
 <user>@bakery-v<version>[<config>]:~/$ build
 ```
 
-For more information on how to use each shell sub-command please refere to [shell](documentation/sub-commands.md#shell).
+For more information on how to use the shell and any sub-command please refere to [shell](documentation/sub-commands.md#shell).
+
 
 ## Sub-Commands
 
@@ -90,6 +98,7 @@ user@node:/dir$ bakery help
 ```
 
 For information on each sub-command and what flags it supports run
+
 
 ```bash
 user@node:/dir$ bakery <sub-command> --help
