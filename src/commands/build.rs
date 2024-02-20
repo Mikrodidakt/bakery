@@ -144,7 +144,8 @@ impl BCommand for BuildCommand {
             // More then one task was specified on the command line
             for t_name in tasks {
                 let task: &WsTaskHandler = workspace.config().task(&t_name)?;
-                task.build(cli, &workspace.config().build_data(), &bb_variables, &env_variables, dry_run, interactive)?;
+                task.build(cli, &workspace.config().build_data(), &bb_variables,
+                    &env_variables, dry_run, interactive, true)?;
             }
         } else {
             // One task was specified on the command line or default was used
@@ -152,12 +153,14 @@ impl BCommand for BuildCommand {
             if task == "all" {
                 // The alias "all" was specified on the command line or it none was specified and "all" was used
                 for (_t_name, task) in workspace.config().tasks() {
-                    task.build(cli, &workspace.config().build_data(), &bb_variables, &env_variables, dry_run, interactive)?;
+                    task.build(cli, &workspace.config().build_data(), &bb_variables,
+                        &env_variables, dry_run, interactive, false)?;
                 }
             } else {
                 // One task was specified on the command line
                 let task: &WsTaskHandler = workspace.config().task(tasks.get(0).unwrap())?;
-                task.build(cli, &workspace.config().build_data(), &bb_variables, &env_variables, dry_run, interactive)?;
+                task.build(cli, &workspace.config().build_data(), &bb_variables,
+                    &env_variables, dry_run, interactive, true)?;
             }
         }
         Ok(())

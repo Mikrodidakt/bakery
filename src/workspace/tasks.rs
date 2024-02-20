@@ -45,15 +45,16 @@ impl WsTaskHandler {
         })
     }
 
-    pub fn build<'a>(&self, cli: &'a Cli, build_data: &WsBuildData, bb_variables: &Vec<String>, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+    pub fn build<'a>(&self, cli: &'a Cli, build_data: &WsBuildData, bb_variables: &Vec<String>,
+        env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool, force: bool) -> Result<(), BError> {
         let executer: Box<dyn TaskExecuter>;
 
-        if self.data.disabled() {
+        if !force && self.data.disabled() {
             cli.info(format!("Task '{}' is disabled in build config so execution is skipped", self.data.name()));
             return Ok(());
         }
 
-        if !self.data.condition() {
+        if !force && !self.data.condition() {
             cli.info(format!("Task condition for task '{}' is not meet so execution is skipped", self.data.name()));
             return Ok(());
         }
@@ -468,7 +469,7 @@ mod tests {
             clap::Command::new("bakery"),
             None,
         );
-        task.build(&cli, &build_data, &vec![], &HashMap::new(), false, false).expect("Failed to run task!");
+        task.build(&cli, &build_data, &vec![], &HashMap::new(), false, false, false).expect("Failed to run task!");
     }
 
     /*
@@ -568,7 +569,7 @@ mod tests {
             clap::Command::new("bakery"),
             None,
         );
-        task.build(&cli, &build_data, &vec![], &HashMap::new(), false, false).expect("Failed to run task!");
+        task.build(&cli, &build_data, &vec![], &HashMap::new(), false, false, false).expect("Failed to run task!");
     }
 
     #[test]
@@ -684,6 +685,7 @@ mod tests {
             &vec![],
             &HashMap::new(),
             true, // Running dry-run should skip the execution and instead only create the bitbake confs
+            false,
             false).expect("Failed to run task!");
         let mut local_conf_content: String = String::from("");
         local_conf_content.push_str("BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"\n");
