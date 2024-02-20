@@ -65,8 +65,8 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
 WORKDIR /bakery
-COPY ../../artifacts/bakery.deb .
-RUN dpkg -i bakery.deb
+#COPY ../../artifacts/bakery.deb .
+#RUN dpkg -i bakery.deb
 
 # Setting up a bakery specific bash env pulled in by /etc/bash.bashrc 
 RUN mkdir -p /etc/bakery && \
