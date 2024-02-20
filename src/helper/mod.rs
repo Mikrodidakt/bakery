@@ -322,6 +322,8 @@ impl Helper {
             format!("{}/.bakery:{}/.bakery", Helper::env_home(), Helper::env_home()),
             String::from("-v"),
             String::from("/var/run/docker.sock:/var/run/docker.sock"),
+            String::from("-v"),
+            String::from("/usr/bin/bakery:/usr/bin/bakery:ro"),
             String::from("-u"),
             format!("{}:{}", users::get_current_uid(), users::get_current_gid()),
             String::from("-v"),
