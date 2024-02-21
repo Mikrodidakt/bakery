@@ -29,6 +29,12 @@ The build config is what describes building the product for bakery. A typical bu
                         "recipes": [],
                         "artifacts": []
                 }
+        },
+        "deploy": {
+                "cmd": ""
+        },
+        "upload": {
+                "cmd": ""
         }
 }
 ```
@@ -39,8 +45,10 @@ The build config can be split up in
 * Product data  - product data like name, description, arch.
 * Context data  - context variables that can be used throught the build config.
 * Bitbake data  - bitbake data distro, machine, deploy dir, init-env script, local.conf and bblayers.conf.
-* Tasks data    - To build a product multiple tasks might be required. The tasks data contains a list of tasks and defines what each task should do.
+* Tasks data    - to build a product multiple tasks might be required. The tasks data contains a list of tasks and defines what each task should do.
   * Artifacts data - The artifacts data is part of the task data and contains what artifacts to collect for each task.
+* Deploy data   - information on how to deploy an image to the target. 
+* Upload data   - information on how to upload firmware to a artifactory server.
 
 # Config Data
 
@@ -256,6 +264,55 @@ The builddir is only used by the non-bitbake task and is used to change working 
 Sometimes a task is needed but it should not be executed by default when not specifing a task and running a full build. For example a signing task that requires some additional resources like an HSM when signing so it should only be executed by a specific signing node then it can be disabled. It will then only be executed when the task is specificelly specified in the bakery command using the the task flag in the [build](sub-commands.mk#Build).
 
 ## artifacts
+
+# deploy
+
+The deploy section currently is just made up of a cmd. This can be used to define a custom deploy command making use of the context variables.
+
+```json
+"deploy": {
+        "cmd": "$#[SCRIPTS_DIR]/deploy.sh $#[ARTIFACTS_DIR]/full-image-$#[MACHINE].mender $#[DEVICE]"
+}
+```
+
+# upload
+
+The upload section currently is just made up of a cmd. This can be used to define a custom upload command making use of the context variables.
+
+```json
+"upload": {
+        "cmd": "$#[SCRIPTS_DIR]/upload.sh $#[ARTIFACTS_DIR]/full-image-$#[MACHINE].mender $#[MENDER_ARTIFACT_SERVER]"
+}
+```
+
+# Context
+
+The context is a concept that is made up of two context variable type "built-in" variables and "config" variables. The "config" context variables are the once defined in the context section of the build config while the "built-in" variables are comming from the bakery binary. The values of the "built-in" variables are either defined by the workspace.json or by a combination that the bakery binary will define in run-time. Currently the following "built-in" variables are avilable to be used in the build config
+
+```
+MACHINE
+ARCH
+DISTRO
+BB_BUILD_DIR
+BB_DEPLOY_DIR
+PRODUCT_NAME
+ARTIFACTS_DIR
+LAYERS_DIR
+SCRIPTS_DIR
+BUILDS_DIR
+WORK_DIR
+PLATFORM_VERSION
+BUILD_ID
+PLATFORM_RELEASE
+BUILD_SHA
+VARIANT
+RELEASE_BUILD
+ARCHIVER
+DEBUG_SYMBOLS
+DEVICE
+```
+
+To get the up to date list please refere to [BUILT_IN_CONTEXT_VARIABLES](https://github.com/Mikrodidakt/bakery/blob/main/src/data/context.rs#L13). Some of the "built-in" context variables will be exposed to the bitbake environment by getting included to the local.conf. To get a list of what context variables a build config offeres and the values of them run the [context](sub-commands.md#Context) sub-command.
 
 
 
