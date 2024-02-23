@@ -62,3 +62,11 @@ strixos/bakery-workspace        latest    f896c2e2b7f7   8 days ago     2.58GB
 
 ```
 
+# Crops
+
+The Yocto Project has setup a docker project called crops currently the bakery is not using it but that would be the goal. The images are setup a bit differently and I need to go over it to use if for bakery and have simply not had time yet. But it would be greate if the bakery could make use of the crops containers.
+
+* https://hub.docker.com/r/crops/poky
+* https://github.com/crops/yocto-dockerfiles
+* https://github.com/crops/poky-container
+
