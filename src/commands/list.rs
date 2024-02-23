@@ -1,3 +1,5 @@
+use indexmap::IndexMap;
+
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
 use crate::workspace::Workspace;
@@ -38,6 +40,7 @@ impl BCommand for ListCommand {
 
     fn execute(&self, cli: &Cli, workspace: &mut Workspace) -> Result<(), BError> {
         let config: String = self.get_arg_str(cli, "config", BCOMMAND)?;
+        let ctx: bool = self.get_arg_flag(cli, "ctx", BCOMMAND)?;
         if config == "NA" { // default value if not specified
             // If no config is specified then we will list all supported build configs
             workspace
@@ -53,10 +56,19 @@ impl BCommand for ListCommand {
         } else {
             // List all tasks for a build config
             if workspace.valid_config(config.as_str()) {
-                //cli.info(format!("The following tasks are supported by '{}'", config.as_str()));
-                workspace.config().tasks().iter().for_each(|(_name, task)| {
-                    cli.stdout(format!("{}", task.data().name()));
-                });
+                if ctx {
+                    workspace.expand_ctx()?;
+                    let variables: IndexMap<String, String> = workspace.context()?;
+                    cli.info(format!("Context varibles for build config '{}':", config));
+                    variables.iter().for_each(|(key, value)| {
+                        cli.stdout(format!("{}={}", key.to_ascii_uppercase(), value));
+                    });
+                } else {
+                    //cli.info(format!("The following tasks are supported by '{}'", config.as_str()));
+                    workspace.config().tasks().iter().for_each(|(_name, task)| {
+                        cli.stdout(format!("{}", task.data().name()));
+                    });
+                }
             } else {
                 return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
             }
@@ -67,14 +79,22 @@ impl BCommand for ListCommand {
 
 impl ListCommand {
     pub fn new() -> Self {
-        let subcmd: clap::Command = clap::Command::new(BCOMMAND).about(BCOMMAND_ABOUT).arg(
-            clap::Arg::new("config")
-                .short('c')
-                .long("config")
-                .help("The build config defining all the components for the full build")
-                .value_name("name")
-                .default_value("NA"),
-        );
+        let subcmd: clap::Command = clap::Command::new(BCOMMAND)
+            .about(BCOMMAND_ABOUT)
+            .arg(
+                clap::Arg::new("config")
+                    .short('c')
+                    .long("config")
+                    .help("The build config defining all the components for the full build")
+                    .value_name("name")
+                    .default_value("NA"),
+            )
+            .arg(
+                clap::Arg::new("ctx")
+                    .action(clap::ArgAction::SetTrue)
+                    .long("ctx")
+                    .help("List the context variables for a build config"),
+            );
         // Initialize and return a new BuildCommand instance
         ListCommand {
             // Initialize fields if any
@@ -91,6 +111,7 @@ impl ListCommand {
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
+    use indexmap::{IndexMap, indexmap};
     use tempdir::TempDir;
 
     use crate::cli::*;
@@ -99,15 +120,13 @@ mod tests {
     use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
 
     fn helper_test_list_subcommand(
+        work_dir: &PathBuf,
         json_ws_settings: &str,
         json_build_config: &str,
         mlogger: MockLogger,
         msystem: MockSystem,
         cmd_line: Vec<&str>,
     ) -> Result<(), BError> {
-        let temp_dir: TempDir =
-            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
-        let work_dir: &PathBuf = &temp_dir.into_path();
         let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings)?;
         let config: WsBuildConfigHandler =
             WsBuildConfigHandler::from_str(json_build_config, &settings)?;
@@ -125,6 +144,8 @@ mod tests {
 
     #[test]
     fn test_cmd_list_no_build_config() {
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
         let json_ws_settings: &str = r#"
         {
             "version": "5",
@@ -152,6 +173,7 @@ mod tests {
             .once()
             .returning(|_x| ());
         let _result: Result<(), BError> = helper_test_list_subcommand(
+            &work_dir,
             json_ws_settings,
             json_build_config,
             mocked_logger,
@@ -162,6 +184,8 @@ mod tests {
 
     #[test]
     fn test_cmd_list_build_config() {
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
         let json_ws_settings: &str = r#"
         {
             "version": "5",
@@ -204,6 +228,7 @@ mod tests {
             .once()
             .returning(|_x| ());
         let _result: Result<(), BError> = helper_test_list_subcommand(
+            &work_dir,
             json_ws_settings,
             json_build_config,
             mocked_logger,
@@ -214,6 +239,8 @@ mod tests {
 
     #[test]
     fn test_cmd_list_invalid_build_config() {
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
         let json_ws_settings: &str = r#"
         {
             "version": "5",
@@ -245,6 +272,7 @@ mod tests {
         }
         "#;
         let result: Result<(), BError> = helper_test_list_subcommand(
+            &work_dir,
             json_ws_settings,
             json_build_config,
             MockLogger::new(),
@@ -262,5 +290,81 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn test_cmd_list_ctx() {
+        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = temp_dir.into_path();
+        let json_ws_settings: &str = r#"
+        {
+            "version": "5",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "5",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "context": [
+                "PLATFORM_VERSION=x.y.z",
+                "BUILD_ID=abcdef",
+                "VARIANT=test"
+            ],
+            "bb": {
+                "machine": "test-machine",
+                "distro": "test-distro"
+            }
+        }
+        "#;
+        let mut mocked_logger: MockLogger = MockLogger::new();
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq("Context varibles for build config 'default':".to_string()))
+            .once()
+            .returning(|_x| ());
+        let ctx_variables: IndexMap<String, String> = indexmap! {
+            "MACHINE".to_string() => "test-machine".to_string(),
+            "ARCH".to_string() => "test-arch".to_string(),
+            "DISTRO".to_string() => "test-distro".to_string(),
+            "PRODUCT_NAME".to_string() => "default".to_string(),
+            "BB_BUILD_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("builds/default")).display()),
+            "BB_DEPLOY_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("builds/default/tmp/deploy/images")).display()),
+            "ARTIFACTS_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("artifacts")).display()),
+            "LAYERS_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("layers")).display()),
+            "SCRIPTS_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("scripts")).display()),
+            "BUILDS_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("builds")).display()),
+            "WORK_DIR".to_string() => format!("{}", work_dir.display()),
+            "PLATFORM_VERSION".to_string() => "x.y.z".to_string(),
+            "BUILD_ID".to_string() => "abcdef".to_string(),
+            "PLATFORM_RELEASE".to_string() => "".to_string(),
+            "BUILD_SHA".to_string() => "".to_string(),
+            "RELEASE_BUILD".to_string() => "".to_string(),
+            "VARIANT".to_string() => "test".to_string(),
+            "ARCHIVER".to_string() => "".to_string(),
+            "DEBUG_SYMBOLS".to_string() => "".to_string(),
+            "DEVICE".to_string() => "".to_string(),
+        };
+        ctx_variables.iter().for_each(|(key, value)|{
+            mocked_logger
+                .expect_stdout()
+                .with(mockall::predicate::eq(format!("{}={}", key, value)))
+                .once()
+                .returning(|_x| ());
+        });
+
+        let _result: Result<(), BError> = helper_test_list_subcommand(
+            &work_dir,
+            json_ws_settings,
+            json_build_config,
+            mocked_logger,
+            MockSystem::new(),
+            vec!["bakery", "list", "--config", "default", "--ctx"],
+        );
     }
 }
