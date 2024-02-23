@@ -7,7 +7,7 @@ use crate::workspace::{
     WsDeployHandler,
     WsUploadHandler,
 };
-use crate::data::WsBuildData;
+use crate::data::{WsBuildData, WsContextData};
 use crate::error::BError;
 use crate::fs::JsonFileReader;
 use crate::configs::Context;
@@ -59,6 +59,10 @@ impl WsBuildConfigHandler {
         self.deploy.expand_ctx(self.data.context().ctx())?;
         self.upload.expand_ctx(self.data.context().ctx())?;
         Ok(())
+    }
+
+    pub fn ctx(&self) -> Result<IndexMap<String, String>, BError> {
+        Ok(self.data.context().ctx().variables().clone())
     }
 
     pub fn task(&self, task: &str) -> Result<&WsTaskHandler, BError> {

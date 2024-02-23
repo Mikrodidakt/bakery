@@ -47,7 +47,7 @@ The build config can be split up in
 * Bitbake data  - bitbake data distro, machine, deploy dir, init-env script, local.conf and bblayers.conf.
 * Tasks data    - to build a product multiple tasks might be required. The tasks data contains a list of tasks and defines what each task should do.
   * Artifacts data - The artifacts data is part of the task data and contains what artifacts to collect for each task.
-* Deploy data   - information on how to deploy an image to the target. 
+* Deploy data   - information on how to deploy an image to the target.
 * Upload data   - information on how to upload firmware to a artifactory server.
 
 # Config Data
@@ -312,7 +312,7 @@ DEBUG_SYMBOLS
 DEVICE
 ```
 
-To get the up to date list please refere to [BUILT_IN_CONTEXT_VARIABLES](https://github.com/Mikrodidakt/bakery/blob/main/src/data/context.rs#L13). Some of the "built-in" context variables will be exposed to the bitbake environment by getting included to the local.conf. To get a list of what context variables a build config offeres and the values of them run the [context](sub-commands.md#Context) sub-command.
+To get the up to date list please refere to [BUILT_IN_CONTEXT_VARIABLES](https://github.com/Mikrodidakt/bakery/blob/main/src/data/context.rs#L13). Some of the "built-in" context variables will be exposed to the bitbake environment by getting included to the local.conf. To get a list of what context variables a build config offeres and the values of them run the [list](sub-commands.md#context) sub-command with --ctx flag.
 
 
 

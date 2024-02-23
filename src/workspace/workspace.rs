@@ -178,6 +178,10 @@ impl Workspace {
         self.config.expand_ctx()?;
         Ok(())
     }
+
+    pub fn context(&self) -> Result<IndexMap<String, String>, BError> {
+        self.config().ctx()
+    }
 }
 
 #[cfg(test)]

@@ -26,7 +26,7 @@ When starting a Bakery shell the config will be selected and used inside the she
 ```
 
 Each subcommand will be available as an alias with the build config predefined. Simply type the sub-command in the shell no need to specify bakery or the build config since
-it is already preset in the bakery workspace 
+it is already preset in the bakery workspace
 
 ```bash
 help
@@ -71,6 +71,17 @@ The list sub-command will list either all the available build configs in a works
 user@node:/dir$ bakery list -c <config>
 ```
 
+## Context
+
+The list sub-command can also list all the context variables for a specific build config by running
+
+```bash
+user@node:/dir$ bakery list -c <config> --ctx
+```
+
+This will take the build config and list all the builtin context variables and any one defined in the build config. Can be usefull when setting up the initial workspace or debugging an issue.
+
+
 # Deploy
 
 The deploy sub-command is a special task with it's own defenition in the build config. It is more or less just a proxy for calling a custom deploy script to deploy a build on the target.
@@ -90,8 +101,4 @@ user@node:/dir$ bakery deploy -c <config>
 ```
 
 For details on how to configure this please see [Deploy](build-config.md#Upload)
-
-# Context
-
-The context sub-command is not yet update but will be shortly added.
 
