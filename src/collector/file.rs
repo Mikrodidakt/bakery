@@ -22,6 +22,10 @@ impl<'a> Collector for FileCollector<'a> {
         let base_dir: &Path = src_path.parent().unwrap();
         let mut collected: Vec<Collected> = vec![];
 
+        if files.is_empty() && !src_path.exists() {
+            return Err(BError::IOError(format!("File '{}' dose not exists", src_path.display())));
+        }
+
         for f in files.iter() {
             let mut dest_file: PathBuf = dest_path.clone();
             if self.is_dir(&dest_path, dest_str) {
@@ -31,7 +35,7 @@ impl<'a> Collector for FileCollector<'a> {
             }
 
             if !f.exists() {
-                return Err(BError::IOError(format!("File {} dose not exists", f.display())));
+                return Err(BError::IOError(format!("File '{}' dose not exists", f.display())));
             }
 
             self.info(self.cli, format!("Copy file {} => {}", f.display(), dest_file.display()));
@@ -73,6 +77,7 @@ impl<'a> FileCollector<'a> {
 
     fn list_files(&self, glob_pattern_path: &PathBuf) -> Result<Vec<PathBuf>, BError> {
         let mut files: Vec<PathBuf> = vec![];
+
         match glob_pattern_path.to_str() {
             Some(pattern) => {
                 //println!("pattern: {:?}", pattern);
@@ -97,6 +102,7 @@ impl<'a> FileCollector<'a> {
                 files.push(glob_pattern_path.clone());
             }
         }
+
         Ok(files)
     }
 
@@ -115,6 +121,7 @@ mod tests {
     use crate::helper::Helper;
     use crate::collector::{FileCollector, Collector, Collected};
     use crate::configs::Context;
+    use crate::error::BError;
 
     use tempdir::TempDir;
     use std::path::PathBuf;
@@ -325,5 +332,37 @@ mod tests {
             Collected { src: task_build_dir.join(src_file_name), dest: dest.clone() },
         ]);
         assert!(dest.exists());
+    }
+
+    #[test]
+    fn test_file_collector_source_missing() {
+        let src_file_name: &str = "file.txt";
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = PathBuf::from(temp_dir.path());
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
+        let json_artifacts_config: &str = r#"
+        {
+            "source": "file.txt"
+        }"#;
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
+        let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
+            json_artifacts_config,
+            &task_build_dir,
+            &build_data
+        ).expect("Failed to parse config");
+        let collector: FileCollector = FileCollector::new(&artifacts, None);
+        let result: Result<Vec<Collected>, BError> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir());
+        match result {
+            Ok(_status) => {
+                panic!("We should have recived an error because the source is missing!");
+            }
+            Err(e) => {
+                assert_eq!(
+                    e.to_string(),
+                    format!("File '{}' dose not exists", task_build_dir.join(src_file_name).display())
+                );
+            }
+        }
     }
 }
