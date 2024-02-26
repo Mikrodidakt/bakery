@@ -19,7 +19,7 @@ Download one of the deb-packages releases.
 ```bash
 user@node:/dir$ BAKERY_VERSION=x.y.z
 user@node:/dir$ wget https://github.com/Mikrodidakt/bakery/releases/download/v${BAKERY_VERSION}/bakery-${BAKERY_VERSION}.deb
-user@node:/dir$ sudo dpkg -i bakery-${VERSION}.deb
+user@node:/dir$ sudo dpkg -i bakery-${BAKERY_VERSION}.deb
 ```
 
 Because bakery is written in Rust bakery is a single binary depending only on libc. It will be installed under /usr/bin.
