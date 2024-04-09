@@ -56,3 +56,8 @@ release:
 .PHONY: clean
 clean:
 	cargo clean && rm -r artifacts
+
+## publish            - Publish the deb and crate package
+.PHONY: publish
+publish:
+	echo "publish deb and crate package"

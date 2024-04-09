@@ -1,0 +1,23 @@
+name: Release
+
+on:
+  workflow_dispatch
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: make build
+    - name: Run tests
+      run: make test
+    - name: Release
+      run: make release
+    - name: Publish
+      run: make publish
