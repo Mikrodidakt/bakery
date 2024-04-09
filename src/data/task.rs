@@ -14,7 +14,7 @@ pub enum TType {
 }
 
 pub struct WsTaskData {
-    index: String,
+    index: u32,
     name: String,
     ttype: TType, // Optional if not set for the task the default type 'bitbake' is used
     disabled: String, // Optional if not set for the task the default value 'false' is used
@@ -55,7 +55,7 @@ impl WsTaskData {
     }
 
     pub fn new(data: &Value, work_dir: &PathBuf, bb_build_dir: &PathBuf) -> Result<Self, BError> {
-        let index: String = Self::get_str_value("index", &data, None)?;
+        let index: u32 = Self::get_u32_value("index", &data, None)?;
         let name: String = Self::get_str_value("name", &data, None)?;
         let ttype: String = Self::get_str_value("type", &data, Some(String::from("bitbake")))?;
         let disabled: String = Self::get_str_value("disabled", &data, Some(String::from("false")))?;
@@ -120,8 +120,7 @@ impl WsTaskData {
     }
 
     pub fn index(&self) -> u32 {
-        // convert str to int
-        1
+        self.index
     }
 
     pub fn name(&self) -> &str {
@@ -213,7 +212,7 @@ mod tests {
         let bb_build_dir: PathBuf = work_dir.clone().join(String::from("test/builddir"));
         let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
         let task: WsTaskData = WsTaskData::new(&data, &work_dir, &bb_build_dir).expect("Failed parsing task data");
-        assert_eq!(task.index(), 1);
+        assert_eq!(task.index(), 0);
         assert_eq!(task.name(), "task1-name");
         assert_eq!(task.disabled(), false);
         assert_eq!(task.condition(), true);
@@ -240,7 +239,7 @@ mod tests {
         let bb_build_dir: PathBuf = work_dir.clone().join(String::from("builds/test-name"));
         let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
         let task: WsTaskData = WsTaskData::new(&data, &work_dir, &bb_build_dir).expect("Failed parsing task data");
-        assert_eq!(task.index(), 1);
+        assert_eq!(task.index(), 0);
         assert_eq!(task.name(), "task1-name");
         assert_eq!(task.disabled(), false);
         assert_eq!(task.condition(), true);
@@ -257,7 +256,7 @@ mod tests {
     fn test_ws_task_data_context() {
         let json_task_config: &str = r#"
         {
-            "index": "0",
+            "index": "2",
             "name": "$#[TASK_NAME]",
             "recipes": [
                 "$#[IMAGE_RECIPE]",
@@ -275,7 +274,7 @@ mod tests {
         let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
         let mut task: WsTaskData = WsTaskData::new(&data, &work_dir, &bb_build_dir).expect("Failed parsing task data");
         task.expand_ctx(&context).unwrap();
-        assert_eq!(task.index(), 1);
+        assert_eq!(task.index(), 2);
         assert_eq!(task.name(), "task1-name");
         assert_eq!(task.disabled(), false);
         assert_eq!(task.condition(), true);

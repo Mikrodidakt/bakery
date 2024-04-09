@@ -42,6 +42,24 @@ pub trait Config {
         }
     }
 
+    fn get_u32_value(name: &str, data: &Value, default: Option<u32>) -> Result<u32, BError> {
+        let value: Option<&str> = data.get(name).and_then(|v| v.as_str());
+        match value {
+            Some(value) => {
+                match value.parse::<u32>() {
+                    Ok(n) => Ok(n),
+                    Err(_err) => Err(BError::ValueError(format!("Failed to read int value '{}'", name))),
+                }
+            },
+            None => {
+                match default {
+                    Some(default_value) => Ok(default_value),
+                    None => Err(BError::ValueError(format!("Failed to read string value '{}'", name))),
+                }
+            }
+        }
+    }
+
     fn get_array_value(name: &str, data: &Value, default: Option<Vec<String>>) -> Result<Vec<String>, BError> {
         match data.get(name) {
             Some(array_value) => {
@@ -74,7 +92,7 @@ pub trait Config {
                     for value in array_value.as_array().unwrap().iter() {
                         let pair: String = value.to_string();
                         let parts: Vec<&str> = pair.splitn(2, '=').collect();
-                        
+
                         if parts.len() == 2 {
                             let key = parts[0].to_string();
                             let value = parts[1].to_string();
@@ -105,7 +123,7 @@ pub trait Config {
     fn parse(json_string: &str) -> Result<Value, BError> {
         match serde_json::from_str(json_string) {
             Ok(data) => {
-                Ok(data) 
+                Ok(data)
             },
             Err(err) => Err(BError::ParseError(format!("Failed to parse JSON: {}", err))),
         }
