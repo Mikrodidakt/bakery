@@ -51,3 +51,8 @@ docker-shell:
 .PHONY: release
 release:
 	./scripts/do_release.sh
+
+## clean              - Clean
+.PHONY: clean
+clean:
+	cargo clean && rm -r artifacts
