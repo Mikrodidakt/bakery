@@ -25,7 +25,7 @@ impl WsSettingsHandler {
     }
 
     pub fn new(work_dir: PathBuf, settings: WsSettings) -> Self {
-        let docker = DockerImage {
+        let docker: DockerImage = DockerImage {
             image: settings.docker_image.clone(),
             tag: settings.docker_tag.clone(),
             registry: settings.docker_registry.clone(),
@@ -65,49 +65,49 @@ impl WsSettingsHandler {
     }
 
     pub fn builds_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir();
+        let mut path_buf: PathBuf = self.work_dir();
         path_buf.push(&self.ws_settings.builds_dir);
         path_buf
     }
 
     pub fn cache_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir();
+        let mut path_buf: PathBuf = self.work_dir();
         path_buf.push(&self.ws_settings.cache_dir);
         path_buf
     }
 
     pub fn artifacts_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir();
+        let mut path_buf: PathBuf = self.work_dir();
         path_buf.push(&self.ws_settings.artifacts_dir);
         path_buf
     }
 
     pub fn layers_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir();
+        let mut path_buf: PathBuf = self.work_dir();
         path_buf.push(&self.ws_settings.layers_dir);
         path_buf
     }
 
     pub fn configs_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir();
+        let mut path_buf: PathBuf = self.work_dir();
         path_buf.push(&self.ws_settings.configs_dir);
         path_buf
     }
 
     pub fn include_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir();
+        let mut path_buf: PathBuf = self.work_dir();
         path_buf.push(&self.ws_settings.include_dir);
         path_buf
     }
 
     pub fn scripts_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir();
+        let mut path_buf: PathBuf = self.work_dir();
         path_buf.push(&self.ws_settings.scripts_dir);
         path_buf
     }
 
     pub fn docker_dir(&self) -> PathBuf {
-        let mut path_buf = self.work_dir();
+        let mut path_buf: PathBuf = self.work_dir();
         path_buf.push(&self.ws_settings.docker_dir);
         path_buf
     }
