@@ -42,12 +42,19 @@ impl BCommand for DeployCommand {
         let config: String = self.get_arg_str(cli, "config", BCOMMAND)?;
         let ctx: Vec<String> = self.get_arg_many(cli, "ctx", BCOMMAND)?;
         let device: String = self.get_arg_str(cli, "device", BCOMMAND)?;
+        let image: String = self.get_arg_str(cli, "image", BCOMMAND)?;
         let args_context: IndexMap<String, String> = self.setup_context(ctx);
         let mut context: WsContextData = WsContextData::new(&args_context)?;
 
         if device != String::from("NA") {
             context.update(&indexmap!{
                 "DEVICE".to_string() => device,
+            });
+        }
+
+        if image != String::from("NA") {
+            context.update(&indexmap!{
+                "IMAGE".to_string() => image,
             });
         }
 
@@ -94,6 +101,15 @@ impl DeployCommand {
                 .value_name("device")
                 .default_value("NA")
                 .help("The device can either be an IP or a device file like /dev/ttyUSB. Will be exposed as a context variable $#[DEVICE]"),
+        )
+        .arg(
+            clap::Arg::new("image")
+                .action(clap::ArgAction::Append)
+                .short('i')
+                .long("image")
+                .value_name("image")
+                .default_value("NA")
+                .help("The image will be exposed as a context variable $#[IMAGE]"),
           );
         // Initialize and return a new DeployCommand instance
         DeployCommand {
@@ -347,6 +363,178 @@ mod tests {
             Box::new(mocked_system),
             clap::Command::new("bakery"),
             Some(vec!["bakery", "deploy", "-c", "default"]),
+        );
+        let cmd: DeployCommand = DeployCommand::new();
+        let _result: Result<(), BError> = cmd.execute(&cli, &mut workspace);
+    }
+
+    #[test]
+    fn test_cmd_deploy_device_arg() {
+        let temp_dir: TempDir =
+        TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: &PathBuf = &temp_dir.into_path();
+        let json_ws_settings: &str = r#"
+        {
+            "version": "5",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "5",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {},
+            "context": [
+                "DEVICE=192.168.253.90"
+            ],
+            "deploy": {
+                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[DEVICE]"
+            }
+        }
+        "#;
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec![&format!("{}/scripts/script.sh", work_dir.display()), "192.168.253.91"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                env: HashMap::new(),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings).expect("Failed to parse settings");
+        let config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &settings).expect("Failed to parse build config");
+        let mut workspace: Workspace =
+            Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config)).expect("Failed to setup workspace");
+        let cli: Cli = Cli::new(
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            clap::Command::new("bakery"),
+            Some(vec!["bakery", "deploy", "-c", "default", "-d", "192.168.253.91"]),
+        );
+        let cmd: DeployCommand = DeployCommand::new();
+        let _result: Result<(), BError> = cmd.execute(&cli, &mut workspace);
+    }
+
+
+    #[test]
+    fn test_cmd_deploy_image_ctx() {
+        let temp_dir: TempDir =
+        TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: &PathBuf = &temp_dir.into_path();
+        let json_ws_settings: &str = r#"
+        {
+            "version": "5",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "5",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {},
+            "context": [
+                "IMAGE=ctx-test-image"
+            ],
+            "deploy": {
+                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[IMAGE]"
+            }
+        }
+        "#;
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec![&format!("{}/scripts/script.sh", work_dir.display()), "ctx-test-image"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                env: HashMap::new(),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings).expect("Failed to parse settings");
+        let config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &settings).expect("Failed to parse build config");
+        let mut workspace: Workspace =
+            Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config)).expect("Failed to setup workspace");
+        let cli: Cli = Cli::new(
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            clap::Command::new("bakery"),
+            Some(vec!["bakery", "deploy", "-c", "default"]),
+        );
+        let cmd: DeployCommand = DeployCommand::new();
+        let _result: Result<(), BError> = cmd.execute(&cli, &mut workspace);
+    }
+
+    #[test]
+    fn test_cmd_deploy_image_arg() {
+        let temp_dir: TempDir =
+        TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: &PathBuf = &temp_dir.into_path();
+        let json_ws_settings: &str = r#"
+        {
+            "version": "5",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "5",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {},
+            "context": [
+                "IMAGE=ctx-test-image"
+            ],
+            "deploy": {
+                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[IMAGE]"
+            }
+        }
+        "#;
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec![&format!("{}/scripts/script.sh", work_dir.display()), "arg-test-image"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                env: HashMap::new(),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings).expect("Failed to parse settings");
+        let config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &settings).expect("Failed to parse build config");
+        let mut workspace: Workspace =
+            Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config)).expect("Failed to setup workspace");
+        let cli: Cli = Cli::new(
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            clap::Command::new("bakery"),
+            Some(vec!["bakery", "deploy", "-c", "default", "-i", "arg-test-image"]),
         );
         let cmd: DeployCommand = DeployCommand::new();
         let _result: Result<(), BError> = cmd.execute(&cli, &mut workspace);

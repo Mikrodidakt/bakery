@@ -349,6 +349,7 @@ mod tests {
             "ARCHIVER".to_string() => "".to_string(),
             "DEBUG_SYMBOLS".to_string() => "".to_string(),
             "DEVICE".to_string() => "".to_string(),
+            "IMAGE".to_string() => "".to_string(),
         };
         ctx_variables.iter().for_each(|(key, value)|{
             mocked_logger

@@ -31,6 +31,7 @@ pub const CTX_KEY_RELEASE_BUILD: &str = "RELEASE_BUILD";
 pub const CTX_KEY_ARCHIVER: &str = "ARCHIVER";
 pub const CTX_KEY_DEBUG_SYMBOLS: &str = "DEBUG_SYMBOLS";
 pub const CTX_KEY_DEVICE: &str = "DEVICE";
+pub const CTX_KEY_IMAGE: &str = "IMAGE";
 
 impl Config for WsContextData {}
 
@@ -47,6 +48,7 @@ impl WsContextData {
             CTX_KEY_RELEASE_BUILD |
             CTX_KEY_ARCHIVER |
             CTX_KEY_DEVICE |
+            CTX_KEY_IMAGE |
             CTX_KEY_DEBUG_SYMBOLS => true,
             CTX_KEY_MACHINE |
             CTX_KEY_ARCH |
@@ -105,6 +107,7 @@ impl WsContextData {
             CTX_KEY_ARCHIVER.to_string() => "".to_string(),
             CTX_KEY_DEBUG_SYMBOLS.to_string() => "".to_string(),
             CTX_KEY_DEVICE.to_string() => "".to_string(),
+            CTX_KEY_IMAGE.to_string() => "".to_string(),
         };
         let mut ctx: Context = Context::new(&ctx_default_variables);
         ctx.update(&variables);
@@ -175,6 +178,7 @@ mod tests {
         CTX_KEY_DEBUG_SYMBOLS,
         CTX_KEY_PLATFORM_RELEASE,
         CTX_KEY_DEVICE,
+        CTX_KEY_IMAGE,
     };
     use crate::workspace::WsSettingsHandler;
     use crate::data::WsContextData;
@@ -192,6 +196,7 @@ mod tests {
         assert!(data.get_ctx_value(CTX_KEY_VARIANT).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_PRODUCT_NAME).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_DEVICE).is_empty());
+        assert!(data.get_ctx_value(CTX_KEY_IMAGE).is_empty());
         assert_eq!(
             data.get_ctx_path(CTX_KEY_BB_BUILD_DIR),
             PathBuf::from("")
@@ -262,5 +267,20 @@ mod tests {
         assert_eq!(data.get_ctx_value("KEY2"), "value2");
         assert_eq!(data.get_ctx_value("KEY3"), "value3");
         assert_eq!(data.get_ctx_path(CTX_KEY_WORK_DIR), settings.work_dir());
+    }
+
+    #[test]
+    fn test_ws_builtin_context_data() {
+        let json_build_config = r#"
+        {
+            "version": "5",
+            "context": [
+                "IMAGE=image",
+                "DEVICE=device"
+            ]
+        }"#;
+        let data: WsContextData = WsContextData::from_str(json_build_config).expect("Failed to parse context data");
+        assert_eq!(data.get_ctx_value(CTX_KEY_IMAGE), "image");
+        assert_eq!(data.get_ctx_value(CTX_KEY_DEVICE), "device");
     }
 }
