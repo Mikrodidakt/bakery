@@ -1,12 +1,13 @@
 #!/bin/sh
 set -e
 WORKSPACE=$(pwd)
+. ${WORKSPACE}/scripts/lib.sh
 SETTINGS_FILE=${WORKSPACE}/settings.json
 _ARTIFACT_SERVER="https://strixos.jfrog.io/strixos"
 _DOCKER_REGISTRY="strixos"
 _DOCKER_IMAGE="bakery-workspace"
 _DOCKER_DIR=${WORKSPACE}/docker
-_DOCKER_TAG="0.1.33"
+_DOCKER_TAG=$(get_bakery_version ${WORKSPACE}/Cargo.toml)
 _DOCKER_ARGS="--name bakery-workspace \
     --rm \
     -it \
