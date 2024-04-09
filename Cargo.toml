@@ -1,7 +1,16 @@
 [package]
 name = "bakery"
 version = "0.1.37"
+description = "Build engine for the Yocto/OE Projects"
+catagories = ["command-line-utilities", "development-tools::build-utils"]
+keywords = ["cli", "yocto", "openembedded", "build", "docker"]
 edition = "2021"
+readme = "README.md"
+repository = "https://github.com/Mikrodidakt/bakery"
+license = "Apache-2.0"
+license-file = "LICENSE"
+exclude = ["docker/", "scripts/", "Makefile", "tests/", ".*"]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
