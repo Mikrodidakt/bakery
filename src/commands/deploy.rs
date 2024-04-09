@@ -4,7 +4,7 @@ use indexmap::{IndexMap, indexmap};
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
 use crate::workspace::{Workspace, WsDeployHandler};
-use crate::data::WsContextData;
+use crate::data::{WsContextData, CTX_KEY_IMAGE, CTX_KEY_DEVICE};
 
 static BCOMMAND: &str = "deploy";
 static BCOMMAND_ABOUT: &str = "Deploy artifact to target";
@@ -48,13 +48,13 @@ impl BCommand for DeployCommand {
 
         if device != String::from("NA") {
             context.update(&indexmap!{
-                "DEVICE".to_string() => device,
+                CTX_KEY_DEVICE.to_string() => device,
             });
         }
 
         if image != String::from("NA") {
             context.update(&indexmap!{
-                "IMAGE".to_string() => image,
+                CTX_KEY_IMAGE.to_string() => image,
             });
         }
 
