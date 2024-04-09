@@ -19,3 +19,37 @@ get_bakery_version() {
     echo NA
   fi
 }
+
+get_bakery_major() {
+  local cargo_file=$1
+  if [ -f $cargo_file ]; then
+    version=$(get_bakery_version $cargo_file)
+    major=${version%%.*}
+    echo $major
+  else
+    echo NA
+  fi
+}
+
+get_bakery_minor() {
+  local cargo_file=$1
+  if [ -f $cargo_file ]; then
+    version=$(get_bakery_version $cargo_file)
+    minor=${version#*.}
+    minor=${minor%%.*}
+    echo $minor
+  else
+    echo NA
+  fi
+}
+
+get_bakery_build() {
+  local cargo_file=$1
+  if [ -f $cargo_file ]; then
+    version=$(get_bakery_version $cargo_file)
+    build=${version##*.}
+    echo $build
+  else
+    echo NA
+  fi
+}
