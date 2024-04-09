@@ -20,8 +20,8 @@ cp ${WORK_DIR}/target/release/bakery ${ARTIFACTS_DIR}
 echo "INFO: create bakery deb packagage"
 (cd ${WORK_DIR}; ./scripts/do_deb_package.sh)
 
-echo "INFO: build docker bakery-workspace"
-(cd ${WORK_DIR}; ./docker/do_docker_build.sh)
+#echo "INFO: build docker bakery-workspace"
+#(cd ${WORK_DIR}; ./docker/do_docker_build.sh)
 
 echo "INFO: tag bakery v${VERSION}"
 git add ${WORK_DIR}/Cargo.toml
