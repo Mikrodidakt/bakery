@@ -66,7 +66,7 @@ impl BCommand for ListCommand {
                 } else {
                     //cli.info(format!("The following tasks are supported by '{}'", config.as_str()));
                     workspace.config().tasks().iter().for_each(|(_name, task)| {
-                        cli.stdout(format!("{}", task.data().name()));
+                        cli.stdout(format!("{} - {}", task.data().name(), task.data().description()));
                     });
                 }
             } else {
@@ -211,6 +211,7 @@ mod tests {
                 "task2": {
                     "index": "2",
                     "name": "task2",
+                    "description": "test",
                     "type": "non-bitbake"
                 }
             }
@@ -219,12 +220,12 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_stdout()
-            .with(mockall::predicate::eq("task1".to_string()))
+            .with(mockall::predicate::eq("task1 - NA".to_string()))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_stdout()
-            .with(mockall::predicate::eq("task2".to_string()))
+            .with(mockall::predicate::eq("task2 - test".to_string()))
             .once()
             .returning(|_x| ());
         let _result: Result<(), BError> = helper_test_list_subcommand(

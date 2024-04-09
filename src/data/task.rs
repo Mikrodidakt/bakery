@@ -24,6 +24,7 @@ pub struct WsTaskData {
     condition: String,
     clean: String,
     recipes: Vec<String>, // The list of recipes will be empty if the type for the task is 'non-bitbake'
+    description: String,
     env: IndexMap<String, String>,
 }
 
@@ -63,6 +64,7 @@ impl WsTaskData {
         let condition: String = Self::get_str_value("condition", data, Some(String::from("true")))?;
         let build: String = Self::get_str_value("build", &data, Some(String::from("")))?;
         let clean: String = Self::get_str_value("clean", &data, Some(String::from("")))?;
+        let description: String = Self::get_str_value("description", &data, Some(String::from("NA")))?;
         let env: IndexMap<String, String> = Self::get_hashmap_value("env", &data)?;
         let recipes: Vec<String> = Self::get_array_value("recipes", &data, Some(vec![]))?;
 
@@ -97,6 +99,7 @@ impl WsTaskData {
             build,
             clean,
             recipes,
+            description,
             env,
         })
     }
@@ -127,6 +130,10 @@ impl WsTaskData {
 
     pub fn ttype(&self) -> &TType {
         &self.ttype
+    }
+
+    pub fn description(&self) -> &str {
+        &self.description
     }
 
     pub fn disabled(&self) -> bool {
@@ -194,6 +201,7 @@ mod tests {
         {
             "index": "0",
             "name": "task1-name",
+            "description": "test",
             "disabled": "false",
             "type": "non-bitbake",
             "builddir": "test/builddir",
@@ -209,6 +217,7 @@ mod tests {
         assert_eq!(task.name(), "task1-name");
         assert_eq!(task.disabled(), false);
         assert_eq!(task.condition(), true);
+        assert_eq!(task.description(), "test");
         assert_eq!(task.ttype(), &TType::NonBitbake);
         assert_eq!(task.build_dir(), &PathBuf::from("/workspace/test/builddir"));
         assert_eq!(task.build_cmd(), "build-cmd");
@@ -240,6 +249,7 @@ mod tests {
         assert_eq!(task.build_cmd(), "");
         assert_eq!(task.clean_cmd(), "");
         assert_eq!(task.docker_image(), "");
+        assert_eq!(task.description(), "NA");
         assert_eq!(task.recipes(), &vec![String::from("test-image"), String::from("test-image:sdk")]);
     }
 
