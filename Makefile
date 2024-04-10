@@ -55,7 +55,7 @@ release:
 ## clean              - Clean
 .PHONY: clean
 clean:
-	cargo clean && rm -r artifacts
+	cargo clean && rm -r artifacts || true
 
 ## publish            - Publish the deb and crate package
 .PHONY: publish

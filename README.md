@@ -34,28 +34,25 @@ By default bakery will use Docker. Please see [how to setup docker](documentatio
 
 ## Usage
 
-To try bakery out the easiest way is to use the template workspace under tests/template-workspace. Run
-
 ```bash
-user@node:/dir$ cd tests/template-workspace
-user@node:/dir$ git submodule update
+Build engine for the Yocto/OE projects
+
+Usage: bakery <COMMAND>
+
+Commands:
+  clean   Clean one or all the tasks defined in a build config
+  shell   Start a shell inside docker or run any command inside bitbake command inside or outside of docker
+  list    List all builds or the tasks available for one build
+  build   Execute a build either a full build or a task of one of the builds
+  upload  Upload artifacts to artifactory server
+  deploy  Deploy artifact to target
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
 ```
-
-This will pull down poky and together with the workspace and the build config beaglebone black can be built using the bakery workspace shell covered by [Shell](#Shell)
-
-### List Products
-
-To list what products are supported in a workspace run
-
-```bash
-user@node:/dir$ bakery list
-```
-
-This will list all available products in the Bakery workspace including a short description.
-
-### Build
-
-The recommended way of working with Bakery is to start a shell this will setup the env for using Bakery but also to make it possible to run any tools available by OE/Yocto.
+For more information on how to use each sub-command please refere to [sub-commands](documentation/sub-commands.md). Each sub-command is configured by defining a build config file describing how to build a product. The recommended way of working with Bakery is to start a shell this will setup the env for using Bakery but also to make it possible to run any tools available by OE/Yocto.
 
 ```bash
 user@node:/dir$ bakery shell -c <config>
@@ -65,12 +62,6 @@ When starting a Bakery shell the config will be selected and used inside the she
 
 ```bash
 <user>@bakery-v<version>[<config>]:~/$
-```
-
-for example in the template-workspace something like this would be presented
-
-```bash
-user@bakery-vx.y.z[beaglebone]:~/$
 ```
 
 Each subcommand will be available as an alias with the build config predefined. Simply type the subcommand to run it. To get a list of the current subcommands run
@@ -88,23 +79,20 @@ To start a build run
 
 For more information on how to use the shell and any sub-command please refere to [shell](documentation/sub-commands.md#shell).
 
+## Template Project
 
-## Sub-Commands
-
-For a detailed description of what sub-commands bakery offers please run
-
-```bash
-user@node:/dir$ bakery help
-```
-
-For information on each sub-command and what flags it supports run
-
+To try bakery out the easiest way is to use the template workspace under tests/template-workspace. Run
 
 ```bash
-user@node:/dir$ bakery <sub-command> --help
+user@node:/dir$ cd tests/template-workspace
+user@node:/dir$ git submodule update
 ```
 
-For more information on how to use each sub-command please refere to [sub-commands](documentation/sub-commands.md).
+This will pull down poky and together with the workspace and the build config beaglebone black can be built using the bakery workspace shell.
+
+```bash
+user@bakery-vx.y.z[beaglebone]:~/$
+```
 
 ## Setup A Project
 
