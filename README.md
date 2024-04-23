@@ -1,5 +1,3 @@
-[TOC]
-
 # Bakery: Build Engine for the Yocto/OE Projects
 
 ## Introduction
@@ -12,6 +10,15 @@ Building complex Yocto Project or OpenEmbedded projects can often involve intric
 
 ## Installation
 
+### Cargo
+
+For instruction on how to setup cargo please see [build source code](documentation/build-bakery.md) this covers how to setup the tool chain for rust.
+
+```bash
+user@node:/dir$ cargo install thebakery
+```
+Bakery will be installed under ${HOME}/.cargo/bin/bakery
+
 ### Debian Package
 
 Download one of the deb-packages releases.
@@ -22,7 +29,7 @@ user@node:/dir$ wget https://github.com/Mikrodidakt/bakery/releases/download/v${
 user@node:/dir$ sudo dpkg -i bakery-${BAKERY_VERSION}.deb
 ```
 
-Because bakery is written in Rust bakery is a single binary depending only on libc. It will be installed under /usr/bin.
+Because bakery is written in Rust bakery is a single binary depending only on libc. It will be installed under /usr/bin/bakery.
 
 ### Build Source Code
 
@@ -30,7 +37,7 @@ Please see [build source code](documentation/build-bakery.md) for information on
 
 ## Docker
 
-By default bakery will use Docker. Please see [how to setup docker](documentation/docker.md) for more information on setup docker. Please see [how to disable docker](documentation/workspace-config.md#disabled) for information on how to run bakery without docker.
+By default, Bakery utilizes Docker. Refer to the [Docker setup guide](documentation/docker.md) for detailed instructions on setting up Docker on your host system. Additionally, if you wish to run Bakery without Docker, please consult the guide on [disabling Docker](documentation/workspace-config.md#disabled) for detailed instructions.
 
 ## Usage
 
@@ -52,7 +59,9 @@ Options:
   -h, --help     Print help
   -V, --version  Print version
 ```
-For more information on how to use each sub-command please refere to [sub-commands](documentation/sub-commands.md). Each sub-command is configured by defining a build config file describing how to build a product. The recommended way of working with Bakery is to start a shell this will setup the env for using Bakery but also to make it possible to run any tools available by OE/Yocto.
+
+For detailed instructions on using each sub-command, please refer to the [sub-commands](documentation/sub-commands.md) documentation. Each sub-command is configured by defining a build configuration file that describes how to build a product. It is recommended to begin by starting a shell, as this not only sets up the environment for using Bakery but also enables the use of any tools available through OE/Yocto.
+
 
 ```bash
 user@node:/dir$ bakery shell -c <config>

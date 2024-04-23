@@ -1,14 +1,15 @@
 # Introduction
 
-By default bakery will use docker and it will use the bakery-workspace image. Currently bakery has no requirement except that docker is available on the system and that the user calling bakery is part of the docker group. Bakery should never run as root so if you are experiancing an permission issue when running bakery and docker then the most likely the user is not part of the docker group.
+By default, Bakery utilizes Docker and relies on the bakery-workspace image. Presently, Bakery has minimal requirements, only necessitating the availability of Docker on the system and that the user invoking Bakery is a member of the docker group. It's important to note that Bakery should never run as root. If you encounter permission issues when running Bakery with Docker, it's likely that the user is not part of the docker group.
 
 # Setup Docker
 
-There are multiple ways to install docker on your system and bakery has currently no preference. For reference on how to setup docker please see [setup-docker.sh](https://github.com/Mikrodidakt/bakery/blob/main/scripts/setup-docker.sh). This script currently supports setting up Docker on ubuntu and debian it is bassed on [Install Docker](https://docs.docker.com/engine/install/).
+There are multiple ways to install docker on your system and bakery has currently no preference. For reference on how to setup docker please see [setup-docker.sh](https://github.com/Mikrodidakt/bakery/blob/main/scripts/setup-docker.sh). This script currently supports setting up Docker on ubuntu and debian it is based on [Install Docker](https://docs.docker.com/engine/install/).
 
 ## Docker Group
 
-It is a requirement that Docker is installed and setup correctly where each user belongs to the docker group to prevent running docker as root. For more information please refer to [Post Install on Linux](https://docs.docker.com/engine/install/linux-postinstall/). After Docker has been setup check that user belongs to the group by running
+Installing and correctly configuring Docker is a prerequisite for Bakery. It's essential that each user is a member of the docker group to avoid running Docker as root. For detailed instructions on [post-installation](https://docs.docker.com/engine/install/linux-postinstall/) steps on Linux, please refer to Post Install on Linux. Once Docker is set up, ensure that the user belongs to the docker group by running:
+
 
 ```bash
 user@node:/dir$ groups
@@ -29,7 +30,7 @@ user@node:/dir$ docker pull strixos/bakery-workspace:${BVERSION}
 
 ## Docker Hub
 
-By default the Docker image bakery-workspace is used by bakery and is uploaded to Docker hub. For some reason a Docker hub account is sometimes required to pull down even a public image. It is not clear why but if bakery-workspace cannot be pulled then your local user might be required to log into Docker hub by running
+The default Docker image utilized by Bakery is bakery-workspace, which is uploaded to Docker Hub. Occasionally, even for public images, a Docker Hub account might be necessary to pull down the image. The reason for this requirement is not always clear. If you encounter issues pulling bakery-workspace, it might be necessary for your local user to log into Docker Hub by executing the following command:
 
 ```bash
 user@node:/dir$ docker login
@@ -37,7 +38,7 @@ user@node:/dir$ docker login
 
 ## Build Image
 
-The bakery workspace can also be built locally beofre starting a build make sure that you are on the tag matching the bakery that you have installed on your system.
+Additionally, you can build the bakery workspace locally. Before initiating a build, ensure that you are on the tag corresponding to the bakery version installed on your system.
 
 
 ```bash
@@ -64,7 +65,7 @@ strixos/bakery-workspace        latest    f896c2e2b7f7   8 days ago     2.58GB
 
 # Crops
 
-The Yocto Project has setup a docker project called crops currently the bakery is not using it but that would be the goal. The images are setup a bit differently and I need to go over it to use if for bakery and have simply not had time yet. But it would be greate if the bakery could make use of the crops containers.
+The Yocto Project has established a Docker project named Crops. Although Bakery does not currently utilize it, integrating Crops containers is a future objective. These images are structured differently, and while there hasn't been an opportunity to explore their integration with Bakery yet, it is a desirable goal. Utilizing Crops containers could enhance Bakery's functionality and efficiency.
 
 * https://hub.docker.com/r/crops/poky
 * https://github.com/crops/yocto-dockerfiles
