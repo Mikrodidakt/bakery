@@ -7,7 +7,7 @@ use crate::workspace::Workspace;
 use crate::executers::{Docker, DockerImage};
 
 static BCOMMAND: &str = "shell";
-static BCOMMAND_ABOUT: &str = "Start a shell inside docker or run any command inside bitbake command inside or outside of docker";
+static BCOMMAND_ABOUT: &str = "Initiate a shell within Docker or execute any command within the BitBake environment";
 pub struct ShellCommand {
     cmd: BBaseCommand,
     // Your struct fields and methods here
@@ -191,23 +191,29 @@ impl ShellCommand {
     fn bb_build_env(&self, cli: &Cli, workspace: &Workspace, args_env_variables: &HashMap<String, String>) -> Result<HashMap<String, String>, BError> {
         let init_env: PathBuf = workspace.config().build_data().bitbake().init_env_file();
 
-        // Env variables priority are
-        // 1. Cli env variables
-        // 2. System env variables
+        /*
+         * Env variables priority are
+         * 1. Cli env variables
+         * 2. System env variables
+         */
 
-        // Sourcing the init env file and returning all the env variables available including from the shell
+        /* Sourcing the init env file and returning all the env variables available including from the shell */
         cli.info(format!("source init env file {}", init_env.display()));
         let mut env: HashMap<String, String> = cli.source_init_env(&init_env, &workspace.config().build_data().bitbake().build_dir())?;
-        // Any variable that should be able to passthrough into bitbake needs to be defined as part of the bb passthrough variable
-        // we define some defaults that should always be possible to passthrough
+        /*
+         * Any variable that should be able to passthrough into bitbake needs to be defined as part of the bb passthrough variable
+         * we define some defaults that should always be possible to passthrough
+         */
         let mut bb_env_passthrough_additions: String = String::from("SSTATE_DIR DL_DIR TMPDIR");
 
-        // Process the env variables from the cli
+        /* Process the env variables from the cli */
         args_env_variables.iter().for_each(|(key, value)| {
             env.insert(key.clone(), value.clone());
-            // Any variable comming from the cli should not by default be added to the passthrough
-            // list. The only way to get it through is if this variable is already defined as part
-            // of the task build config env
+            /*
+             * Any variable comming from the cli should not by default be added to the passthrough
+             * list. The only way to get it through is if this variable is already defined as part
+             * of the task build config env
+             */
         });
 
         if env.contains_key("BB_ENV_PASSTHROUGH_ADDITIONS") {

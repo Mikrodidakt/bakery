@@ -48,7 +48,7 @@ Usage: bakery <COMMAND>
 
 Commands:
   clean   Clean one or all the tasks defined in a build config
-  shell   Start a shell inside docker or run any command inside bitbake command inside or outside of docker
+  shell   Initiate a shell within Docker or execute any command within the BitBake environment
   list    List all builds or the tasks available for one build
   build   Execute a build either a full build or a task of one of the builds
   upload  Upload artifacts to artifactory server
