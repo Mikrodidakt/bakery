@@ -73,7 +73,7 @@ When starting a Bakery shell the config will be selected and used inside the she
 <user>@bakery-v<version>[<config>]:~/$
 ```
 
-Each subcommand will be available as an alias with the build config predefined. Simply type the subcommand to run it. To get a list of the current subcommands run
+Each subcommand will be available as an alias with the build config predefined. Simply type the subcommand from any location to run it. To get a list of the current subcommands run
 
 
 ```bash

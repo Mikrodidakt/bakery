@@ -3,7 +3,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-. $SCRIPT_DIR/lib.sh
+. ${SCRIPT_DIR}/lib.sh
 
 VERSION=$(get_bakery_version ${WORK_DIR}/Cargo.toml)
 TEMP_WORK_DIR=$(mktemp -d --suffix=-bakery-deb)
@@ -11,7 +11,9 @@ TEMP_WORK_DIR=$(mktemp -d --suffix=-bakery-deb)
 mkdir -p ${TEMP_WORK_DIR}/bakery
 TEMP_WORK_DIR=${TEMP_WORK_DIR}/bakery
 mkdir -p ${TEMP_WORK_DIR}/usr/bin
+mkdir -p ${TEMP_WORK_DIR}/etc/bakery
 cp ${ARTIFACTS_DIR}/bakery ${TEMP_WORK_DIR}/usr/bin/
+cp ${SCRIPT_DIR}/bakery.bashrc ${TEMP_WORK_DIR}/etc/bakery/bakery.bashrc
 
 mkdir -p ${TEMP_WORK_DIR}/DEBIAN
 touch ${TEMP_WORK_DIR}/DEBIAN/control

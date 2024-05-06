@@ -232,11 +232,13 @@ impl ShellCommand {
 
         let mut env: HashMap<String, String> = self.bb_build_env(cli, workspace, args_env_variables)?;
         /*
-         * Set the BAKERY_CURRENT_BUILD_CONFIG env variable used by the aliases in /etc/bakery/bakery.bashrc
-         * which is sourced by /etc/bash.bashrc when running an interactive bash shell. This will make it
-         * possible to run build, clean, deploy, upload aliases in the shell without having to
-         * specify the build config since it is selected when starting the shell
+         * Set the BAKERY_CURRENT_BUILD_CONFIG and BAKERY_WORKSPACE env variable used by the aliases in
+         * /etc/bakery/bakery.bashrc which is sourced by /etc/bash.bashrc when running an interactive
+         * bash shell. This will make it possible to run build, clean, deploy, upload aliases from any location
+         * in the shell without having to specify the build config or change directory since it is selected
+         * when starting the shell
          */
+        env.insert(String::from("BAKERY_WORKSPACE"), workspace.settings().work_dir().to_string_lossy().to_string());
         env.insert(String::from("BAKERY_CURRENT_BUILD_CONFIG"), workspace.config().build_data().product().name().to_string());
 
         cli.info(String::from("Start shell setting up bitbake build env"));
