@@ -121,11 +121,34 @@ fi
 PATH=${BAKERY_BIN_DIR}:${PATH}
 # The BAKERY_CURRENT_BUILD_CONFIG will be set by
 # bakery when initializing a workspace shell
-alias build="(cd ${BAKERY_WORKSPACE}; ${BAKERY_BIN_DIR}/bakery build -c ${BAKERY_CURRENT_BUILD_CONFIG})"
-alias clean="(cd ${BAKERY_WORKSPACE}; ${BAKERY_BIN_DIR}/bakery clean -c ${BAKERY_CURRENT_BUILD_CONFIG})"
-alias deploy="(cd ${BAKERY_WORKSPACE}; ${BAKERY_BIN_DIR}/bakery deploy -c ${BAKERY_CURRENT_BUILD_CONFIG})"
-alias upload="(cd ${BAKERY_WORKSPACE}; ${BAKERY_BIN_DIR}/bakery upload -c ${BAKERY_CURRENT_BUILD_CONFIG})"
-alias help="(cd ${BAKERY_WORKSPACE}; ${BAKERY_BIN_DIR}/bakery help)"
-alias list="(cd ${BAKERY_WORKSPACE}; ${BAKERY_BIN_DIR}/bakery list -c ${BAKERY_CURRENT_BUILD_CONFIG})"
-alias shell="(cd ${BAKERY_WORKSPACE}; ${BAKERY_BIN_DIR}/bakery shell)"
-alias version="${BAKERY_BIN_DIR}/bakery --version"
+build() {
+    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" build -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+}
+
+clean() {
+    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" clean -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+}
+
+deploy() {
+    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" deploy -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+}
+
+upload() {
+    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" upload -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+}
+
+help() {
+    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" help "$@")
+}
+
+list() {
+    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" list -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+}
+
+shell() {
+    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" shell "$@")
+}
+
+version() {
+    "${BAKERY_BIN_DIR}/bakery" --version
+}
