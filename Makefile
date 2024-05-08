@@ -8,6 +8,11 @@ help:
 build:
 	cargo build
 
+## build-release      - Build release using cargo
+.PHONY: build-release
+build-release:
+	./scripts/do_build_release.sh
+
 ## test               - Run all tests using cargo
 .PHONY: test
 test:
@@ -23,10 +28,15 @@ install:
 install-deb:
 	dpkg -i artifactory/bakery.deb
 
-## deb-package        - Create a debian package from the latest local build
+## deb-package        - Create a debian package from the latest release build
 .PHONY: deb-package
-deb-package: test
+deb-package: build-release
 	./scripts/do_deb_package.sh
+
+## inc-version        - Increment minor version
+.PHONY: inc-version
+inc-version:
+	./scripts/do_inc_version.sh
 
 ## setup-rust         - Setup rust on local machine supports debian/ubuntu
 .PHONY: setup-rust
@@ -49,7 +59,9 @@ docker-shell:
 
 ## release            - Create a release build including a deb package
 .PHONY: release
-release:
+release: inc-version
+	./scripts/do_build_release.sh
+	./scripts/do_deb_package.sh
 	./scripts/do_release.sh
 
 ## clean              - Clean
