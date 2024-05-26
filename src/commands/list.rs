@@ -315,7 +315,7 @@ mod tests {
             "context": [
                 "PLATFORM_VERSION=x.y.z",
                 "BUILD_ID=abcdef",
-                "VARIANT=test"
+                "BUILD_VARIANT=test"
             ],
             "bb": {
                 "machine": "test-machine",
@@ -346,7 +346,7 @@ mod tests {
             "PLATFORM_RELEASE".to_string() => "".to_string(),
             "BUILD_SHA".to_string() => "".to_string(),
             "RELEASE_BUILD".to_string() => "".to_string(),
-            "VARIANT".to_string() => "test".to_string(),
+            "BUILD_VARIANT".to_string() => "test".to_string(),
             "ARCHIVER".to_string() => "".to_string(),
             "DEBUG_SYMBOLS".to_string() => "".to_string(),
             "DEVICE".to_string() => "".to_string(),

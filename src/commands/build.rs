@@ -130,7 +130,8 @@ impl BCommand for BuildCommand {
         }
 
         // We need to add the extra context variables to the list of bitbake variables
-        // so they can be added to the bitbake local.conf file
+        // so they can be added to the bitbake local.conf file if used as env variables
+        // they can also be injected as context variables
         for (key, value) in extra_ctx.clone() {
             bb_variables.push(format!("{} ?= \"{}\"", key, value));
         }
@@ -249,7 +250,7 @@ impl BuildCommand {
                     .long("platform-version")
                     .value_name("x.y.z")
                     .default_value("0.0.0")
-                    .help("Platform version number for the build."),
+                    .help("Platform version number for the build. Will be available as context variable PLATFORM_VERSION"),
             )
             .arg(
                 clap::Arg::new("build_sha")
@@ -257,7 +258,7 @@ impl BuildCommand {
                     .long("build-sha")
                     .value_name("sha")
                     .default_value("dev")
-                    .help("Sha for the current build."),
+                    .help("Sha for the current build. Will be available as a context variable BUILD_SHA"),
             )
             .arg(
                 clap::Arg::new("variant")
@@ -267,7 +268,7 @@ impl BuildCommand {
                     .default_value("dev")
                     .value_parser(["dev", "test", "release"])
                     .default_value("dev")
-                    .help("Specify the variant of the build it can be one of release, dev or test."),
+                    .help("Specify the variant of the build it can be one of release, dev or test. Will be available as a context variable BUILD_VARIANT"),
             )
             .arg(
                 clap::Arg::new("interactive")
@@ -461,7 +462,6 @@ mod tests {
         local_conf_content.push_str("BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"\n");
         local_conf_content.push_str("PARALLEL_MAKE ?= \"-j ${@oe.utils.cpu_count()}\"\n");
         local_conf_content.push_str("MACHINE ?= \"raspberrypi3\"\n");
-        local_conf_content.push_str("VARIANT ?= \"dev\"\n");
         local_conf_content.push_str("PRODUCT_NAME ?= \"default\"\n");
         local_conf_content.push_str("DISTRO ?= \"strix\"\n");
         local_conf_content.push_str(&format!("SSTATE_DIR ?= \"{}/.cache/test-arch/sstate-cache\"\n", work_dir.to_string_lossy().to_string()));

@@ -26,7 +26,7 @@ pub const CTX_KEY_PLATFORM_VERSION: &str = "PLATFORM_VERSION";
 pub const CTX_KEY_BUILD_ID: &str = "BUILD_ID";
 pub const CTX_KEY_PLATFORM_RELEASE: &str = "PLATFORM_RELEASE";
 pub const CTX_KEY_BUILD_SHA: &str = "BUILD_SHA";
-pub const CTX_KEY_VARIANT: &str = "VARIANT";
+pub const CTX_KEY_BUILD_VARIANT: &str = "BUILD_VARIANT";
 pub const CTX_KEY_RELEASE_BUILD: &str = "RELEASE_BUILD";
 pub const CTX_KEY_ARCHIVER: &str = "ARCHIVER";
 pub const CTX_KEY_DEBUG_SYMBOLS: &str = "DEBUG_SYMBOLS";
@@ -44,7 +44,7 @@ impl WsContextData {
             CTX_KEY_BUILD_ID |
             CTX_KEY_PLATFORM_RELEASE |
             CTX_KEY_BUILD_SHA |
-            CTX_KEY_VARIANT |
+            CTX_KEY_BUILD_VARIANT |
             CTX_KEY_RELEASE_BUILD |
             CTX_KEY_ARCHIVER |
             CTX_KEY_DEVICE |
@@ -98,12 +98,12 @@ impl WsContextData {
             CTX_KEY_SCRIPTS_DIR.to_string() => "".to_string(),
             CTX_KEY_BUILDS_DIR.to_string() => "".to_string(),
             CTX_KEY_WORK_DIR.to_string() => "".to_string(),
-            CTX_KEY_PLATFORM_VERSION.to_string() => "".to_string(),
-            CTX_KEY_BUILD_ID.to_string() => "".to_string(),
+            CTX_KEY_PLATFORM_VERSION.to_string() => "0.0.0".to_string(),
+            CTX_KEY_BUILD_ID.to_string() => "0".to_string(),
             CTX_KEY_PLATFORM_RELEASE.to_string() => "".to_string(),
             CTX_KEY_BUILD_SHA.to_string() => "".to_string(),
             CTX_KEY_RELEASE_BUILD.to_string() => "".to_string(),
-            CTX_KEY_VARIANT.to_string() => "".to_string(),
+            CTX_KEY_BUILD_VARIANT.to_string() => "dev".to_string(),
             CTX_KEY_ARCHIVER.to_string() => "".to_string(),
             CTX_KEY_DEBUG_SYMBOLS.to_string() => "".to_string(),
             CTX_KEY_DEVICE.to_string() => "".to_string(),
@@ -161,7 +161,7 @@ mod tests {
         CTX_KEY_MACHINE,
         CTX_KEY_ARCH,
         CTX_KEY_DISTRO,
-        CTX_KEY_VARIANT,
+        CTX_KEY_BUILD_VARIANT,
         CTX_KEY_PRODUCT_NAME,
         CTX_KEY_BB_BUILD_DIR,
         CTX_KEY_BB_DEPLOY_DIR,
@@ -193,7 +193,6 @@ mod tests {
         assert!(data.get_ctx_value(CTX_KEY_MACHINE).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_ARCH).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_DISTRO).is_empty());
-        assert!(data.get_ctx_value(CTX_KEY_VARIANT).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_PRODUCT_NAME).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_DEVICE).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_IMAGE).is_empty());
@@ -221,9 +220,22 @@ mod tests {
             data.get_ctx_path(CTX_KEY_BUILDS_DIR),
             PathBuf::from("")
         );
-        assert_eq!(data.get_ctx_path(CTX_KEY_WORK_DIR), PathBuf::from(""));
-        assert!(data.get_ctx_value(CTX_KEY_PLATFORM_VERSION).is_empty());
-        assert!(data.get_ctx_value(CTX_KEY_BUILD_ID).is_empty());
+        assert_eq!(
+            data.get_ctx_value(CTX_KEY_PLATFORM_VERSION),
+            String::from("0.0.0")
+        );
+        assert_eq!(
+            data.get_ctx_value(CTX_KEY_BUILD_ID),
+            String::from("0")
+        );
+        assert_eq!(
+            data.get_ctx_path(CTX_KEY_WORK_DIR),
+            PathBuf::from("")
+        );
+        assert_eq!(
+            data.get_ctx_value(CTX_KEY_BUILD_VARIANT),
+            String::from("dev")
+        );
         assert!(data.get_ctx_value(CTX_KEY_PLATFORM_RELEASE).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_BUILD_SHA).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_RELEASE_BUILD).is_empty());
@@ -253,7 +265,7 @@ mod tests {
             CTX_KEY_MACHINE.to_string() => "test-machine".to_string(),
             CTX_KEY_ARCH.to_string() => "test-arch".to_string(),
             CTX_KEY_DISTRO.to_string() => "test-distro".to_string(),
-            CTX_KEY_VARIANT.to_string() => "test-variant".to_string(),
+            CTX_KEY_BUILD_VARIANT.to_string() => "test-variant".to_string(),
             CTX_KEY_PRODUCT_NAME.to_string() => "test".to_string(),
             CTX_KEY_WORK_DIR.to_string() => settings.work_dir().to_string_lossy().to_string(),
         };
@@ -261,7 +273,7 @@ mod tests {
         assert_eq!(data.get_ctx_value(CTX_KEY_MACHINE), "test-machine");
         assert_eq!(data.get_ctx_value(CTX_KEY_ARCH), "test-arch");
         assert_eq!(data.get_ctx_value(CTX_KEY_DISTRO), "test-distro");
-        assert_eq!(data.get_ctx_value(CTX_KEY_VARIANT), "test-variant");
+        assert_eq!(data.get_ctx_value(CTX_KEY_BUILD_VARIANT), "test-variant");
         assert_eq!(data.get_ctx_value(CTX_KEY_PRODUCT_NAME), "test");
         assert_eq!(data.get_ctx_value("KEY1"), "value1");
         assert_eq!(data.get_ctx_value("KEY2"), "value2");

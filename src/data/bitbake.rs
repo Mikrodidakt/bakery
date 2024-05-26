@@ -99,8 +99,6 @@ impl WsBitbakeData {
             conf_str.push_str(format!("{}\n", line).as_str());
         }
         conf_str.push_str(&format!("MACHINE ?= \"{}\"\n", self.machine()));
-        // TODO: we need to handle VARIANT correctly but this is good enough for now
-        conf_str.push_str(&format!("VARIANT ?= \"{}\"\n", "dev".to_string()));
         // TODO: we should define a method product_name() call that instead
         conf_str.push_str(&format!("PRODUCT_NAME ?= \"{}\"\n", self.product));
         conf_str.push_str(&format!("DISTRO ?= \"{}\"\n", self.distro));
@@ -245,7 +243,6 @@ mod tests {
         conf_str.push_str("BB_LOCAL_CONF_TEST_LINE_2\n");
         conf_str.push_str("BB_LOCAL_CONF_TEST_LINE_3\n");
         conf_str.push_str("MACHINE ?= \"test-machine\"\n");
-        conf_str.push_str("VARIANT ?= \"dev\"\n");
         conf_str.push_str("PRODUCT_NAME ?= \"test-name\"\n");
         conf_str.push_str("DISTRO ?= \"test-distro\"\n");
         conf_str.push_str("SSTATE_DIR ?= \"/workspace/.cache/test-arch/sstate-cache\"\n");
@@ -301,6 +298,6 @@ mod tests {
         let context: Context = Context::new(&variables);
         data.expand_ctx(&context).unwrap();
         assert_eq!(data.bblayers_conf(), "BAKERY_WORKDIR=\"${TOPDIR}/../..\"\nBBLAYERS ?= \" \\\n       /bakery-ws/layers/meta-test \\\n       /bakery-ws/builds/workspace \\\n\"\n");
-        assert_eq!(data.local_conf(), "BAKERY_WORKSPACE_DIR ?= \"/bakery-ws/builds/workspace\"\nPACKAGE_CLASSES ?= \"package_rpm\"\nBB_DISKMON_DIRS ?= \"\\\n    STOPTASKS,${TMPDIR},1G,100K \\\n    HALT,${SSTATE_DIR},100M,1K \\\n    HALT,/tmp,10M,1K\"\nCONF_VERSION = \"2\"\nMACHINE ?= \"test-machine\"\nVARIANT ?= \"dev\"\nPRODUCT_NAME ?= \"test-name\"\nDISTRO ?= \"test-distro\"\nSSTATE_DIR ?= \"/bakery-ws/.cache/test-arch/sstate-cache\"\nDL_DIR ?= \"/bakery-ws/.cache/download\"\n");
+        assert_eq!(data.local_conf(), "BAKERY_WORKSPACE_DIR ?= \"/bakery-ws/builds/workspace\"\nPACKAGE_CLASSES ?= \"package_rpm\"\nBB_DISKMON_DIRS ?= \"\\\n    STOPTASKS,${TMPDIR},1G,100K \\\n    HALT,${SSTATE_DIR},100M,1K \\\n    HALT,/tmp,10M,1K\"\nCONF_VERSION = \"2\"\nMACHINE ?= \"test-machine\"\nPRODUCT_NAME ?= \"test-name\"\nDISTRO ?= \"test-distro\"\nSSTATE_DIR ?= \"/bakery-ws/.cache/test-arch/sstate-cache\"\nDL_DIR ?= \"/bakery-ws/.cache/download\"\n");
     }
 }
