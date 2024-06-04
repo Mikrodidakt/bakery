@@ -10,7 +10,7 @@ VERSION=$(get_bakery_version ${WORK_DIR}/Cargo.toml)
 #echo "INFO: build docker bakery-workspace"
 #(cd ${WORK_DIR}; ./docker/do_docker_build.sh)
 
-cp ${TEMP_WORK_DIR}/../bakery.deb ${ARTIFACTS_DIR}/bakery-${VERSION}.deb
+cp ${ARTIFACTS_DIR}/bakery.deb ${ARTIFACTS_DIR}/bakery-${VERSION}.deb
 
 echo "INFO: tag bakery v${VERSION}"
 git add ${WORK_DIR}/Cargo.toml
