@@ -26,7 +26,7 @@ install:
 ## install-deb        - Install latest locally built bakery under /usr/bin using deb package
 .PHONY: install-deb
 install-deb:
-	dpkg -i artifactory/bakery.deb
+	sudo dpkg -i artifacts/bakery.deb
 
 ## deb-package        - Create a debian package from the latest release build
 .PHONY: deb-package
