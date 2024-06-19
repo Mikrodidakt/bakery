@@ -451,7 +451,7 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()), "&&", "bitbake", "test-image"]
+                cmd_line: vec!["cd", &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()), "&&", "devtool", "create-workspace", "&&", "bitbake", "test-image"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -539,7 +539,7 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()), "&&", "bitbake", "image"]
+                cmd_line: vec!["cd", &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()), "&&", "devtool", "create-workspace", "&&", "bitbake", "image"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -551,7 +551,7 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()), "&&", "bitbake", "image", "-c", "do_populate_sdk"]
+                cmd_line: vec!["cd", &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()), "&&", "devtool", "create-workspace", "&&", "bitbake", "image", "-c", "do_populate_sdk"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -599,15 +599,15 @@ mod tests {
                     "GNDIR := \"${@os.path.abspath(os.path.join(os.path.dirname(d.getVar('FILE', True)),'../../../../'))}\"",
                     "BBFILES ?= \"\"",
                     "BBLAYERS ?= \" \\",
-                    "   ${STRIXOS_LAYER}/meta-strix-raspberrypi \\",
-                    "   ${STRIX_WORKDIR}/layers/poky/meta \\",
-                    "   ${STRIX_WORKDIR}/layers/poky/meta-poky \\",
-                    "   ${STRIX_WORKDIR}/layers/poky/meta-yocto-bsp \\",
-                    "   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-oe \\",
-                    "   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-networking \\",
-                    "   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-filesystems \\",
-                    "   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-python \\",
-                    "   ${STRIX_WORKDIR}/layers/meta-raspberrypi \""
+                    "  ${STRIXOS_LAYER}/meta-strix-raspberrypi \\",
+                    "  ${STRIX_WORKDIR}/layers/poky/meta \\",
+                    "  ${STRIX_WORKDIR}/layers/poky/meta-poky \\",
+                    "  ${STRIX_WORKDIR}/layers/poky/meta-yocto-bsp \\",
+                    "  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-oe \\",
+                    "  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-networking \\",
+                    "  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-filesystems \\",
+                    "  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-python \\",
+                    "  ${STRIX_WORKDIR}/layers/meta-raspberrypi \""
                 ],
                 "localconf": [
                     "BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"",
@@ -621,14 +621,14 @@ mod tests {
                     "PATCHRESOLVE = \"noop\"",
                     "EXTRA_IMAGE_FEATURES = \"debug-tweaks\"",
                     "BB_DISKMON_DIRS = \" \\",
-                    "   STOPTASKS,${TMPDIR},1G,100K \\",
-                    "   STOPTASKS,${DL_DIR},1G,100K \\",
-                    "   STOPTASKS,${SSTATE_DIR},1G,100K \\",
-                    "   STOPTASKS,/tmp,100M,100K \\",
-                    "   ABORT,${TMPDIR},100M,1K \\",
-                    "   ABORT,${DL_DIR},100M,1K \\",
-                    "   ABORT,${SSTATE_DIR},100M,1K \\",
-                    "   ABORT,/tmp,10M,1K \""
+                    "  STOPTASKS,${TMPDIR},1G,100K \\",
+                    "  STOPTASKS,${DL_DIR},1G,100K \\",
+                    "  STOPTASKS,${SSTATE_DIR},1G,100K \\",
+                    "  STOPTASKS,/tmp,100M,100K \\",
+                    "  ABORT,${TMPDIR},100M,1K \\",
+                    "  ABORT,${DL_DIR},100M,1K \\",
+                    "  ABORT,${SSTATE_DIR},100M,1K \\",
+                    "  ABORT,/tmp,10M,1K \""
                 ]
             }
         }
@@ -647,6 +647,18 @@ mod tests {
         mocked_system
             .expect_init_env_file()
             .returning(|_x, _y| Ok(HashMap::new()));
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec!["devtool", "create-workspace"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
@@ -666,6 +678,11 @@ mod tests {
         mocked_logger
             .expect_info()
             .with(mockall::predicate::eq(format!("execute bitbake build task '{}'", task.data().name())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq("devtool create-workspace".to_string()))
             .once()
             .returning(|_x| ());
         mocked_logger
@@ -699,14 +716,14 @@ mod tests {
         local_conf_content.push_str("PATCHRESOLVE = \"noop\"\n");
         local_conf_content.push_str("EXTRA_IMAGE_FEATURES = \"debug-tweaks\"\n");
         local_conf_content.push_str("BB_DISKMON_DIRS = \" \\\n");
-        local_conf_content.push_str("   STOPTASKS,${TMPDIR},1G,100K \\\n");
-        local_conf_content.push_str("   STOPTASKS,${DL_DIR},1G,100K \\\n");
-        local_conf_content.push_str("   STOPTASKS,${SSTATE_DIR},1G,100K \\\n");
-        local_conf_content.push_str("   STOPTASKS,/tmp,100M,100K \\\n");
-        local_conf_content.push_str("   ABORT,${TMPDIR},100M,1K \\\n");
-        local_conf_content.push_str("   ABORT,${DL_DIR},100M,1K \\\n");
-        local_conf_content.push_str("   ABORT,${SSTATE_DIR},100M,1K \\\n");
-        local_conf_content.push_str("   ABORT,/tmp,10M,1K \"\n");
+        local_conf_content.push_str("STOPTASKS,${TMPDIR},1G,100K \\\n");
+        local_conf_content.push_str("STOPTASKS,${DL_DIR},1G,100K \\\n");
+        local_conf_content.push_str("STOPTASKS,${SSTATE_DIR},1G,100K \\\n");
+        local_conf_content.push_str("STOPTASKS,/tmp,100M,100K \\\n");
+        local_conf_content.push_str("ABORT,${TMPDIR},100M,1K \\\n");
+        local_conf_content.push_str("ABORT,${DL_DIR},100M,1K \\\n");
+        local_conf_content.push_str("ABORT,${SSTATE_DIR},100M,1K \\\n");
+        local_conf_content.push_str("ABORT,/tmp,10M,1K \"\n");
         local_conf_content.push_str("MACHINE ?= \"raspberrypi3\"\n");
         local_conf_content.push_str("PRODUCT_NAME ?= \"default\"\n");
         local_conf_content.push_str("DISTRO ?= \"strix\"\n");
@@ -720,15 +737,15 @@ mod tests {
         bblayers_conf_content.push_str("GNDIR := \"${@os.path.abspath(os.path.join(os.path.dirname(d.getVar('FILE', True)),'../../../../'))}\"\n");
         bblayers_conf_content.push_str("BBFILES ?= \"\"\n");
         bblayers_conf_content.push_str("BBLAYERS ?= \" \\\n");
-        bblayers_conf_content.push_str("   ${STRIXOS_LAYER}/meta-strix-raspberrypi \\\n");
-        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/poky/meta \\\n");
-        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/poky/meta-poky \\\n");
-        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/poky/meta-yocto-bsp \\\n");
-        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-oe \\\n");
-        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-networking \\\n");
-        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-filesystems \\\n");
-        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/meta-openembedded/meta-python \\\n");
-        bblayers_conf_content.push_str("   ${STRIX_WORKDIR}/layers/meta-raspberrypi \"\n");
+        bblayers_conf_content.push_str("  ${STRIXOS_LAYER}/meta-strix-raspberrypi \\\n");
+        bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/poky/meta \\\n");
+        bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/poky/meta-poky \\\n");
+        bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/poky/meta-yocto-bsp \\\n");
+        bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-oe \\\n");
+        bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-networking \\\n");
+        bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-filesystems \\\n");
+        bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-python \\\n");
+        bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/meta-raspberrypi \"\n");
         helper_verify_bitbake_conf(&local_conf_path, &local_conf_content, &bblayers_conf_path, &bblayers_conf_content);
     }
 }

@@ -68,6 +68,8 @@ impl<'a> TaskExecuter for BBBuildExecuter<'a> {
         self.cli.info(format!("execute bitbake build task '{}'", self.task_data.name()));
         let force: bool = dry_run;
         let env: HashMap<String, String> = self.bb_build_env(args_env_variables)?;
+        let exec_dir: std::path::PathBuf = self.bb_data.build_dir();
+        let mut docker_str: &str = "";
         // if we are running a dry run we should always create the bb configs.
         // When not a dry run it will be determined if it is needed or not to
         // regenerate the bb configs based on the content of the existing configs
@@ -76,23 +78,37 @@ impl<'a> TaskExecuter for BBBuildExecuter<'a> {
         conf.create_bitbake_configs(self.cli)?;
 
         if dry_run {
+            let mut cmd_line: Vec<String> = vec![];
+            cmd_line.append(&mut vec![
+                "devtool".to_string(),
+                "create-workspace".to_string(),
+            ]);
+            if !docker_str.is_empty() {
+                let image: DockerImage = DockerImage::new(docker_str);
+                let docker: Docker = Docker::new(image, interactive);
+                docker.run_cmd(&mut cmd_line, &env, &exec_dir, &self.cli)?;
+            } else {
+                self.cli.check_call(&cmd_line, &env, true)?;
+            }
             self.cli.info("Dry run. Skipping build!".to_string());
             return Ok(());
         }
 
         for r in self.task_data.recipes() {
+            let mut cmd_line: Vec<String> = vec![];
             let recipe: Recipe = Recipe::new(r);
             let mut cmd: Vec<String> = recipe.bitbake_cmd();
-            let exec_dir: std::path::PathBuf = self.bb_data.build_dir();
-            let mut cmd_line: Vec<String> = vec![];
+
             cmd_line.append(&mut vec![
                 "cd".to_string(),
                 exec_dir.to_string_lossy().to_string(),
                 "&&".to_string(),
+                "devtool".to_string(),
+                "create-workspace".to_string(),
+                "&&".to_string(),
             ]);
             cmd_line.append(&mut cmd);
 
-            let mut docker_str: &str = "";
             if !self.task_data.docker_image().is_empty() && self.task_data.docker_image() != "NA" {
                 docker_str = self.task_data.docker_image();
             }
@@ -245,14 +261,14 @@ mod tests {
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("cd {} && bitbake test-image", &build_dir.to_string_lossy().to_string())))
+            .with(mockall::predicate::eq(format!("cd {} && devtool create-workspace && bitbake test-image", &build_dir.to_string_lossy().to_string())))
             .once()
             .returning(|_x| ());
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "bitbake", "test-image"]
+                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "devtool", "create-workspace", "&&", "bitbake", "test-image"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -314,6 +330,18 @@ mod tests {
         mocked_system
             .expect_init_env_file()
             .returning(|_x, _y| Ok(HashMap::new()));
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec!["devtool", "create-workspace"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
@@ -333,6 +361,11 @@ mod tests {
         mocked_logger
             .expect_info()
             .with(mockall::predicate::eq(format!("execute bitbake build task '{}'", task_data.name())))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_info()
+            .with(mockall::predicate::eq("devtool create-workspace".to_string()))
             .once()
             .returning(|_x| ());
         mocked_logger

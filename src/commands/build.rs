@@ -419,6 +419,18 @@ mod tests {
         mocked_system
             .expect_init_env_file()
             .returning(|_x, _y| Ok(HashMap::new()));
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec!["devtool", "create-workspace"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
@@ -439,6 +451,11 @@ mod tests {
             mocked_logger
                 .expect_info()
                 .with(mockall::predicate::eq(format!("execute bitbake build task '{}'", name)))
+                .once()
+                .returning(|_x| ());
+            mocked_logger
+                .expect_info()
+                .with(mockall::predicate::eq("devtool create-workspace".to_string()))
                 .once()
                 .returning(|_x| ());
             mocked_logger
@@ -517,7 +534,7 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "bitbake", "test-image"]
+                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "devtool", "create-workspace", "&&", "bitbake", "test-image"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -909,7 +926,7 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "bitbake", "test-image"]
+                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "devtool", "create-workspace", "&&", "bitbake", "test-image"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -984,7 +1001,7 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "bitbake", "image"]
+                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "devtool", "create-workspace", "&&", "bitbake", "image"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
@@ -996,7 +1013,7 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "bitbake", "image", "-c", "do_populate_sdk"]
+                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "devtool", "create-workspace", "&&", "bitbake", "image", "-c", "do_populate_sdk"]
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
