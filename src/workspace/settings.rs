@@ -64,52 +64,45 @@ impl WsSettingsHandler {
         &self.ws_settings
     }
 
-    pub fn builds_dir(&self) -> PathBuf {
+    pub fn append_dir(&self, dir: &String) -> PathBuf {
         let mut path_buf: PathBuf = self.work_dir();
-        path_buf.push(&self.ws_settings.builds_dir);
+        if dir.is_empty() {
+            return path_buf;
+        }
+        path_buf.push(&dir);
         path_buf
+    }
+
+    pub fn builds_dir(&self) -> PathBuf {
+        self.append_dir(&self.ws_settings.builds_dir)
     }
 
     pub fn cache_dir(&self) -> PathBuf {
-        let mut path_buf: PathBuf = self.work_dir();
-        path_buf.push(&self.ws_settings.cache_dir);
-        path_buf
+        self.append_dir(&self.ws_settings.cache_dir)
     }
 
     pub fn artifacts_dir(&self) -> PathBuf {
-        let mut path_buf: PathBuf = self.work_dir();
-        path_buf.push(&self.ws_settings.artifacts_dir);
-        path_buf
+        self.append_dir(&self.ws_settings.artifacts_dir)
     }
 
     pub fn layers_dir(&self) -> PathBuf {
-        let mut path_buf: PathBuf = self.work_dir();
-        path_buf.push(&self.ws_settings.layers_dir);
-        path_buf
+        self.append_dir(&self.ws_settings.layers_dir)
     }
 
     pub fn configs_dir(&self) -> PathBuf {
-        let mut path_buf: PathBuf = self.work_dir();
-        path_buf.push(&self.ws_settings.configs_dir);
-        path_buf
+        self.append_dir(&self.ws_settings.configs_dir)
     }
 
     pub fn include_dir(&self) -> PathBuf {
-        let mut path_buf: PathBuf = self.work_dir();
-        path_buf.push(&self.ws_settings.include_dir);
-        path_buf
+        self.append_dir(&self.ws_settings.include_dir)
     }
 
     pub fn scripts_dir(&self) -> PathBuf {
-        let mut path_buf: PathBuf = self.work_dir();
-        path_buf.push(&self.ws_settings.scripts_dir);
-        path_buf
+        self.append_dir(&self.ws_settings.scripts_dir)
     }
 
     pub fn docker_dir(&self) -> PathBuf {
-        let mut path_buf: PathBuf = self.work_dir();
-        path_buf.push(&self.ws_settings.docker_dir);
-        path_buf
+        self.append_dir(&self.ws_settings.docker_dir)
     }
 
     pub fn docker_top_dir(&self) -> PathBuf {
@@ -205,6 +198,25 @@ mod tests {
         assert_eq!(settings.docker_dir(), PathBuf::from("/workspace/docker_test"));
         assert_eq!(settings.configs_dir(), PathBuf::from("/workspace/configs_test"));
         assert_eq!(settings.include_dir(), PathBuf::from("/workspace/include_test"));
+    }
+
+    #[test]
+    fn test_settings_ws_top_dir() {
+        let json_test_str = r#"
+        {
+            "version": "4",
+            "workspace": {
+              "layersdir": ""
+            }
+        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let settings: WsSettingsHandler = WsSettingsHandler::new(
+            work_dir,
+            Helper::setup_ws_settings(json_test_str),
+        );
+        /* Making sure the expanded path doesn't end with '/' */
+        assert_eq!(settings.layers_dir().to_string_lossy(), String::from("/workspace"));
+        assert_eq!(settings.work_dir().to_string_lossy(), String::from("/workspace"));
     }
 
     #[test]
