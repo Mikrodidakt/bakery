@@ -7,6 +7,13 @@ use crate::data::WsBitbakeData;
 use crate::error::BError;
 use crate::cli::Cli;
 
+static BBLAYERS_PATTERNS: [&str; 4] = [
+    "BBLAYERS ?=",
+    "BBLAYERS?=",
+    "BBLAYERS=",
+    "BBLAYERS =",
+];
+
 pub struct BitbakeConf {
     build_conf_dir: PathBuf,
     local_conf_path: PathBuf,
@@ -20,16 +27,10 @@ pub struct BitbakeConf {
 impl BitbakeConf {
     fn add_ws_to_bblayers_conf(&self, content: &str) -> String {
         let mut found_bblayers: bool = false;
-        let bblayers_patterns: [&str; 4] = [
-            "BBLAYERS ?=",
-            "BBLAYERS?=",
-            "BBLAYERS=",
-            "BBLAYERS =",
-        ];
 
         for line in content.lines() {
             // Check if the line starts with any of the BBLAYERS patterns
-            if bblayers_patterns.iter().any(|&pattern| line.starts_with(pattern)) {
+            if BBLAYERS_PATTERNS.iter().any(|&pattern| line.starts_with(pattern)) {
                 found_bblayers = true;
                 break;
             }
@@ -52,12 +53,6 @@ impl BitbakeConf {
         let mut found_bblayers: bool = false;
         let mut result_lines: Vec<String> = Vec::new();
         let mut file: std::fs::File = std::fs::File::create(path)?;
-        let bblayers_patterns: [&str; 4] = [
-            "BBLAYERS ?=",
-            "BBLAYERS?=",
-            "BBLAYERS=",
-            "BBLAYERS =",
-        ];
 
         /*
          * Clean the content from newlines and tabs
@@ -80,7 +75,7 @@ impl BitbakeConf {
             }
 
             // Check if the line starts with any of the BBLAYERS patterns
-            if bblayers_patterns.iter().any(|&pattern| line.starts_with(pattern)) {
+            if BBLAYERS_PATTERNS.iter().any(|&pattern| line.starts_with(pattern)) {
                 found_bblayers = true;
             }
         }
