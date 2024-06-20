@@ -1,7 +1,6 @@
 pub mod build;
 pub mod clean;
 pub mod list;
-pub mod tests;
 pub mod handler;
 pub mod shell;
 pub mod deploy;
