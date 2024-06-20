@@ -71,6 +71,66 @@ mod tests {
     }
 
     #[test]
+    fn test_get_shell_command() {
+        let cmd_handler: CmdHandler = CmdHandler::new();
+        let cmd: Result<&Box<dyn BCommand>, BError> = cmd_handler.get_cmd("shell");
+
+        match cmd {
+            Ok(command) => {
+                assert_eq!(command.cmd_str(), "shell");
+            }
+            Err(err) => {
+                assert!(false, "Expected OK result, but got an error '{}'", err);
+            }
+        }
+    }
+
+    #[test]
+    fn test_get_deploy_command() {
+        let cmd_handler: CmdHandler = CmdHandler::new();
+        let cmd: Result<&Box<dyn BCommand>, BError> = cmd_handler.get_cmd("deploy");
+
+        match cmd {
+            Ok(command) => {
+                assert_eq!(command.cmd_str(), "deploy");
+            }
+            Err(err) => {
+                assert!(false, "Expected OK result, but got an error '{}'", err);
+            }
+        }
+    }
+
+    #[test]
+    fn test_get_upload_command() {
+        let cmd_handler: CmdHandler = CmdHandler::new();
+        let cmd: Result<&Box<dyn BCommand>, BError> = cmd_handler.get_cmd("upload");
+
+        match cmd {
+            Ok(command) => {
+                assert_eq!(command.cmd_str(), "upload");
+            }
+            Err(err) => {
+                assert!(false, "Expected OK result, but got an error '{}'", err);
+            }
+        }
+    }
+
+    #[test]
+    fn test_get_list_command() {
+        let cmd_handler: CmdHandler = CmdHandler::new();
+        let cmd: Result<&Box<dyn BCommand>, BError> = cmd_handler.get_cmd("list");
+
+        match cmd {
+            Ok(command) => {
+                assert_eq!(command.cmd_str(), "list");
+            }
+            Err(err) => {
+                assert!(false, "Expected OK result, but got an error '{}'", err);
+            }
+        }
+    }
+
+    #[test]
     fn test_get_invalid_command() {
         let cmd_handler: CmdHandler = CmdHandler::new();
         let cmd: Result<&Box<dyn BCommand>, BError> = cmd_handler.get_cmd("invalid");
