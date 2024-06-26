@@ -44,6 +44,7 @@ impl BCommand for ShellCommand {
         let volumes: Vec<String> = self.get_arg_many(cli, "volume", BCOMMAND)?;
         let env: Vec<String> = self.get_arg_many(cli, "env", BCOMMAND)?;
         let cmd: String = self.get_arg_str(cli, "run", BCOMMAND)?;
+        let docker_pull: bool = self.get_arg_flag(cli, "docker_pull", BCOMMAND)?;
 
         /*
          * If docker is enabled in the workspace settings then bakery will be bootstraped into a docker container
@@ -56,6 +57,10 @@ impl BCommand for ShellCommand {
                 String::from("bakery"),
                 String::from("shell"),
             ];
+
+            if docker_pull {
+                self.docker_pull(cli, workspace)?;
+            }
 
             /*
              * We need to rebuild the command line because if the cmd is defined
@@ -159,6 +164,12 @@ impl ShellCommand {
                 .value_name("registry/image:tag")
                 .default_value("")
                 .help("Use a custome docker image when creating a shell"),
+        )
+        .arg(
+            clap::Arg::new("docker_pull")
+                .action(clap::ArgAction::SetTrue)
+                .long("docker-pull")
+                .help("Force the bakery shell to pull down the latest docker image from registry."),
         )
         .arg(
             clap::Arg::new("run")

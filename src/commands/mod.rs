@@ -34,6 +34,11 @@ pub trait BCommand {
         false
     }
 
+    fn docker_pull(&self, cli: &Cli, workspace: &Workspace) -> Result<(), BError> {
+        let docker: Docker = Docker::new(workspace.settings().docker_image(), false);
+        return docker.pull(cli);
+    }
+
     fn bootstrap(&self, cmd_line: &Vec<String>, cli: &Cli, workspace: &Workspace,
             volumes: &Vec<String>, interactive: bool) -> Result<(), BError> {
         let docker: Docker = Docker::new(workspace.settings().docker_image(), interactive);
