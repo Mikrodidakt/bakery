@@ -8,7 +8,7 @@ use crate::workspace::{
 };
 use crate::data::{WsBuildData, WsContextData};
 use crate::error::BError;
-use crate::fs::JsonFileReader;
+use crate::fs::ConfigFileReader;
 use crate::configs::Context;
 
 pub struct WsBuildConfigHandler {
@@ -21,7 +21,7 @@ pub struct WsBuildConfigHandler {
 
 impl WsBuildConfigHandler {
     pub fn from_str(json_config: &str, settings: &WsSettingsHandler) -> Result<Self, BError> {
-        let data: Value = JsonFileReader::parse(json_config)?;
+        let data: Value = ConfigFileReader::parse(json_config)?;
         Self::new(&data, settings)
     }
 
@@ -107,7 +107,7 @@ impl WsBuildConfigHandler {
 mod tests {
     use std::path::PathBuf;
 
-    use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, WsTaskHandler};
+    use crate::workspace::{WsBuildConfigHandler, WsSettingsHandler, WsTaskCmdHandler, WsTaskHandler};
     use crate::error::BError;
 
     #[test]

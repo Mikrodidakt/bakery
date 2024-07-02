@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
-use crate::fs::JsonFileReader;
+use crate::fs::ConfigFileReader;
 use crate::error::BError;
 
 const WORKSPACE_SETTINGS: &str = "workspace.json";
@@ -30,7 +30,7 @@ impl WsConfigFileHandler {
          * in the repo for the product that is going to be baked.
          */
         if path.exists() {
-            let settings_str: String = JsonFileReader::new(&path).read_json()?;
+            let settings_str: String = ConfigFileReader::new(&path).read_json()?;
             return WsSettingsHandler::from_str(&self.work_dir, &settings_str);
         }
 
@@ -40,7 +40,7 @@ impl WsConfigFileHandler {
          */
         path = self.work_dir.clone().join(WORKSPACE_SETTINGS);
         if path.exists() {
-            let settings_str: String = JsonFileReader::new(&path).read_json()?;
+            let settings_str: String = ConfigFileReader::new(&path).read_json()?;
             return WsSettingsHandler::from_str(&self.work_dir, &settings_str);
         }
 
@@ -62,7 +62,7 @@ impl WsConfigFileHandler {
 
         /* We start by looking for the build config in the workspace/work directory */
         if path.exists() {
-            let build_config_json: String = JsonFileReader::new(&path).read_json()?;
+            let build_config_json: String = ConfigFileReader::new(&path).read_json()?;
             return WsBuildConfigHandler::from_str(&build_config_json, settings);
         }
 
@@ -72,7 +72,7 @@ impl WsConfigFileHandler {
          */
         path = settings.configs_dir().join(build_config.clone());
         if path.exists() {
-            let build_config_json: String = JsonFileReader::new(&path).read_json()?;
+            let build_config_json: String = ConfigFileReader::new(&path).read_json()?;
             return WsBuildConfigHandler::from_str(&build_config_json, settings);
         }
 

@@ -1,6 +1,6 @@
 use crate::configs::Context;
 use crate::error::BError;
-use crate::fs::JsonFileReader;
+use crate::fs::ConfigFileReader;
 use crate::data::{
     WsArtifactData,
     WsBuildData,
@@ -16,7 +16,7 @@ pub struct WsArtifactsHandler {
 
 impl WsArtifactsHandler {
     pub fn from_str(json_config: &str, task_build_dir: &PathBuf, build_data: &WsBuildData) -> Result<Self, BError> {
-        let data: Value = JsonFileReader::parse(json_config)?;
+        let data: Value = ConfigFileReader::parse(json_config)?;
         Self::new(&data, task_build_dir, build_data)
     }
 

@@ -4,7 +4,7 @@ use std::env;
 use std::io::Error;
 use indexmap::IndexMap;
 
-use crate::fs::JsonFileReader;
+use crate::fs::ConfigFileReader;
 use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
 use crate::error::BError;
 use crate::data::{WsProductData, WsContextData};
@@ -97,7 +97,7 @@ impl Workspace {
                         if extension == "json" {
                             if let Some(file_name) = path.file_name() {
                                 if let Some(file_name_str) = file_name.to_str() {
-                                    let build_config_json: String = JsonFileReader::new(&path).read_json()?;
+                                    let build_config_json: String = ConfigFileReader::new(&path).read_json()?;
                                     let config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(&build_config_json, settings)?;
                                     if config.build_data().valid() {
                                         list_of_files.push(file_name_str.to_string());
@@ -126,7 +126,7 @@ impl Workspace {
         } else {
             for f in list_of_files {
                 let config_path: PathBuf = settings.configs_dir().join(f);
-                let config_str: String = JsonFileReader::new(&config_path).read_json()?;
+                let config_str: String = ConfigFileReader::new(&config_path).read_json()?;
                 let product: WsProductData = WsProductData::from_str(&config_str)?;
                 build_configs.insert(config_path, product.description().to_string());
             }

@@ -5,18 +5,18 @@ use std::path::PathBuf;
 use crate::error::BError;
 use serde_json::Value;
 
-pub struct JsonFileReader {
+pub struct ConfigFileReader {
     file_path: PathBuf,
 }
 
-impl JsonFileReader {
+impl ConfigFileReader {
     pub fn parse(json_string: &str) -> Result<Value, BError> {
         let value: serde_json::Value = serde_json::from_str(json_string)?;
         Ok(value)
     }
 
     pub fn new(file_path: &PathBuf) -> Self {
-        JsonFileReader {
+        ConfigFileReader {
             file_path: file_path.clone()
         }
     }

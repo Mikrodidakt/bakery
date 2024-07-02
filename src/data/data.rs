@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use crate::configs::Context;
 use crate::error::BError;
 use crate::workspace::{WsArtifactsHandler, WsSettingsHandler, WsTaskHandler};
-use crate::fs::JsonFileReader;
+use crate::fs::ConfigFileReader;
 use crate::data::{WsConfigData, WsProductData, WsBitbakeData, WsContextData};
 use crate::data::context;
 
@@ -28,7 +28,7 @@ impl WsBuildData {
     }
 
     pub fn from_str(json_config: &str, settings: &WsSettingsHandler) -> Result<Self, BError> {
-        let data: Value = JsonFileReader::parse(json_config)?;
+        let data: Value = ConfigFileReader::parse(json_config)?;
         Self::new(&data, settings)
     }
 
@@ -178,7 +178,7 @@ mod tests {
     use std::path::PathBuf;
 
     use crate::error::BError;
-    use crate::fs::JsonFileReader;
+    use crate::fs::ConfigFileReader;
     use crate::workspace::{
         WsArtifactsHandler,
         WsTaskHandler,
@@ -208,7 +208,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let json_data: Value =
-            JsonFileReader::parse(json_build_config).expect("Failed to parse json");
+            ConfigFileReader::parse(json_build_config).expect("Failed to parse json");
         let tasks: IndexMap<String, WsTaskHandler> =
             data.get_tasks(&json_data).expect("Failed to parse tasks");
         assert!(tasks.is_empty());
@@ -227,7 +227,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let json_data: Value =
-            JsonFileReader::parse(json_build_config).expect("Failed to parse json");
+            ConfigFileReader::parse(json_build_config).expect("Failed to parse json");
         let result: Result<IndexMap<String, WsTaskHandler>, BError> = data.get_tasks(&json_data);
         match result {
             Ok(_rconfig) => {
@@ -262,7 +262,7 @@ mod tests {
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
-        let json_data: Value = JsonFileReader::parse(json_task_str).expect("Failed to parse json");
+        let json_data: Value = ConfigFileReader::parse(json_task_str).expect("Failed to parse json");
         let task: WsTaskHandler = data.get_task(&json_data).expect("Failed to parse task");
         assert_eq!(task.data().build_dir(), &PathBuf::from("/workspace/builds/test-name"));
         assert_eq!(task.data().name(), "task-name");
@@ -291,7 +291,7 @@ mod tests {
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
-        let json_data: Value = JsonFileReader::parse(json_task_str).expect("Failed to parse json");
+        let json_data: Value = ConfigFileReader::parse(json_task_str).expect("Failed to parse json");
         let mut task: WsTaskHandler = data.get_task(&json_data).expect("Failed to parse task");
         task.expand_ctx(data.context().ctx()).unwrap();
         assert_eq!(task.data().recipes(), &vec!["test-image"]);
@@ -321,7 +321,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let json_data: Value =
-            JsonFileReader::parse(json_build_config).expect("Failed to parse json");
+            ConfigFileReader::parse(json_build_config).expect("Failed to parse json");
         let tasks: IndexMap<String, WsTaskHandler> =
             data.get_tasks(&json_data).expect("Failed to parse tasks");
         assert!(!tasks.is_empty());
@@ -346,7 +346,7 @@ mod tests {
         }"#;
         let data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let json_data: Value =
-            JsonFileReader::parse(json_artifact_config).expect("Failed to parse json");
+            ConfigFileReader::parse(json_artifact_config).expect("Failed to parse json");
         let result: Result<Vec<WsArtifactsHandler>, BError> =
             data.get_artifacts(&json_data, &task_build_dir);
         match result {
@@ -380,7 +380,7 @@ mod tests {
         let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
         let data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let json_data: Value =
-            JsonFileReader::parse(json_artifact_config).expect("Failed to parse json");
+            ConfigFileReader::parse(json_artifact_config).expect("Failed to parse json");
         let artifacts: WsArtifactsHandler = data
             .get_artifact(&json_data, &task_build_dir)
             .expect("Failed to parse artifacts");
@@ -416,7 +416,7 @@ mod tests {
         let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         let json_data: Value =
-            JsonFileReader::parse(json_artifact_config).expect("Failed to parse json");
+            ConfigFileReader::parse(json_artifact_config).expect("Failed to parse json");
         let mut artifact: WsArtifactsHandler = data
             .get_artifact(&json_data, &task_build_dir)
             .expect("Failed to parse artifacts");
@@ -444,7 +444,7 @@ mod tests {
         let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
         let data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
         let json_data: Value =
-            JsonFileReader::parse(json_artifacts_config).expect("Failed to parse json");
+            ConfigFileReader::parse(json_artifacts_config).expect("Failed to parse json");
         let artifacts: Vec<WsArtifactsHandler> = data
             .get_artifacts(&json_data, &task_build_dir)
             .expect("Failed to parse artifacts");

@@ -1,6 +1,6 @@
 use crate::error::BError;
 use crate::executers::{TaskCmdExecuter, TaskExecuter};
-use crate::fs::JsonFileReader;
+use crate::fs::ConfigFileReader;
 use crate::configs::Context;
 use crate::data::WsTaskCmdData;
 use crate::cli::Cli;
@@ -14,7 +14,7 @@ pub struct WsTaskCmdHandler {
 
 impl WsTaskCmdHandler {
     pub fn from_str(name: &str, json_config: &str) -> Result<Self, BError> {
-        let data: Value = JsonFileReader::parse(json_config)?;
+        let data: Value = ConfigFileReader::parse(json_config)?;
         Self::new(name, &data)
     }
 

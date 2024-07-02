@@ -8,7 +8,7 @@ use crate::executers::{
 };
 use crate::workspace::WsArtifactsHandler;
 use crate::error::BError;
-use crate::fs::JsonFileReader;
+use crate::fs::ConfigFileReader;
 use crate::cli::Cli;
 use crate::data::{
     TType,
@@ -31,7 +31,7 @@ pub struct WsTaskHandler {
 
 impl WsTaskHandler {
     pub fn from_str(json_config: &str, build_data: &WsBuildData) -> Result<Self, BError> {
-        let data: Value = JsonFileReader::parse(json_config)?;
+        let data: Value = ConfigFileReader::parse(json_config)?;
         Self::new(&data, build_data)
     }
 
