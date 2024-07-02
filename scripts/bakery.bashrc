@@ -137,6 +137,10 @@ upload() {
     (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" upload -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
 }
 
+setup() {
+    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" setup -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+}
+
 help() {
     (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" help "$@")
 }
