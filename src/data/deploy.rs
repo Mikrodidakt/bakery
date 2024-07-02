@@ -62,7 +62,7 @@ mod tests {
         {
         }"#;
         let data: WsDeployData = WsDeployData::from_str(json_build_config).expect("Failed to parse config data");
-        assert_eq!(data.cmd(), "NA");
+        assert_eq!(data.cmd(), "echo \"INFO: currently no deploy task defined\"");
     }
 
     #[test]
