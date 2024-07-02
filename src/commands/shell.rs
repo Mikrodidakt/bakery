@@ -18,7 +18,7 @@ impl BCommand for ShellCommand {
         if let Some(sub_matches) = cli.get_args().subcommand_matches(BCOMMAND) {
             if sub_matches.contains_id("config") {
                 if let Some(value) = sub_matches.get_one::<String>("config") {
-                    return value.clone()
+                    return value.clone();
                 }
             }
         }
