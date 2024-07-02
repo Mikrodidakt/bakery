@@ -3,7 +3,6 @@ pub mod recipe;
 pub mod bitbake;
 pub mod nonbitbake;
 pub mod deploy;
-pub mod upload;
 pub mod taskcmd;
 
 pub use docker::Docker;
@@ -12,7 +11,6 @@ pub use recipe::Recipe;
 pub use bitbake::{BBBuildExecuter, BBCleanExecuter};
 pub use nonbitbake::{NonBBBuildExecuter, NonBBCleanExecuter};
 pub use deploy::DeployExecuter;
-pub use upload::UploadExecuter;
 pub use taskcmd::TaskCmdExecuter;
 
 use crate::error::BError;

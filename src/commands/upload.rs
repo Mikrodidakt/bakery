@@ -5,7 +5,7 @@ use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
 use crate::workspace::Workspace;
 use crate::data::WsContextData;
-use crate::workspace::WsUploadHandler;
+use crate::workspace::WsTaskCmdHandler;
 use crate::executers::Docker;
 
 static BCOMMAND: &str = "upload";
@@ -20,7 +20,7 @@ impl BCommand for UploadCommand {
       if let Some(sub_matches) = cli.get_args().subcommand_matches(BCOMMAND) {
           if sub_matches.contains_id("config") {
               if let Some(value) = sub_matches.get_one::<String>("config") {
-                  return value.clone()
+                  return value.clone();
               }
           }
       }
@@ -63,7 +63,7 @@ impl BCommand for UploadCommand {
 
       workspace.update_ctx(&context)?;
 
-      let upload: &WsUploadHandler = workspace.config().upload();
+      let upload: &WsTaskCmdHandler = workspace.config().upload();
       upload.run(cli, &HashMap::new(), false, self.cmd.interactive)
   }
 }
