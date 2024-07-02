@@ -52,7 +52,7 @@ impl BCommand for SetupCommand {
       workspace.update_ctx(&context)?;
 
       let upload: &WsTaskCmdHandler = workspace.config().setup();
-      upload.run(cli, &HashMap::new(), false, self.cmd.interactive)
+      upload.run(cli, &cli.env(), false, self.cmd.interactive)
   }
 }
 
