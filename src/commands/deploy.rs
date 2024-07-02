@@ -3,7 +3,7 @@ use indexmap::{IndexMap, indexmap};
 
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
-use crate::workspace::{Workspace, WsDeployHandler};
+use crate::workspace::{Workspace, WsTaskCmdHandler};
 use crate::data::{WsContextData, CTX_KEY_IMAGE, CTX_KEY_DEVICE};
 
 static BCOMMAND: &str = "deploy";
@@ -18,7 +18,7 @@ impl BCommand for DeployCommand {
         if let Some(sub_matches) = cli.get_args().subcommand_matches(BCOMMAND) {
             if sub_matches.contains_id("config") {
                 if let Some(value) = sub_matches.get_one::<String>("config") {
-                    return value.clone()
+                    return value.clone();
                 }
             }
         }
@@ -68,7 +68,7 @@ impl BCommand for DeployCommand {
          */
         workspace.update_ctx(&context)?;
 
-        let deploy: &WsDeployHandler = workspace.config().deploy();
+        let deploy: &WsTaskCmdHandler = workspace.config().deploy();
         deploy.run(cli, &HashMap::new(), false, self.cmd.interactive)
     }
 }

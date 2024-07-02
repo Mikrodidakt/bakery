@@ -4,7 +4,6 @@ use serde_json::Value;
 use crate::workspace::{
     WsSettingsHandler,
     WsTaskHandler,
-    WsDeployHandler,
     WsTaskCmdHandler,
 };
 use crate::data::{WsBuildData, WsContextData};
@@ -15,7 +14,7 @@ use crate::configs::Context;
 pub struct WsBuildConfigHandler {
     data: WsBuildData,
     tasks: IndexMap<String, WsTaskHandler>,
-    deploy: WsDeployHandler,
+    deploy: WsTaskCmdHandler,
     upload: WsTaskCmdHandler,
     setup: WsTaskCmdHandler,
 }
@@ -29,7 +28,7 @@ impl WsBuildConfigHandler {
     pub fn new(data: &Value, settings: &WsSettingsHandler) -> Result<Self, BError> {
         let build_data: WsBuildData = WsBuildData::new(data, settings)?;
         let tasks: IndexMap<String, WsTaskHandler> = build_data.get_tasks(data)?;
-        let deploy: WsDeployHandler = WsDeployHandler::new(data)?;
+        let deploy: WsTaskCmdHandler = WsTaskCmdHandler::new("deploy", data)?;
         let upload: WsTaskCmdHandler = WsTaskCmdHandler::new("upload", data)?;
         let setup: WsTaskCmdHandler = WsTaskCmdHandler::new("setup", data)?;
 
@@ -83,7 +82,7 @@ impl WsBuildConfigHandler {
         &self.tasks
     }
 
-    pub fn deploy(&self) -> &WsDeployHandler {
+    pub fn deploy(&self) -> &WsTaskCmdHandler {
         &self.deploy
     }
 
