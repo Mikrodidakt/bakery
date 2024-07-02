@@ -30,7 +30,7 @@ impl WsUploadData {
     }
 
     pub fn new(data: &Value) -> Result<Self, BError> {
-        let cmd: String = Self::get_str_value("cmd", data, Some(String::from("NA")))?;
+        let cmd: String = Self::get_str_value("cmd", data, Some(String::from("echo \"INFO: currently no upload task defined\"")))?;
         let docker: String = Self::get_str_value("docker", data, Some(String::from("NA")))?;
 
         Ok(WsUploadData {
