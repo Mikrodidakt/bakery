@@ -10,15 +10,6 @@ Building complex Yocto Project or OpenEmbedded projects can often involve intric
 
 ## Installation
 
-### Cargo
-
-For instruction on how to setup cargo please see [build source code](documentation/build-bakery.md) this covers how to setup the tool chain for rust.
-
-```bash
-user@node:/dir$ cargo install thebakery
-```
-Bakery will be installed under ${HOME}/.cargo/bin/bakery
-
 ### Debian Package
 
 Download one of the deb-packages releases.
@@ -34,6 +25,15 @@ Because bakery is written in Rust bakery is a single binary depending only on li
 ### Build Source Code
 
 Please see [build source code](documentation/build-bakery.md) for information on how to build bakery.
+
+### Cargo
+
+For instruction on how to setup cargo please see [build source code](documentation/build-bakery.md) this covers how to setup the tool chain for rust.
+
+```bash
+user@node:/dir$ cargo install thebakery
+```
+Bakery will be installed under ${HOME}/.cargo/bin/bakery. Note that cargo will currently not install all files only the bakery binary.
 
 ## Docker
 
