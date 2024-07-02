@@ -35,6 +35,9 @@ The build config is what describes building the product for bakery. A typical bu
         },
         "upload": {
                 "cmd": ""
+        },
+        "setup": {
+                "cmd": ""
         }
 }
 ```
@@ -49,6 +52,7 @@ The build config can be split up in
   * Artifacts data - The artifacts data is part of the task data and contains what artifacts to collect for each task.
 * Deploy data   - information on how to deploy an image to the target.
 * Upload data   - information on how to upload firmware to a artifactory server.
+* Setup data    - information on how to setup the workspace e.g. initialization of git submodules
 
 # Config Data
 
@@ -267,7 +271,7 @@ Sometimes a task is needed but it should not be executed by default when not spe
 
 # deploy
 
-The deploy section currently is just made up of a cmd. This can be used to define a custom deploy command making use of the context variables.
+The deploy section currently is just made up of a cmd. This can be used to define a custom deploy command making use of the context variables. If not default a default echo command will be used
 
 ```json
 "deploy": {
@@ -277,11 +281,21 @@ The deploy section currently is just made up of a cmd. This can be used to defin
 
 # upload
 
-The upload section currently is just made up of a cmd. This can be used to define a custom upload command making use of the context variables.
+The upload section currently is just made up of a cmd. This can be used to define a custom upload command making use of the context variables.If not default a default echo command will be used
 
 ```json
 "upload": {
         "cmd": "$#[SCRIPTS_DIR]/upload.sh $#[ARTIFACTS_DIR]/full-image-$#[MACHINE].mender $#[MENDER_ARTIFACT_SERVER]"
+}
+```
+
+# setup
+
+The setup section currently is just made up of a cmd. This can be used to define a custom setup command making use of the context variables.If not default a default echo command will be used
+
+```json
+"setup": {
+        "cmd": "$#[SCRIPTS_DIR]/setup.sh"
 }
 ```
 

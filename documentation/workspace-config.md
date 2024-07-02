@@ -86,7 +86,7 @@ Sometimes one or all of the directories needs to be renamed or moved. The worksp
         "docker": {
                 "disabled": "false",
                 "topdir": "",
-                "registry": "strixos",
+                "registry": "baker",
                 "image": "bakery-workspace",
                 "tag": "current bakery version",
                 "args": [

@@ -85,7 +85,7 @@ This will take the build config and list all the builtin context variables and a
 
 # Deploy
 
-The deploy sub-command is a special task with it's own defenition in the build config. It is more or less just a proxy for calling a custom deploy script to deploy a build on the target.
+The deploy sub-command is a special task with it's own definition in the build config. It is more or less just a proxy for calling a custom deploy script to deploy a build on the target.
 
 ```bash
 user@node:/dir$ bakery deploy -c <config>
@@ -95,11 +95,21 @@ For details on how to configure this please see [Deploy](build-config.md#Deploy)
 
 # Upload
 
-The upload sub-command is a special task with it's own defenition in the build config. It is more or less just a proxy for calling a custom upload script to upload to an artifact server.
+The upload sub-command is a special task with it's own definition in the build config. It is more or less just a proxy for calling a custom upload script to upload to an artifact server.
 
 ```bash
-user@node:/dir$ bakery deploy -c <config>
+user@node:/dir$ bakery upload -c <config>
 ```
 
-For details on how to configure this please see [Deploy](build-config.md#Upload)
+For details on how to configure this please see [Upload](build-config.md#Upload)
+
+# Setup
+
+The setup sub-command is a special task with it's own definition in the build config. It is more or less just a proxy for calling a custom setup script to setup the workspace.
+
+```bash
+user@node:/dir$ bakery setup -c <config>
+```
+
+Currently the setup command is not running inside of docker so any dependency is required to be installed on the host. For details on how to configure this please see [Setup](build-config.md#Setup).
 
