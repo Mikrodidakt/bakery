@@ -60,6 +60,7 @@ impl WsBuildConfigHandler {
         }
         self.deploy.expand_ctx(self.data.context().ctx())?;
         self.upload.expand_ctx(self.data.context().ctx())?;
+        self.setup.expand_ctx(self.data.context().ctx())?;
         Ok(())
     }
 
