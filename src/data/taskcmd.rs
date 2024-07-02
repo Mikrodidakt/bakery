@@ -47,7 +47,7 @@ impl WsTaskCmdData {
         Ok(())
     }
 
-    pub fn setup_cmd(&self) -> &String {
+    pub fn cmd(&self) -> &String {
         &self.cmd
     }
 }
@@ -64,7 +64,7 @@ mod tests {
         {
         }"#;
         let data: WsTaskCmdData = WsTaskCmdData::from_str("deploy", json_build_config).expect("Failed to parse config data");
-        assert_eq!(data.setup_cmd(), "echo \"INFO: currently no 'deploy' task defined\"");
+        assert_eq!(data.cmd(), "echo \"INFO: currently no 'deploy' task defined\"");
     }
 
     #[test]
@@ -74,7 +74,7 @@ mod tests {
             "cmd": "/path/to/deploy/script.sh arg1 arg2 arg3"
         }"#;
         let data: WsTaskCmdData = WsTaskCmdData::from_str("deploy", json_build_config).expect("Failed to parse config data");
-        assert_eq!(data.setup_cmd(), "/path/to/deploy/script.sh arg1 arg2 arg3");
+        assert_eq!(data.cmd(), "/path/to/deploy/script.sh arg1 arg2 arg3");
     }
 
     #[test]
@@ -91,8 +91,8 @@ mod tests {
             "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
         }"#;
         let mut data: WsTaskCmdData = WsTaskCmdData::from_str("deploy", json_build_config).expect("Failed to parse config data");
-        assert_eq!(data.setup_cmd(), "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]");
+        assert_eq!(data.cmd(), "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]");
         data.expand_ctx(&ctx).unwrap();
-        assert_eq!(data.setup_cmd(), "/path/to/deploy/script.sh arg1 arg2 arg3");
+        assert_eq!(data.cmd(), "/path/to/deploy/script.sh arg1 arg2 arg3");
     }
 }

@@ -14,7 +14,7 @@ pub struct TaskCmdExecuter<'a> {
 
 impl<'a> TaskExecuter for TaskCmdExecuter<'a> {
     fn exec(&self, env_variables: &HashMap<String, String>, dry_run: bool, _interactive: bool) -> Result<(), BError> {
-        let cmd: Vec<String> = self.data.setup_cmd().split(' ').map(|c| c.to_string()).collect();
+        let cmd: Vec<String> = self.data.cmd().split(' ').map(|c| c.to_string()).collect();
 
         if dry_run {
             self.cli.info("Dry run. Skipping deploy!".to_string());
