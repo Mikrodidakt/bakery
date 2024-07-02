@@ -5,6 +5,7 @@ pub mod handler;
 pub mod shell;
 pub mod deploy;
 pub mod upload;
+pub mod setup;
 
 use std::collections::HashMap;
 use indexmap::IndexMap;
@@ -132,6 +133,7 @@ pub fn get_supported_cmds() -> HashMap<&'static str, Box<dyn BCommand>> {
     supported_cmds.insert("shell", Box::new(ShellCommand::new()));
     supported_cmds.insert("deploy", Box::new(DeployCommand::new()));
     supported_cmds.insert("upload", Box::new(UploadCommand::new()));
+    supported_cmds.insert("setup", Box::new(SetupCommand::new()));
 
     // Add more commands as needed
 
@@ -145,3 +147,4 @@ pub use shell::ShellCommand;
 pub use handler::CmdHandler;
 pub use deploy::DeployCommand;
 pub use upload::UploadCommand;
+pub use setup::SetupCommand;
