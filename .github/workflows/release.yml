@@ -4,6 +4,13 @@ on:
   push:
     tags:
       - 'v*'  # Triggers the workflow on new tags that match the pattern
+  workflow_dispatch:  # Allows manual trigger from the GitHub Actions tab
+    inputs:
+      tag_name:
+        description: 'Tag name for the release (e.g., v0.1.43)'
+        required: true
+        default: ''
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -14,34 +21,59 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Git Config
+
+    - name: Config
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0)
+        echo "PREVIOUS_TAG=${PREVIOUS_TAG}" >> $GITHUB_ENV
+        if [[ -n "${{ github.event.inputs.tag_name }}" ]]; then
+          CURRENT_TAG=${{ github.event.inputs.tag_name }}
+        else
+          CURRENT_TAG=${{ github.ref }}
+          CURRENT_TAG=${CURRENT_TAG#refs/tags/}  # Strip off 'refs/tags/' prefix
+        fi
+        echo "CURRENT_TAG=${CURRENT_TAG}" >> $GITHUB_ENV
+
     - name: Build
       run: make build
+
     - name: Tests
       run: make test
+
     - name: Package
       run: make deb-package
+
     - name: Release Note
       id: generate_release_notes
       run: |
-        # Generate release notes or other information here
         echo "## Changes" > release_notes.md
-        git log --oneline $(git describe --tags --abbrev=0)..HEAD >> release_notes.md
-        echo "::set-output name=body::$(cat release_notes.md)"
+        # Check if there are commits between the previous tag and current tag
+        if [[ -n "${PREVIOUS_TAG}" && "${PREVIOUS_TAG}" != "${CURRENT_TAG}" ]]; then
+          git log --oneline ${PREVIOUS_TAG}..${CURRENT_TAG} >> release_notes.md
+        elif [[ "${PREVIOUS_TAG}" == "${CURRENT_TAG}" ]]; then
+          echo "No new changes since the last tag." >> release_notes.md
+        else
+          echo "Listing all commits since the beginning." >> release_notes.md
+          git log --oneline >> release_notes.md
+        fi
+        RELEASE_NOTES=$(cat release_notes.md)
+        echo "::set-output name=body::$RELEASE_NOTES"
+      shell: bash
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
+        tag_name: ${{ env.CURRENT_TAG }}
+        release_name: bakery ${{ env.CURRENT_TAG }}
         body: ${{ steps.generate_release_notes.outputs.body }}
         draft: false
         prerelease: false
+
     - name: Upload Release
       uses: actions/upload-release-asset@v1
       env:
@@ -49,11 +81,12 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: artifacts/bakery.deb
-        asset_name: bakery-${{ github.ref }}.deb
+        asset_name: bakery-${{ env.CURRENT_TAG }}.deb
         asset_content_type: application/deb
+
     - name: Publish
       env:
-          CRATE_IO_TOKEN: ${{ secrets.CRATE_IO_TOKEN }}
+        CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
       run: |
-          cargo login ${CRATE_IO_TOKEN}
-          cargo publish
+        cargo login ${CRATES_IO_TOKEN}
+        cargo publish
