@@ -1,4 +1,4 @@
-[![Build & Test](https://github.com/Mikrodidakt/bakery/actions/workflows/buildntest.yml/badge.svg)](https://github.com/Mikrodidakt/bakery/actions/workflows/buildntest.yml)
+[![Build & Test](https://github.com/Mikrodidakt/bakery/actions/workflows/buildntest.yml/badge.svg)](https://github.com/Mikrodidakt/bakery/actions/workflows/buildntest.yml) [![Release](https://github.com/Mikrodidakt/bakery/actions/workflows/release.yml/badge.svg)](https://github.com/Mikrodidakt/bakery/actions/workflows/release.yml)
 
 # Bakery: Build Engine for the Yocto/OE Projects
 
