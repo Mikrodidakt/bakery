@@ -1,3 +1,5 @@
+[![Build & Test](https://github.com/Mikrodidakt/bakery/actions/workflows/buildntest.yml/badge.svg)](https://github.com/Mikrodidakt/bakery/actions/workflows/buildntest.yml)
+
 # Bakery: Build Engine for the Yocto/OE Projects
 
 ## Introduction
