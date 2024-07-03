@@ -64,6 +64,7 @@ release: inc-version
 	./scripts/do_deb_package.sh
 	./scripts/do_release.sh
 	git push
+	git push --tags
 
 ## clean              - Clean
 .PHONY: clean
