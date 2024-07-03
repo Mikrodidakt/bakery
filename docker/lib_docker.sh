@@ -3,9 +3,9 @@ set -e
 WORKSPACE=$(pwd)
 . ${WORKSPACE}/scripts/lib.sh
 SETTINGS_FILE=${WORKSPACE}/settings.json
-_ARTIFACT_SERVER="https://strixos.jfrog.io/strixos"
-_DOCKER_REGISTRY="strixos"
-_DOCKER_IMAGE="bakery-workspace"
+_ARTIFACT_SERVER="https://bakery.jfrog.io/baker"
+_DOCKER_REGISTRY="ghcr.io"
+_DOCKER_IMAGE="mikrodidakt/bakery/bakery-workspace"
 _DOCKER_DIR=${WORKSPACE}/docker
 _DOCKER_TAG=$(get_bakery_version ${WORKSPACE}/Cargo.toml)
 _DOCKER_ARGS="--name bakery-workspace \
@@ -16,11 +16,6 @@ _DOCKER_ARGS="--name bakery-workspace \
     -v $HOME/.gitconfig:$HOME/.gitconfig \
     -v $HOME/.ssh:$HOME/.ssh \
     -v $HOME/.bashrc:$HOME/.bashrc \
-    -v $HOME/.local:$HOME/.local \
-    -v $HOME/.cache:$HOME/.cache \
-    -v $HOME/.vpython-root:$HOME/.vpython-root \
-    -v $HOME/.vpython_cipd_cache:$HOME/.vpython_cipd_cache \
-    -v $HOME/.config/flutter:$HOME/.config/flutter \
     -v $HOME/.cargo/bin:$HOME/.cargo/bin \
     -e DOCKER_USER=$USER \
     -e DOCKER_UID=$(id -u) \
