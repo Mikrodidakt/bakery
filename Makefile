@@ -57,19 +57,15 @@ docker-build:
 docker-shell:
 	(./docker/do_docker_shell.sh)
 
-## release            - Create a release build including a deb package
+## release            - Create a release build, tag and push it to github to trigger a release job
 .PHONY: release
 release: inc-version
 	./scripts/do_build_release.sh
 	./scripts/do_deb_package.sh
 	./scripts/do_release.sh
+	git push
 
 ## clean              - Clean
 .PHONY: clean
 clean:
 	cargo clean && rm -r artifacts || true
-
-## publish            - Publish the deb and crate package
-.PHONY: publish
-publish:
-	echo "publish deb and crate package"

@@ -1,8 +1,9 @@
 name: Release
 
 on:
-  workflow_dispatch
-
+  push:
+    tags:
+      - 'v*'  # Triggers the workflow on new tags that match the pattern
 env:
   CARGO_TERM_COLOR: always
 
@@ -13,16 +14,46 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Git Config
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
     - name: Build
       run: make build
     - name: Tests
       run: make test
-    - name: Release
-      run: make release
-    - name: Push 
-      env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    - name: Package
+      run: make deb-package
+    - name: Release Note
+      id: generate_release_notes
       run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git push https://${GH_TOKEN}@github.com/${{ github.repository }}.git HEAD:main
+        # Generate release notes or other information here
+        echo "## Changes" > release_notes.md
+        git log --oneline $(git describe --tags --abbrev=0)..HEAD >> release_notes.md
+        echo "::set-output name=body::$(cat release_notes.md)"
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: ${{ steps.generate_release_notes.outputs.body }}
+        draft: false
+        prerelease: false
+    - name: Upload Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/bakery.deb
+        asset_name: bakery-${{ github.ref }}.deb
+        asset_content_type: application/deb
+    - name: Publish
+      env:
+          CRATE_IO_TOKEN: ${{ secrets.CRATE_IO_TOKEN }}
+      run: |
+          cargo login ${CRATE_IO_TOKEN}
+          cargo publish

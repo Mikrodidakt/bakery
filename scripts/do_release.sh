@@ -7,11 +7,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 VERSION=$(get_bakery_version ${WORK_DIR}/Cargo.toml)
 
-#echo "INFO: build docker bakery-workspace"
-#(cd ${WORK_DIR}; ./docker/do_docker_build.sh)
-
-cp ${ARTIFACTS_DIR}/bakery.deb ${ARTIFACTS_DIR}/bakery-${VERSION}.deb
-
 echo "INFO: tag bakery v${VERSION}"
 git add ${WORK_DIR}/Cargo.toml
 git add ${WORK_DIR}/Cargo.lock
