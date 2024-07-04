@@ -18,43 +18,41 @@ Download one of the deb-packages releases.
 
 ```bash
 user@node:/dir$ BAKERY_VERSION=x.y.z
-user@node:/dir$ wget https://github.com/Mikrodidakt/bakery/releases/download/v${BAKERY_VERSION}/bakery-${BAKERY_VERSION}.deb
-user@node:/dir$ sudo dpkg -i bakery-${BAKERY_VERSION}.deb
+user@node:/dir$ wget https://github.com/Mikrodidakt/bakery/releases/download/v${BAKERY_VERSION}/bakery-v${BAKERY_VERSION}.deb
+user@node:/dir$ sudo dpkg -i bakery-v${BAKERY_VERSION}.deb
 ```
 
 Because bakery is written in Rust bakery is a single binary depending only on libc. It will be installed under /usr/bin/bakery.
 
-### Build Source Code
+## Build Source Code
 
 Please see [build source code](documentation/build-bakery.md) for information on how to build bakery.
 
-### Cargo
-
-For instruction on how to setup cargo please see [build source code](documentation/build-bakery.md) this covers how to setup the tool chain for rust.
-
-```bash
-user@node:/dir$ cargo install thebakery
-```
-Bakery will be installed under ${HOME}/.cargo/bin/bakery. Note that cargo will currently not install all files only the bakery binary.
-
 ## Docker
 
-By default, Bakery utilizes Docker. Refer to the [Docker setup guide](documentation/docker.md) for detailed instructions on setting up Docker on your host system. Additionally, if you wish to run Bakery without Docker, please consult the guide on [disabling Docker](documentation/workspace-config.md#disabled) for detailed instructions.
+By default, Bakery utilizes Docker. Refer to the [Docker setup guide](documentation/docker.md) for detailed instructions on setting up Docker on your host system. Additionally, if you wish to run Bakery without Docker, please consult the guide on [disabling Docker](documentation/workspace-config.md#disabled) for detailed instructions. To test out that docker works run
+
+
+```bash
+user@node:/dir$ BAKERY_VERSION=x.y.z
+user@node:/dir$ docker run -it ghcr.io/mikrodidakt/bakery/bakery-workspace:${BAKERY_VERSION} /bin/bash
+```
 
 ## Usage
 
 ```bash
-Build engine for the Yocto/OE projects
+Build engine for the Yocto/OE
 
 Usage: bakery <COMMAND>
 
 Commands:
-  clean   Clean one or all the tasks defined in a build config
-  shell   Initiate a shell within Docker or execute any command within the BitBake environment
-  list    List all builds or the tasks available for one build
   build   Execute a build either a full build or a task of one of the builds
+  list    List all builds or the tasks available for one build
   upload  Upload artifacts to artifactory server
+  shell   Initiate a shell within Docker or execute any command within the BitBake environment
   deploy  Deploy artifact to target
+  setup   Setup workspace e.g initializing git submodules
+  clean   Clean one or all the tasks defined in a build config
   help    Print this message or the help of the given subcommand(s)
 
 Options:
