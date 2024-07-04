@@ -7,7 +7,7 @@ use crate::workspace::Workspace;
 use crate::executers::{Docker, DockerImage};
 
 static BCOMMAND: &str = "shell";
-static BCOMMAND_ABOUT: &str = "Initiate a shell within Docker or execute any command within the BitBake environment";
+static BCOMMAND_ABOUT: &str = "Initiate a shell within Docker or execute any command within the BitBake environment.";
 pub struct ShellCommand {
     cmd: BBaseCommand,
     // Your struct fields and methods here

@@ -7,7 +7,7 @@ use crate::workspace::Workspace;
 //use clap::{ArgMatches, value_parser};
 
 static BCOMMAND: &str = "list";
-static BCOMMAND_ABOUT: &str = "List all builds or the tasks available for one build";
+static BCOMMAND_ABOUT: &str = "List all builds or the tasks available for a specific build.";
 pub struct ListCommand {
     cmd: BBaseCommand,
     // Your struct fields and methods here

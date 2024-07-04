@@ -9,7 +9,7 @@ use crate::error::BError;
 use crate::executers::Docker;
 
 static BCOMMAND: &str = "clean";
-static BCOMMAND_ABOUT: &str = "Clean one or all the tasks defined in a build config";
+static BCOMMAND_ABOUT: &str = "Clean one or all tasks defined in a build config.";
 pub struct CleanCommand {
     cmd: BBaseCommand,
     // Your struct fields and methods here

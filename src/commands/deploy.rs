@@ -7,7 +7,7 @@ use crate::workspace::{Workspace, WsTaskCmdHandler};
 use crate::data::{WsContextData, CTX_KEY_IMAGE, CTX_KEY_DEVICE};
 
 static BCOMMAND: &str = "deploy";
-static BCOMMAND_ABOUT: &str = "Deploy artifact to target";
+static BCOMMAND_ABOUT: &str = "Deploy artifacts to the target.";
 pub struct DeployCommand {
     cmd: BBaseCommand,
     // Your struct fields and methods here

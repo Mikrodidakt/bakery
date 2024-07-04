@@ -8,7 +8,7 @@ use crate::data::WsContextData;
 use crate::workspace::WsTaskCmdHandler;
 
 static BCOMMAND: &str = "setup";
-static BCOMMAND_ABOUT: &str = "Setup workspace e.g initializing git submodules";
+static BCOMMAND_ABOUT: &str = "Set up the workspace, e.g., initialize git submodules.";
 pub struct SetupCommand {
     cmd: BBaseCommand,
     // Your struct fields and methods here

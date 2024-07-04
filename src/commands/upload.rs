@@ -9,7 +9,7 @@ use crate::workspace::WsTaskCmdHandler;
 use crate::executers::Docker;
 
 static BCOMMAND: &str = "upload";
-static BCOMMAND_ABOUT: &str = "Upload artifacts to artifactory server";
+static BCOMMAND_ABOUT: &str = "Upload artifacts to the Artifactory server.";
 pub struct UploadCommand {
     cmd: BBaseCommand,
     // Your struct fields and methods here

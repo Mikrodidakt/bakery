@@ -9,7 +9,7 @@ use crate::error::BError;
 use crate::executers::Docker;
 
 static BCOMMAND: &str = "build";
-static BCOMMAND_ABOUT: &str = "Execute a build either a full build or a task of one of the builds";
+static BCOMMAND_ABOUT: &str = "Execute a build, either a full build or a task of one of the builds.";
 
 pub struct BuildCommand {
     cmd: BBaseCommand,

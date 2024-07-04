@@ -8,7 +8,7 @@ use crate::data::WsContextData;
 use crate::workspace::WsTaskCmdHandler;
 
 static BCOMMAND: &str = "sync";
-static BCOMMAND_ABOUT: &str = "Sync workspace e.g sync/update git submodules";
+static BCOMMAND_ABOUT: &str = "Sync workspace e.g sync/update git submodules.";
 pub struct SyncCommand {
     cmd: BBaseCommand,
     // Your struct fields and methods here
