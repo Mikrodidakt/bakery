@@ -91,9 +91,9 @@ impl Docker {
     fn hidden_home_files(&self) -> Vec<String> {
         vec![
             String::from("-v"),
-            format!("{}/.gitconfig:{}/.gitconfig:ro", self.env_home(), self.env_home()),
+            format!("{}/.gitconfig:{}/.gitconfig:rw", self.env_home(), self.env_home()),
             String::from("-v"),
-            format!("{}/.ssh:{}/.ssh:ro", self.env_home(), self.env_home()),
+            format!("{}/.ssh:{}/.ssh:rw", self.env_home(), self.env_home()),
             String::from("-v"),
             format!("{}/.docker:{}/.docker", self.env_home(), self.env_home()),
             String::from("-v"),
