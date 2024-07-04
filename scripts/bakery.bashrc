@@ -141,6 +141,10 @@ setup() {
     (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" setup -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
 }
 
+sync() {
+    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" sync -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+}
+
 help() {
     (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" help "$@")
 }

@@ -113,3 +113,13 @@ user@node:/dir$ bakery setup -c <config>
 
 Currently the setup command is not running inside of docker so any dependency is required to be installed on the host. For details on how to configure this please see [Setup](build-config.md#Setup).
 
+# Sync
+
+The sync sub-command is a special task with it's own definition in the build config. It is more or less just a proxy for calling a custom sync script to sync/update the workspace.
+
+```bash
+user@node:/dir$ bakery sync -c <config>
+```
+
+Currently the sync command is not running inside of docker so any dependency is required to be installed on the host. For details on how to configure this please see [Sync](build-config.md#Sync).
+

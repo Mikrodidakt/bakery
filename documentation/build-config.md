@@ -38,6 +38,9 @@ The build config is what describes building the product for bakery. A typical bu
         },
         "setup": {
                 "cmd": ""
+        },
+        "sync": {
+                "cmd": ""
         }
 }
 ```
@@ -53,6 +56,7 @@ The build config can be split up in
 * Deploy data   - information on how to deploy an image to the target.
 * Upload data   - information on how to upload firmware to a artifactory server.
 * Setup data    - information on how to setup the workspace e.g. initialization of git submodules
+* Sync data     - information on how to sync the workspace e.g. sync/update of git submodules
 
 # Config Data
 
@@ -296,6 +300,16 @@ The setup section currently is just made up of a cmd. This can be used to define
 ```json
 "setup": {
         "cmd": "$#[SCRIPTS_DIR]/setup.sh"
+}
+```
+
+# sync
+
+The sync section currently is just made up of a cmd. This can be used to define a custom sync command making use of the context variables.If not default a default echo command will be used
+
+```json
+"sync": {
+        "cmd": "$#[SCRIPTS_DIR]/sync.sh"
 }
 ```
 

@@ -17,6 +17,7 @@ pub struct WsBuildConfigHandler {
     deploy: WsTaskCmdHandler,
     upload: WsTaskCmdHandler,
     setup: WsTaskCmdHandler,
+    sync: WsTaskCmdHandler,
 }
 
 impl WsBuildConfigHandler {
@@ -31,6 +32,7 @@ impl WsBuildConfigHandler {
         let deploy: WsTaskCmdHandler = WsTaskCmdHandler::new("deploy", data)?;
         let upload: WsTaskCmdHandler = WsTaskCmdHandler::new("upload", data)?;
         let setup: WsTaskCmdHandler = WsTaskCmdHandler::new("setup", data)?;
+        let sync: WsTaskCmdHandler = WsTaskCmdHandler::new("sync", data)?;
 
         if build_data.version() != "5" {
             return Err(BError::InvalidBuildConfigError(build_data.version().to_string()));
@@ -42,6 +44,7 @@ impl WsBuildConfigHandler {
             upload,
             setup,
             tasks,
+            sync,
         })
     }
 
@@ -61,6 +64,7 @@ impl WsBuildConfigHandler {
         self.deploy.expand_ctx(self.data.context().ctx())?;
         self.upload.expand_ctx(self.data.context().ctx())?;
         self.setup.expand_ctx(self.data.context().ctx())?;
+        self.sync.expand_ctx(self.data.context().ctx())?;
         Ok(())
     }
 
@@ -93,6 +97,10 @@ impl WsBuildConfigHandler {
 
     pub fn setup(&self) -> &WsTaskCmdHandler {
         &self.setup
+    }
+
+    pub fn sync(&self) -> &WsTaskCmdHandler {
+        &self.sync
     }
 
     pub fn description(&self) -> &str {

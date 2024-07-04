@@ -46,18 +46,20 @@ Build engine for the Yocto/OE
 Usage: bakery <COMMAND>
 
 Commands:
-  build   Execute a build either a full build or a task of one of the builds
-  list    List all builds or the tasks available for one build
+  sync    Sync workspace e.g sync/update git submodules
   upload  Upload artifacts to artifactory server
-  shell   Initiate a shell within Docker or execute any command within the BitBake environment
   deploy  Deploy artifact to target
+  list    List all builds or the tasks available for one build
   setup   Setup workspace e.g initializing git submodules
   clean   Clean one or all the tasks defined in a build config
+  build   Execute a build either a full build or a task of one of the builds
+  shell   Initiate a shell within Docker or execute any command within the BitBake environment
   help    Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help     Print help
   -V, --version  Print version
+
 ```
 
 For detailed instructions on using each sub-command, please refer to the [sub-commands](documentation/sub-commands.md) documentation. Each sub-command is configured by defining a build configuration file that describes how to build a product. It is recommended to begin by starting a shell, as this not only sets up the environment for using Bakery but also enables the use of any tools available through OE/Yocto.
