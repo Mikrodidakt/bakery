@@ -38,20 +38,23 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Get Docker namespace
+    - name: Get Docker Namespace and Tag
       id: repository_name
-      run: echo "DOCKER_NAMESPACE=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+      run: |
+        DOCKER_TAG=${{ env.CURRENT_TAG }}
+        echo "DOCKER_TAG=${DOCKER_TAG#v}" >> $GITHUB_ENV
+        echo "DOCKER_NAMESPACE=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-    - name: Extract Docker metadata (tags, labels)
+    - name: Extract Docker Metadata
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ghcr.io/${{ env.DOCKER_NAMESPACE }}/bakery-workspace:${{ env.CURRENT_TAG }}
+        images: ghcr.io/${{ env.DOCKER_NAMESPACE }}/bakery-workspace:${{ env.DOCKER_TAG }}
 
     - name: Package
       run: make deb-package
 
-    - name: Build and push Docker image
+    - name: Build and Push Docker Image
       uses: docker/build-push-action@v5
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -59,7 +62,7 @@ jobs:
         context: .
         file: ./docker/Dockerfile
         push: true
-        tags: ghcr.io/${{ env.DOCKER_NAMESPACE }}/bakery-workspace:${{ env.CURRENT_TAG }}
+        tags: ghcr.io/${{ env.DOCKER_NAMESPACE }}/bakery-workspace:${{ env.DOCKER_TAG }}
         labels: ${{ steps.meta.outputs.labels }}
 
     - name: Log out from GitHub Container Registry

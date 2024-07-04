@@ -6,9 +6,9 @@ use crate::error::BError;
 // read them from the Cargo.toml and then incorporate them
 // into the binary
 pub const _BAKERY_DOCKER_ARGS: [&str; 2] = ["--rm=true", "-t"];
-pub const BAKERY_DOCKER_IMAGE: &str = "bakery-workspace";
+pub const BAKERY_DOCKER_IMAGE: &str = "mikrodidakt/bakery/bakery-workspace";
 pub const BAKERY_DOCKER_TAG: &str = env!("CARGO_PKG_VERSION");
-pub const BAKERY_DOCKER_REGISTRY: &str = "strixos";
+pub const BAKERY_DOCKER_REGISTRY: &str = "ghcr.io";
 
 #[derive(Clone)]
 pub struct WsSettings {
