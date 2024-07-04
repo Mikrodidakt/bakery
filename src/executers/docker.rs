@@ -122,13 +122,6 @@ impl Docker {
         ]
     }
 
-    fn bakery_bin(&self) -> Vec<String> {
-        vec![
-            String::from("-v"),
-            String::from("/usr/bin/bakery:/usr/bin/bakery:ro"),
-        ]
-    }
-
     fn group(&self) -> Vec<String> {
         let cache: users::UsersCache = users::UsersCache::new();
         vec![
@@ -195,7 +188,6 @@ impl Docker {
         }
         docker_cmd.append(&mut self.group());
         docker_cmd.append(&mut self.volumes(volumes));
-        docker_cmd.append(&mut self.bakery_bin());
         docker_cmd.append(&mut self.user());
         docker_cmd.append(&mut self.top_dir(docker_top_dir));
         docker_cmd.append(&mut self.work_dir(work_dir));

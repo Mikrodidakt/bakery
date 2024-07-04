@@ -1,5 +1,3 @@
-[TOC]
-
 # Introduction
 
 The workspace config defines the workspace for the bakery. The workspace includes

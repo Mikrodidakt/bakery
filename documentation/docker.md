@@ -16,52 +16,65 @@ user@node:/dir$ groups
 user adm cdrom sudo dip plugdev docker
 ```
 
-# Docker Pull
-
-Currently bakery will not automatically pull down any Docker image this is in the backlog to change but currently this is a manual step. This is done by running
-
-```bash
-user@node:/dir$ BVERSION=$(bakery --version)
-user@node:/dir$ BVERSION=${BAKERY_VERSION##* }
-user@node:/dir$ docker pull strixos/bakery-workspace:${BVERSION}
-```
-
 # Bakery Workspace Image
 
-## Docker Hub
-
-The default Docker image utilized by Bakery is bakery-workspace, which is uploaded to Docker Hub. Occasionally, even for public images, a Docker Hub account might be necessary to pull down the image. The reason for this requirement is not always clear. If you encounter issues pulling bakery-workspace, it might be necessary for your local user to log into Docker Hub by executing the following command:
+The bakery workspace image can be pulled from Github Container Registry by running
 
 ```bash
-user@node:/dir$ docker login
+user@node:/dir$ BAKERY_VERSION=$(bakery --version)
+user@node:/dir$ BAKERY_VERSION=${BAKERY_VERSION##* }
+user@node:/dir$ docker pull ghcr.io/mikrodidakt/bakery/bakery-workspace:${BAKERY_VERSION}
 ```
 
-## Build Image
-
-Additionally, you can build the bakery workspace locally. Before initiating a build, ensure that you are on the tag corresponding to the bakery version installed on your system.
-
+Opening a shell to the bakery-workspace can be done by running
 
 ```bash
-user@node:/dir$ bakery --version
+user@node:/dir$ docker run -it ghcr.io/mikrodidakt/bakery/bakery-workspace:${BAKERY_VERSION} /bin/bash
 ```
 
-Once that is done simply run the following command from the bakery repo.
+## Custom Worksapce Image
 
+If the default bakery workspace image is not enough a custome image can easily be setup. To get bakery to use the custom image change the values in the workspace config file
+
+```json
+        "docker": {
+                "registry": "registry.io",
+                "image": "custom-workspace",
+                "tag": "x.y.z",
+                "args": [
+                ]
+        }
+```
+
+When creating the custom bakery workspace make sure to include the following
 
 ```bash
-user@node:/dir$ ./docker/do_docker_build.sh
+RUN wget https://github.com/Mikrodidakt/bakery/releases/download/v${BAKERY_VERSION}/bakery-v${BAKERY_VERSION}.deb
+RUN sudo dpkg -i bakery-v${BAKERY_VERSION}.deb
+
+# Setting up a bakery specific bash env pulled in by /etc/bash.bashrc 
+RUN mkdir -p /etc/bakery && \
+     echo "source /etc/bakery/bakery.bashrc" >> /etc/bash.bashrc
 ```
 
-after it has completed you can run
+if the bakery workflow to use the bakery aliases in the [bakery shell](sub-commands.md) is desired.
 
+## Bootstrap Bakery
 
-```bash
-user@node:/dir$ docker images
-REPOSITORY                      TAG       IMAGE ID       CREATED        SIZE
-strixos/bakery-workspace        0.1.36    f896c2e2b7f7   8 days ago     2.58GB
-strixos/bakery-workspace        latest    f896c2e2b7f7   8 days ago     2.58GB
+When starting bakery the first step is that bakery will bootstrap its self into the bakery-workspace image. In the default bakery-workspace image bakery is installed but sometimes it is not desired to use the version inside the container. This can be accomplished by adding the following to the workspace config file
 
+```json
+        "docker": {
+                "registry": "registry.io",
+                "image": "custom-workspace",
+                "tag": "x.y.z",
+                "args": [
+                    "-v /usr/bin/bakery:/usr/bin/bakery:ro"
+                ]
+        }
 ```
+
+This will make sure that the external bakery version is used instead of the internal version.
 
 # Crops
 
