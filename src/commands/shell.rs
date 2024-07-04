@@ -254,7 +254,7 @@ impl ShellCommand {
 
         cli.info(String::from("Start shell setting up bitbake build env"));
         if !docker.is_empty() {
-            let image: DockerImage = DockerImage::new(&docker);
+            let image: DockerImage = DockerImage::new(&docker)?;
             let executer: Docker = Docker::new(image, true);
             return executer.run_cmd(&cmd_line, &env, &workspace.settings().work_dir(), cli);
         }
@@ -276,7 +276,7 @@ impl ShellCommand {
         let env: HashMap<String, String> = self.bb_build_env(cli, workspace, args_env_variables)?;
         cli.info(format!("Running command '{}'", cmd));
         if !docker.is_empty() {
-            let image: DockerImage = DockerImage::new(&docker);
+            let image: DockerImage = DockerImage::new(&docker)?;
             let executer: Docker = Docker::new(image, true);
             return executer.run_cmd(&cmd_line, &env, &workspace.settings().work_dir(), cli);
         }
@@ -292,7 +292,7 @@ impl ShellCommand {
 
         cli.info(String::from("Starting shell"));
         if !docker.is_empty() {
-            let image: DockerImage = DockerImage::new(&docker);
+            let image: DockerImage = DockerImage::new(&docker)?;
             let executer: Docker = Docker::new(image, true);
             return executer.run_cmd(&cmd_line, &HashMap::new(), &workspace.settings().work_dir(), cli);
         }

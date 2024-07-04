@@ -653,6 +653,7 @@ mod tests {
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let mut mocked_system: MockSystem = MockSystem::new();
+        let docker_image: DockerImage = DockerImage::new(&format!("ghcr.io/mikrodidakt/bakery/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))).expect("Invalid docker image format");
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
@@ -662,7 +663,7 @@ mod tests {
                         &vec![],
                         &work_dir.clone(),
                         &work_dir,
-                        &DockerImage::new(&format!("strixos/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))),
+                        &docker_image,
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default")]
                     ),
                 env: HashMap::new(),
@@ -717,6 +718,7 @@ mod tests {
         "#;
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
+        let docker_image: DockerImage = DockerImage::new(&format!("ghcr.io/mikrodidakt/bakery/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))).expect("Invalid docker image format");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
@@ -727,7 +729,7 @@ mod tests {
                         &vec![String::from("/test/testdir:/test/testdir")],
                         &work_dir.clone(),
                         &work_dir,
-                        &DockerImage::new(&format!("strixos/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))),
+                        &docker_image,
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default"), String::from("-v"), String::from("/test/testdir:/test/testdir")]
                     ),
                 env: HashMap::new(),
@@ -782,6 +784,7 @@ mod tests {
         "#;
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
+        let docker_image: DockerImage = DockerImage::new(&format!("ghcr.io/mikrodidakt/bakery/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))).expect("Invalid docker image format");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
@@ -792,7 +795,7 @@ mod tests {
                         &vec![],
                         &work_dir.clone(),
                         &work_dir,
-                        &DockerImage::new(&format!("strixos/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))),
+                        &docker_image,
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default"), String::from("--interactive=false")]
                     ),
                 env: HashMap::new(),
@@ -852,6 +855,7 @@ mod tests {
         "#;
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
+        let docker_image: DockerImage = DockerImage::new(&format!("ghcr.io/mikrodidakt/bakery/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))).expect("Invalid docker image format");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
@@ -862,7 +866,7 @@ mod tests {
                         &vec![],
                         &work_dir.clone(),
                         &work_dir,
-                        &DockerImage::new(&format!("strixos/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))),
+                        &docker_image,
                         &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default")]
                     ),
                 env: HashMap::new(),

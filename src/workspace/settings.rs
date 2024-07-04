@@ -231,7 +231,7 @@ mod tests {
             Helper::setup_ws_settings(json_test_str),
         );
         let docker_image: DockerImage = settings.docker_image();
-        assert_eq!(format!("{}", docker_image), format!("strixos/bakery-workspace:{}", env!("CARGO_PKG_VERSION")));
+        assert_eq!(format!("{}", docker_image), format!("ghcr.io/mikrodidakt/bakery/bakery-workspace:{}", env!("CARGO_PKG_VERSION")));
     }
 
     #[test]

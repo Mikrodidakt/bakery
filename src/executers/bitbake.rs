@@ -84,7 +84,7 @@ impl<'a> TaskExecuter for BBBuildExecuter<'a> {
                 "create-workspace".to_string(),
             ]);
             if !docker_str.is_empty() {
-                let image: DockerImage = DockerImage::new(docker_str);
+                let image: DockerImage = DockerImage::new(docker_str)?;
                 let docker: Docker = Docker::new(image, interactive);
                 docker.run_cmd(&mut cmd_line, &env, &exec_dir, &self.cli)?;
             } else {
@@ -127,7 +127,7 @@ impl<'a> TaskExecuter for BBBuildExecuter<'a> {
             */
 
             if !docker_str.is_empty() {
-                let image: DockerImage = DockerImage::new(docker_str);
+                let image: DockerImage = DockerImage::new(docker_str)?;
                 let docker: Docker = Docker::new(image, interactive);
                 docker.run_cmd(&mut cmd_line, &env, &exec_dir, &self.cli)?;
             } else {

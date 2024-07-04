@@ -28,17 +28,32 @@ impl fmt::Display for DockerImage {
 }
 
 impl DockerImage {
-    pub fn new(image_str: &str) -> Self {
-        let mut split: Vec<String> = image_str.split('/').map(|c| c.to_string()).collect();
-        let registry: String = split[0].clone();
-        split = split[1].split(':').map(|c| c.to_string()).collect();
-        let image: String = split[0].clone();
-        let tag: String = split[1].clone();
-        DockerImage {
+    pub fn new(image_str: &str) -> Result<Self, BError> {
+        let mut split: Vec<&str> = image_str.split('/').collect();
+
+        if split.len() < 2 {
+            return Err(BError::DockerImageError(format!("Invalid image format: {}", image_str)));
+        }
+
+        let tag_split: Vec<&str> = split.pop().unwrap().split(':').collect();
+
+        if tag_split.len() != 2 {
+            return Err(BError::DockerImageError(format!("Invalid image format: {}", image_str)));
+        }
+
+        let tag: String = tag_split[1].to_string();
+        let registry: String = split[0].to_string();
+        let mut image: String = split.split_off(1).join("/").to_string();
+        if !image.is_empty() {
+            image.push_str("/");
+        }
+        image.push_str(tag_split[0]);
+
+        Ok(DockerImage {
             registry,
             image,
             tag,
-        }
+        })
     }
 }
 
@@ -255,6 +270,30 @@ mod tests {
     use crate::helper::Helper;
 
     #[test]
+    fn test_dockerimage() {
+        let image: DockerImage = DockerImage::new("test-registry/test/test-image:0.1").expect("Invalid docker image format");
+        assert_eq!(image.registry, "test-registry");
+        assert_eq!(image.image, "test/test-image");
+        assert_eq!(image.tag, "0.1");
+    }
+
+    #[test]
+    fn test_dockerimage_long_namespace() {
+        let image: DockerImage = DockerImage::new("test-registry/test/test/test-image:0.1").expect("Invalid docker image format");
+        assert_eq!(image.registry, "test-registry");
+        assert_eq!(image.image, "test/test/test-image");
+        assert_eq!(image.tag, "0.1");
+    }
+
+    #[test]
+    fn test_dockerimage_short_namespace() {
+        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1").expect("Invalid docker image format");
+        assert_eq!(image.registry, "test-registry");
+        assert_eq!(image.image, "test-image");
+        assert_eq!(image.tag, "0.1");
+    }
+
+    #[test]
     fn test_docker_bootstrap_cmdline() {
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
@@ -270,7 +309,7 @@ mod tests {
         let volumes: Vec<String> = vec![];
         let interactive: bool = false;
         let docker_args: Vec<String> = vec![];
-        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
+        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1").expect("Invalid docker image format");
         let docker: Docker = Docker::new(image.clone(), interactive);
         let result: Vec<String> = docker.bootstrap_cmd_line(&test_cmd, &docker_top_dir, &work_dir, &docker_args, &volumes);
         let cmd_line: Vec<String> = Helper::docker_bootstrap_string(interactive, &docker_args, &volumes, &docker_top_dir, &work_dir, &image, &test_cmd);
@@ -293,7 +332,7 @@ mod tests {
         let volumes: Vec<String> = vec![];
         let interactive: bool = true;
         let docker_args: Vec<String> = vec![];
-        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
+        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1").expect("Invalid docker image format");
         let docker: Docker = Docker::new(image.clone(), interactive);
         let result: Vec<String> = docker.bootstrap_cmd_line(&test_cmd, &docker_top_dir, &work_dir, &docker_args, &volumes);
         let cmd_line: Vec<String> = Helper::docker_bootstrap_string(interactive, &docker_args, &volumes, &docker_top_dir, &work_dir, &image, &test_cmd);
@@ -319,7 +358,7 @@ mod tests {
             String::from("--test"),
             String::from("test")
         ];
-        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
+        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1").expect("Invalid docker image format");
         let docker: Docker = Docker::new(image.clone(), interactive);
         let result: Vec<String> = docker.bootstrap_cmd_line(&test_cmd, &docker_top_dir, &work_dir, &docker_args, &volumes);
         let cmd_line: Vec<String> = Helper::docker_bootstrap_string(interactive, &docker_args, &volumes, &docker_top_dir, &work_dir, &image, &test_cmd);
@@ -344,7 +383,7 @@ mod tests {
         ];
         let interactive: bool = false;
         let docker_args: Vec<String> = vec![];
-        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
+        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1").expect("Invalid docker image format");
         let docker: Docker = Docker::new(image.clone(), interactive);
         let result: Vec<String> = docker.bootstrap_cmd_line(&test_cmd, &docker_top_dir, &work_dir, &docker_args, &volumes);
         let cmd_line: Vec<String> = Helper::docker_bootstrap_string(interactive, &docker_args, &volumes, &docker_top_dir, &work_dir, &image, &test_cmd);
@@ -367,7 +406,7 @@ mod tests {
         let volumes: Vec<String> = vec![];
         let interactive: bool = false;
         let docker_args: Vec<String> = vec![];
-        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
+        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1").expect("Invalid docker image format");
         let docker: Docker = Docker::new(image.clone(), interactive);
         let result: Vec<String> = docker.bootstrap_cmd_line(&test_cmd, &docker_top_dir, &work_dir, &docker_args, &volumes);
         let cmd_line: Vec<String> = Helper::docker_bootstrap_string(interactive, &docker_args, &volumes, &docker_top_dir, &work_dir, &image, &test_cmd);
@@ -378,7 +417,7 @@ mod tests {
     fn test_docker_env_file() {
         let temp_dir: TempDir =
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
-        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
+        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1").expect("Invalid docker image format");
         let docker: Docker = Docker::new(image.clone(), true);
         let env: HashMap<String, String> = HashMap::from([
             (String::from("TEST_KEY1"), String::from("TEST_VALUE1")),
@@ -417,7 +456,7 @@ TEST_KEY1=TEST_VALUE1
             String::from("test"),
         ];
         let interactive: bool = false;
-        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
+        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1").expect("Invalid docker image format");
         let docker: Docker = Docker::new(image.clone(), interactive);
         let result: Vec<String> = docker.cmd_line(&test_cmd, &env_file, &work_dir);
         let cmd_line: Vec<String> = Helper::docker_cmdline_string(interactive, &work_dir, &image, &test_cmd, &env_file);
@@ -438,7 +477,7 @@ TEST_KEY1=TEST_VALUE1
             String::from("test"),
         ];
         let interactive: bool = true;
-        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1");
+        let image: DockerImage = DockerImage::new("test-registry/test-image:0.1").expect("Invalid docker image format");
         let docker: Docker = Docker::new(image.clone(), interactive);
         let result: Vec<String> = docker.cmd_line(&test_cmd, &env_file, &work_dir);
         let cmd_line: Vec<String> = Helper::docker_cmdline_string(interactive, &work_dir, &image, &test_cmd, &env_file);

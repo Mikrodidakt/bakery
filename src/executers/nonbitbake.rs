@@ -33,7 +33,7 @@ impl<'a> TaskExecuter for NonBBCleanExecuter<'a> {
         }
 
         if !docker_str.is_empty() {
-            let image: DockerImage = DockerImage::new(docker_str);
+            let image: DockerImage = DockerImage::new(docker_str)?;
             let docker: Docker = Docker::new(image, interactive);
             docker.run_cmd(&mut cmd_line, args_env_variables, self.task_data.build_dir(), &self.cli)?;
         } else {
@@ -71,7 +71,7 @@ impl<'a> TaskExecuter for NonBBBuildExecuter<'a> {
         cmd_line.append(&mut cmd);
 
         if !self.task_data.docker_image().is_empty() && self.task_data.docker_image() != "NA" {
-            let image: DockerImage = DockerImage::new(self.task_data.docker_image());
+            let image: DockerImage = DockerImage::new(self.task_data.docker_image())?;
             let docker: Docker = Docker::new(image, interactive);
             docker.run_cmd(&mut cmd_line, env_variables, exec_dir, &self.cli)?;
         } else {

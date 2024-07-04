@@ -306,7 +306,7 @@ mod tests {
             }
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.docker_image, "bakery-workspace");
+        assert_eq!(&settings.docker_image, "mikrodidakt/bakery/bakery-workspace");
     }
 
     #[test]
@@ -316,7 +316,7 @@ mod tests {
             "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.docker_image, "bakery-workspace");
+        assert_eq!(&settings.docker_image, "mikrodidakt/bakery/bakery-workspace");
     }
 
     #[test]
@@ -401,7 +401,7 @@ mod tests {
             }
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.docker_registry, "strixos");
+        assert_eq!(&settings.docker_registry, "ghcr.io");
     }
 
     #[test]
@@ -411,7 +411,7 @@ mod tests {
             "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.docker_registry, "strixos");
+        assert_eq!(&settings.docker_registry, "ghcr.io");
     }
 
     #[test]
