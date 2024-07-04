@@ -28,11 +28,17 @@ jobs:
         git --version
         git remote -v
         git tag -l
+        pwd
+        ls -la
 
     - name: Config
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Clean
+      run: |
+        make clean
 
     - name: Get Tag
       run: |
@@ -54,10 +60,7 @@ jobs:
         echo 'EOF' >> $GITHUB_OUTPUT
       shell: bash
 
-    - name: Build
-      run: make build
-
-    - name: Tests
+    - name: Build and Tests
       run: make test
 
     - name: Package
