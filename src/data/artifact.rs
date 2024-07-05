@@ -11,6 +11,7 @@ pub enum AType {
     Archive,
     Manifest,
     Link,
+    Condition,
 }
 
 // TODO: we should consider using IndexSet instead of vector to make sure we
@@ -21,6 +22,7 @@ pub struct WsArtifactData {
     pub source: String, // The source is only used if the type is file
     pub dest: String, // The dest is optional
     pub manifest: String, // The manifest content will be a json string that can be put in a file. The manifest can then be used by the CI to collect information from the build
+    pub condition: String, // The condition is only used if the type is condition
 }
 
 impl Config for WsArtifactData {
@@ -42,8 +44,9 @@ impl WsArtifactData {
         let source: String = Self::get_str_value("source", &data, Some(String::from("")))?;
         let dest: String = Self::get_str_value("dest", &data, Some(String::from("")))?;
         let manifest: String = Self::get_str_manifest("content", &data, Some(String::from("{}")))?;
+        let condition: String = Self::get_str_value("condition", &data, Some(String::from("")))?;
 
-        if ttype != "file" && ttype != "directory" && ttype != "archive" && ttype != "manifest" && ttype != "link" {
+        if ttype != "file" && ttype != "directory" && ttype != "archive" && ttype != "manifest" && ttype != "link" && ttype != "condition" {
             return Err(BError::ParseArtifactsError(format!("Invalid type '{}'", ttype)));
         }
         if ttype == "file" && source.is_empty() {
@@ -60,6 +63,9 @@ impl WsArtifactData {
         }
         if ttype == "link" && (name.is_empty() || source.is_empty()) {
             return Err(BError::ParseArtifactsError(format!("The 'link' type requires a 'name' and 'source'")));
+        }
+        if ttype == "condition" && condition.is_empty() {
+            return Err(BError::ParseArtifactsError(format!("The 'condition' type requires a 'condition'")));
         }
 
         let enum_ttype: AType;
@@ -79,6 +85,9 @@ impl WsArtifactData {
             "link" => {
                 enum_ttype = AType::Link;
             },
+            "condition" => {
+                enum_ttype = AType::Condition;
+            },
             _ => {
                 return Err(BError::ParseArtifactsError(format!("Invalid type '{}'", ttype)));
             },
@@ -93,6 +102,7 @@ impl WsArtifactData {
             source,
             dest,
             manifest,
+            condition,
         })
     }
 
@@ -116,6 +126,9 @@ impl WsArtifactData {
             AType::Link => {
                 self.name = ctx.expand_str(&self.name)?;
                 self.source = ctx.expand_str(&self.source)?;
+            },
+            AType::Condition => {
+                self.condition = ctx.expand_str(&self.condition)?;
             },
             _ => {
                 panic!("Invalid 'artifact' format in build config. Invalid type '{:?}'", self.atype);
@@ -142,6 +155,13 @@ impl WsArtifactData {
 
     pub fn manifest(&self) -> &str {
         &self.manifest
+    }
+
+    pub fn condition(&self) -> bool {
+        match self.condition.as_str() {
+            "true" | "True" | "TRUE" | "1" => true,
+            _ => false,
+        }
     }
 }
 
@@ -447,5 +467,76 @@ mod tests {
                 assert_eq!(e.to_string(), String::from("Invalid 'artifact' node in build config. The 'link' type requires a 'name' and 'source'"));
             }
         }
+    }
+
+    #[test]
+    fn test_ws_artifact_data_error_no_condition() {
+        let json_artifact_config: &str = r#"
+        {
+            "type": "condition"
+        }
+        "#;
+        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value);
+        match result {
+            Ok(_rconfig) => {
+                panic!("We should have recived an error because the type is invalid!");
+            }
+            Err(e) => {
+                assert_eq!(e.to_string(), String::from("Invalid 'artifact' node in build config. The 'condition' type requires a 'condition'"));
+            }
+        }
+    }
+
+    #[test]
+    fn test_ws_artifact_condition_true() {
+        let json_artifact_config: &str = r#"
+        {
+            "type": "condition",
+            "condition": "true"
+        }
+        "#;
+        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        assert_eq!(data.atype(), &AType::Condition);
+        assert!(data.condition());
+    }
+
+    #[test]
+    fn test_ws_artifact_condition_true_ctx() {
+        let ctx_variables: IndexMap<String, String> = indexmap! {
+            "RELEASE".to_string() => "1".to_string()
+        };
+        let json_artifact_config: &str = r#"
+        {
+            "type": "condition",
+            "condition": "$#[RELEASE]"
+        }
+        "#;
+        let context: Context = Context::new(&ctx_variables);
+        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        data.expand_ctx(&context).unwrap();
+        assert_eq!(data.atype(), &AType::Condition);
+        assert!(data.condition());
+    }
+
+    #[test]
+    fn test_ws_artifact_condition_false_ctx() {
+        let ctx_variables: IndexMap<String, String> = indexmap! {
+            "RELEASE".to_string() => "0".to_string()
+        };
+        let json_artifact_config: &str = r#"
+        {
+            "type": "condition",
+            "condition": "$#[RELEASE]"
+        }
+        "#;
+        let context: Context = Context::new(&ctx_variables);
+        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        data.expand_ctx(&context).unwrap();
+        assert_eq!(data.atype(), &AType::Condition);
+        assert!(!data.condition());
     }
 }
