@@ -134,7 +134,7 @@ To setup a project from scratch mainly four things are required
 
 While Bakery simplifies many aspects of Yocto Project and OpenEmbedded development, it's essential to understand its limitations:
 
-- **Meta Layer Setup:** Bakery does not handle the setup of meta layers. Developers are encouraged to use Git submodules or the Android Repo tool for managing meta layers independently.
+- **Meta Layer Setup:** Bakery does not handle the initial setup of meta layers. Developers are encouraged to use Git submodules or the Android Repo tool for managing meta layers independently.
 - **Tool Replacement:** Bakery does not replace BitBake or any other tools available for Yocto Project or OpenEmbedded projects. It complements existing tools by wrapping some complexity to make it more straightforward for users with varying levels of knowledge.
 
 Bakery strives to maintain the flexibility for developers who seek complete control of their projects, ensuring compatibility with all tools and workflows available in a Yocto Project and OpenEmbedded project.

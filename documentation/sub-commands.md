@@ -34,6 +34,8 @@ build
 list
 deploy
 upload
+setup
+sync
 ```
 
 The idea with the bakery workspace shell is to have an easy environment with direct access to all the tools. If not running a sub-command in a shell most sub-commands will expect the user to specify what build config to use and it must be executed from the workspace directory containing the
