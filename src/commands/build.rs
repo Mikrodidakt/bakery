@@ -93,18 +93,8 @@ impl BCommand for BuildCommand {
             bb_variables.push("BUILDHISTORY_COMMIT = \"1\"".to_string());
         }
 
-        if archiver {
-            bb_variables.push("INHERIT += \"archiver\"".to_string());
-            bb_variables.push("ARCHIVER_MODE[src] = \"original\"".to_string());
-        }
-
-        if debug_symbols {
-            bb_variables.push("IMAGE_GEN_DEBUGFS = \"1\"".to_string());
-            bb_variables.push("IMAGE_FSTYPES_DEBUGFS = \"tar.bz2\"".to_string());
-        }
-
         let env_variables: HashMap<String, String> = self.setup_env(env);
-        let args_context: IndexMap<String, String> = self.setup_context(ctx);
+        let mut args_context: IndexMap<String, String> = self.setup_context(ctx);
 
         let mut extra_ctx: IndexMap<String, String> = indexmap! {
             "PLATFORM_VERSION".to_string() => version.clone(),
@@ -113,9 +103,19 @@ impl BCommand for BuildCommand {
             "RELEASE_BUILD".to_string() => "0".to_string(),
             "BUILD_VARIANT".to_string() => variant.clone(),
             "PLATFORM_RELEASE".to_string() => format!("{}-{}", version, build_id),
-            //"ARCHIVER".to_string() => (archiver as i32).to_string(),
-            //"DEBUG_SYMBOLS".to_string() => (debug_symbols as i32).to_string(),
         };
+
+        if archiver {
+            bb_variables.push("INHERIT += \"archiver\"".to_string());
+            bb_variables.push("ARCHIVER_MODE[src] = \"original\"".to_string());
+            args_context.insert("ARCHIVER".to_string(), "1".to_string());
+        }
+
+        if debug_symbols {
+            bb_variables.push("IMAGE_GEN_DEBUGFS = \"1\"".to_string());
+            bb_variables.push("IMAGE_FSTYPES_DEBUGFS = \"tar.bz2\"".to_string());
+            args_context.insert("DEBUG_SYMBOLS".to_string(), "1".to_string());
+        }
 
         if variant == "release" {
             /*
