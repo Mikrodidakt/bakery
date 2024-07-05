@@ -22,11 +22,21 @@ The build config is what describes building the product for bakery. A typical bu
                 ]
         },
         "tasks": {
-                "image": {
+                "task1": {
                         "index": "0",
-                        "name": "",
+                        "name": "task1",
                         "disabled": "false",
                         "recipes": [],
+                        "artifacts": []
+                },
+                "task2": {
+                        "index": "1",
+                        "type": "non-bitbake",
+                        "disabled": "false",
+                        "name": "task2",
+                        "builddir": "",
+                        "build": "",
+                        "clean": "",
                         "artifacts": []
                 }
         },
@@ -159,15 +169,11 @@ The name of the task should be unique
 
 A task can be a bitbake task or a non-bitbake task. The different types looks has a slightly different format. Default value is bitbake.
 
-## artifacts
-
-The list of artifacts that bakery should collect for each task.
-
 ### bitbake
 
 ```json
 {
-  "image": {
+  "task1": {
     "index": "0",
     "type": "bitbake",
     "disabled": "false",
@@ -178,25 +184,7 @@ The list of artifacts that bakery should collect for each task.
 }
 ```
 
-### non-bitbake
-
-
-```json
-{
-  "image": {
-    "index": "0",
-    "type": "non-bitbake",
-    "disabled": "false",
-    "name": "",
-    "builddir": "",
-    "build": "",
-    "clean": "",
-    "artifacts": []
-  }
-}
-```
-
-## recipes
+#### recipes
 
 The recipes is only used if the task is of type "bitbake". A list of recipes that the task should execute. Normally a task contains one recipe and it is normally a image recipe but any recipe can be called.
 
@@ -208,7 +196,7 @@ The recipes is only used if the task is of type "bitbake". A list of recipes tha
 }
 ```
 
-### task
+##### task
 
 A recipe task can also be defined so sometimes when building an image and an sdk is needed then that can be defined accordingly
 
@@ -223,7 +211,25 @@ A recipe task can also be defined so sometimes when building an image and an sdk
 
 Any recipe task can be defined.
 
-## build
+### non-bitbake
+
+
+```json
+{
+  "task2": {
+    "index": "0",
+    "type": "non-bitbake",
+    "disabled": "false",
+    "name": "",
+    "builddir": "",
+    "build": "",
+    "clean": "",
+    "artifacts": []
+  }
+}
+```
+
+#### build
 
 Sometimes there are taskes needed to be executed after the image has been built. One such example is signing of firmware. Then a non-bitbake task can be defined.
 
@@ -243,7 +249,7 @@ Sometimes there are taskes needed to be executed after the image has been built.
 }
 ```
 
-## clean
+#### clean
 
 The clean command is only used by the non-bitbake task it can be a shell command or a script that is called.
 
@@ -263,15 +269,120 @@ The clean command is only used by the non-bitbake task it can be a shell command
 }
 ```
 
-## builddir
+#### builddir
 
 The builddir is only used by the non-bitbake task and is used to change working directory before executing the build or clean command.
 
-## disabled
+#### disabled
 
 Sometimes a task is needed but it should not be executed by default when not specifing a task and running a full build. For example a signing task that requires some additional resources like an HSM when signing so it should only be executed by a specific signing node then it can be disabled. It will then only be executed when the task is specificelly specified in the bakery command using the the task flag in the [build](sub-commands.mk#Build).
 
 ## artifacts
+
+Each task has the capability to collect specific files. All collected files will be placed in the artifacts directory, which is defined in the workspace config. The artifacts directory is specified by the context variable ARTIFACTS_DIR. I will refer to the artifacts directory using the context variable $#[ARTIFACTS_DIR].
+
+Artifacts are organized as a list of children, where each child can have a type. If no type is specified, the default type "file" will be used.
+
+### file
+
+Collect file 'test/file1.txt' and copy it to '$#[ARTIFACTS_DIR]/file1.txt'.
+
+```json
+  "artifacts": [
+        {
+            "source": "test/file1.txt"
+        },
+        {
+            "source": "test/file2.txt",
+            "dest": "test/renamed-file2.txt"
+        }
+  ]
+```
+
+Rename 'test/file2.txt' to 'renamed-file2.txt' and copy it '$#[ARTIFACTS_DIR]/test/'.
+
+
+### directory
+
+Create a directory in the $#[ARTIFACTS_DIR] directory named 'dir' and copy all artifacts under '$#[ARTIFACTS_DIR]/dir/'
+
+```json
+  "artifacts": [
+      {
+          "type": "directory",
+          "name": "dir",
+          "artifacts": [
+              {
+                  "source": "file1.txt"
+              },
+              {
+                  "source": "file2.txt",
+                  "dest": "renamed-file2.txt"
+              }
+          ]
+      }
+  ]
+```
+
+### archive
+
+Create a archive in the $#[ARTIFACTS_DIR] directory named 'test.zip' and collect the all artifacts in the archive
+
+```json
+  "artifacts": [
+          "type": "archive",
+          "name": "test.zip",
+          "artifacts": [
+              {
+                  "source": "file1.txt",
+                  "dest": "renamed-file2.txt"
+              }
+          ]
+  ]
+```
+
+The archive type currently supports the following archives zip, tar.bz2 and tar.gz.
+
+### manifest
+
+Create a manifest file in the $#[ARTIFACTS_DIR] directory named 'test-manifest.json'. The manifest can contain build data.
+
+```json
+  "artifacts": [
+        {
+            "type": "manifest",
+            "name": "test-manifest.json",
+            "content": {
+                "machine": "$#[MACHINE]",
+                "date": "$#{DATE}",
+                "time": "${TIME}",
+                "arch": "$#[ARCH]",
+                "distro": "$#[DISTRO]",
+                "sha": "$#[BUILD_ID]",
+                "variant": "$#[BUILD_VARIANT]",
+                "version": "$#[PLATFORM_VERSION]"
+            }
+        }
+  ]
+```
+
+### link
+
+Create a symbolic link in the $#[ARTIFACTS_DIR] directory named 'link.txt' pointing to 'test/file.txt'.
+
+```json
+  "artifacts": [
+        {
+            "type": "link",
+            "name": "link.txt",
+            "source": "test/file.txt"
+        }
+  ]
+```
+
+### Context
+
+All context variables can be used in the artifacts the only place where context variables cannot be used is in the 'type' for the artifacts.
 
 # deploy
 
