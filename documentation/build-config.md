@@ -117,7 +117,32 @@ This context variable can then be used in the build config by wrapping it inside
 }
 ```
 
-Any context variable in the build config will be expanded when bakery is parsing the build config. More information on the context variables can be found in the [Context](#Context) section.
+Any context variable in the build config will be expanded when bakery is parsing the build config. The context is a concept that is made up of two context variable type "built-in" variables and "config" variables. The "config" context variables are the once defined in the context section of the build config while the "built-in" variables are comming from the bakery binary. The values of the "built-in" variables are either defined by the workspace.json or by a combination that the bakery binary will define in run-time. Currently the following "built-in" variables are avilable to be used in the build config
+
+```
+MACHINE
+ARCH
+DISTRO
+BB_BUILD_DIR
+BB_DEPLOY_DIR
+PRODUCT_NAME
+ARTIFACTS_DIR
+LAYERS_DIR
+SCRIPTS_DIR
+BUILDS_DIR
+WORK_DIR
+PLATFORM_VERSION
+BUILD_ID
+PLATFORM_RELEASE
+BUILD_SHA
+BUILD_VARIANT
+RELEASE_BUILD
+ARCHIVER
+DEBUG_SYMBOLS
+DEVICE
+```
+
+To get the up to date list please refere to [BUILT_IN_CONTEXT_VARIABLES](https://github.com/Mikrodidakt/bakery/blob/main/src/data/context.rs#L13). Some of the "built-in" context variables will be exposed to the bitbake environment by getting included to the local.conf. To get a list of what context variables a build config offeres and the values of them run the [list](sub-commands.md#context) sub-command with --ctx flag.
 
 # Bitbake Data
 
@@ -299,13 +324,13 @@ The builddir is only used by the non-bitbake task and is used to change working 
 
 ## artifacts
 
-Each task has the capability to collect specific files. All collected files will be placed in the artifacts directory, which is defined in the workspace config. The artifacts directory is specified by the context variable ARTIFACTS_DIR. I will refer to the artifacts directory using the context variable $#[ARTIFACTS_DIR].
+Each task has the capability to collect specific files. All collected files will be placed in the artifacts directory, which is defined in the workspace config. The artifacts directory is specified by the context variable ARTIFACTS_DIR. I will refer to the artifacts directory using the context variable ARTIFACTS_DIR.
 
 Artifacts are organized as a list of children, where each child can have a type. If no type is specified, the default type "file" will be used.
 
 ### file
 
-Collect file 'test/file1.txt' and copy it to '$#[ARTIFACTS_DIR]/file1.txt'.
+Collect file 'test/file1.txt' and copy it to 'ARTIFACTS_DIR/file1.txt'.
 
 ```json
   "artifacts": [
@@ -319,12 +344,12 @@ Collect file 'test/file1.txt' and copy it to '$#[ARTIFACTS_DIR]/file1.txt'.
   ]
 ```
 
-Rename 'test/file2.txt' to 'renamed-file2.txt' and copy it '$#[ARTIFACTS_DIR]/test/'.
+Rename 'test/file2.txt' to 'renamed-file2.txt' and copy it 'ARTIFACTS_DIR/test/'.
 
 
 ### directory
 
-Create a directory in the $#[ARTIFACTS_DIR] directory named 'dir' and copy all artifacts under '$#[ARTIFACTS_DIR]/dir/'
+Create a directory in the 'ARTIFACTS_DIR' directory named 'dir' and copy all artifacts under 'ARTIFACTS_DIR/dir/'
 
 ```json
   "artifacts": [
@@ -346,7 +371,7 @@ Create a directory in the $#[ARTIFACTS_DIR] directory named 'dir' and copy all a
 
 ### archive
 
-Create a archive in the $#[ARTIFACTS_DIR] directory named 'test.zip' and collect the all artifacts in the archive
+Create a archive in the 'ARTIFACTS_DIR' directory named 'test.zip' and collect the all artifacts in the archive
 
 ```json
   "artifacts": [
@@ -365,7 +390,7 @@ The archive type currently supports the following archives zip, tar.bz2 and tar.
 
 ### manifest
 
-Create a manifest file in the $#[ARTIFACTS_DIR] directory named 'test-manifest.json'. The manifest can contain build data.
+Create a manifest file in the 'ARTIFACTS_DIR' directory named 'test-manifest.json'. The manifest can contain build data.
 
 ```json
   "artifacts": [
@@ -388,7 +413,7 @@ Create a manifest file in the $#[ARTIFACTS_DIR] directory named 'test-manifest.j
 
 ### link
 
-Create a symbolic link in the $#[ARTIFACTS_DIR] directory named 'link.txt' pointing to 'test/file.txt'.
+Create a symbolic link in the 'ARTIFACTS_DIR' directory named 'link.txt' pointing to 'test/file.txt'.
 
 ```json
   "artifacts": [
@@ -402,7 +427,7 @@ Create a symbolic link in the $#[ARTIFACTS_DIR] directory named 'link.txt' point
 
 ### conditional
 
-Create a symbolic link in the $#[ARTIFACTS_DIR] directory named 'link.txt' pointing to 'test/file.txt' if the 'condition' is true.
+Create a symbolic link in the 'ARTIFACTS_DIR' directory named 'link.txt' pointing to 'test/file.txt' if the 'condition' is true.
 
 ```json
   "artifacts": [
@@ -469,37 +494,3 @@ The sync section currently is just made up of a cmd. This can be used to define 
         "cmd": "$#[SCRIPTS_DIR]/sync.sh"
 }
 ```
-
-# Context
-
-The context is a concept that is made up of two context variable type "built-in" variables and "config" variables. The "config" context variables are the once defined in the context section of the build config while the "built-in" variables are comming from the bakery binary. The values of the "built-in" variables are either defined by the workspace.json or by a combination that the bakery binary will define in run-time. Currently the following "built-in" variables are avilable to be used in the build config
-
-```
-MACHINE
-ARCH
-DISTRO
-BB_BUILD_DIR
-BB_DEPLOY_DIR
-PRODUCT_NAME
-ARTIFACTS_DIR
-LAYERS_DIR
-SCRIPTS_DIR
-BUILDS_DIR
-WORK_DIR
-PLATFORM_VERSION
-BUILD_ID
-PLATFORM_RELEASE
-BUILD_SHA
-BUILD_VARIANT
-RELEASE_BUILD
-ARCHIVER
-DEBUG_SYMBOLS
-DEVICE
-```
-
-To get the up to date list please refere to [BUILT_IN_CONTEXT_VARIABLES](https://github.com/Mikrodidakt/bakery/blob/main/src/data/context.rs#L13). Some of the "built-in" context variables will be exposed to the bitbake environment by getting included to the local.conf. To get a list of what context variables a build config offeres and the values of them run the [list](sub-commands.md#context) sub-command with --ctx flag.
-
-
-
-
-
