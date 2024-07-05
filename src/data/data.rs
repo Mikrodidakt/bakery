@@ -1,6 +1,7 @@
 use indexmap::{indexmap, IndexMap};
 use serde_json::Value;
 use std::path::PathBuf;
+use chrono;
 
 use crate::configs::Context;
 use crate::error::BError;
@@ -52,6 +53,7 @@ impl WsBuildData {
 
         // Setup context with "built-in" variables that will always
         // be available
+        // TODO: use local to get the date and time format correct
         let ctx_built_in_variables: IndexMap<String, String> = indexmap! {
             context::CTX_KEY_MACHINE.to_string() => bitbake.machine().to_string(),
             context::CTX_KEY_ARCH.to_string() => product.arch().to_string(),
@@ -62,6 +64,8 @@ impl WsBuildData {
             context::CTX_KEY_SCRIPTS_DIR.to_string() => settings.scripts_dir().to_string_lossy().to_string(),
             context::CTX_KEY_BUILDS_DIR.to_string() => settings.builds_dir().to_string_lossy().to_string(),
             context::CTX_KEY_WORK_DIR.to_string() => settings.work_dir().to_string_lossy().to_string(),
+            context::CTX_KEY_DATE.to_string() => chrono::offset::Local::now().format("%Y-%m-%d").to_string(),
+            context::CTX_KEY_TIME.to_string() => chrono::offset::Local::now().format("%H:%M").to_string(),
         };
 
         context.update(&ctx_built_in_variables);
@@ -176,6 +180,7 @@ mod tests {
     use indexmap::IndexMap;
     use serde_json::Value;
     use std::path::PathBuf;
+    use chrono;
 
     use crate::error::BError;
     use crate::fs::ConfigFileReader;
@@ -423,6 +428,31 @@ mod tests {
         artifact.expand_ctx(data.context().ctx()).unwrap();
         assert_eq!(artifact.data().atype(), &AType::Manifest);
         assert_eq!(artifact.data().name(), "test-manifest");
+    }
+
+    #[test]
+    fn test_ws_build_data_time_date() {
+        let json_artifact_config: &str = r#"
+        {
+            "type": "manifest",
+            "name": "test-manifest",
+            "content": {
+                "date": "$#[DATE]",
+                "time": "$#[TIME]"
+            }
+        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
+        let data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
+        let json_data: Value =
+            ConfigFileReader::parse(json_artifact_config).expect("Failed to parse json");
+        let mut artifact: WsArtifactsHandler = data
+            .get_artifact(&json_data, &task_build_dir)
+            .expect("Failed to parse artifacts");
+        artifact.expand_ctx(data.context().ctx()).unwrap();
+        assert_eq!(artifact.data().atype(), &AType::Manifest);
+        assert_eq!(artifact.data().name(), "test-manifest");
+        assert_eq!(artifact.data().manifest(), format!("{{\"date\":\"{}\",\"time\":\"{}\"}}", chrono::offset::Local::now().format("%Y-%m-%d").to_string(), chrono::offset::Local::now().format("%H:%M").to_string()));
     }
 
     #[test]

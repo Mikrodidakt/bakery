@@ -32,6 +32,8 @@ pub const CTX_KEY_ARCHIVER: &str = "ARCHIVER";
 pub const CTX_KEY_DEBUG_SYMBOLS: &str = "DEBUG_SYMBOLS";
 pub const CTX_KEY_DEVICE: &str = "DEVICE";
 pub const CTX_KEY_IMAGE: &str = "IMAGE";
+pub const CTX_KEY_DATE: &str = "DATE";
+pub const CTX_KEY_TIME: &str = "TIME";
 
 impl Config for WsContextData {}
 
@@ -49,6 +51,8 @@ impl WsContextData {
             CTX_KEY_ARCHIVER |
             CTX_KEY_DEVICE |
             CTX_KEY_IMAGE |
+            CTX_KEY_DATE |
+            CTX_KEY_TIME |
             CTX_KEY_DEBUG_SYMBOLS => true,
             CTX_KEY_MACHINE |
             CTX_KEY_ARCH |
@@ -108,6 +112,8 @@ impl WsContextData {
             CTX_KEY_DEBUG_SYMBOLS.to_string() => "".to_string(),
             CTX_KEY_DEVICE.to_string() => "".to_string(),
             CTX_KEY_IMAGE.to_string() => "".to_string(),
+            CTX_KEY_TIME.to_string() => "".to_string(),
+            CTX_KEY_DATE.to_string() => "".to_string(),
         };
         let mut ctx: Context = Context::new(&ctx_default_variables);
         ctx.update(&variables);
@@ -179,6 +185,8 @@ mod tests {
         CTX_KEY_PLATFORM_RELEASE,
         CTX_KEY_DEVICE,
         CTX_KEY_IMAGE,
+        CTX_KEY_DATE,
+        CTX_KEY_TIME,
     };
     use crate::workspace::WsSettingsHandler;
     use crate::data::WsContextData;
@@ -235,6 +243,14 @@ mod tests {
         assert_eq!(
             data.get_ctx_value(CTX_KEY_BUILD_VARIANT),
             String::from("dev")
+        );
+        assert_eq!(
+            data.get_ctx_value(CTX_KEY_DATE),
+            String::from("")
+        );
+        assert_eq!(
+            data.get_ctx_value(CTX_KEY_TIME),
+            String::from("")
         );
         assert!(data.get_ctx_value(CTX_KEY_PLATFORM_RELEASE).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_BUILD_SHA).is_empty());
