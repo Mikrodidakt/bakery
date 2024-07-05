@@ -5,7 +5,7 @@ use crate::collector::{
     ManifestCollector,
     ArchiveCollector,
     LinkCollector,
-    ConditionCollector,
+    ConditionalCollector,
 };
 use crate::data::AType;
 use crate::workspace::WsArtifactsHandler;
@@ -33,8 +33,8 @@ impl CollectorFactory {
             AType::Link => {
                 collector = Box::new(LinkCollector::new(artifact, cli));
             },
-            AType::Condition => {
-                collector = Box::new(ConditionCollector::new(artifact, cli));
+            AType::Conditional => {
+                collector = Box::new(ConditionalCollector::new(artifact, cli));
             }
         }
         collector.verify_attributes()?;

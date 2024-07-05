@@ -4,7 +4,7 @@ pub mod directory;
 pub mod manifest;
 pub mod archive;
 pub mod link;
-pub mod condition;
+pub mod conditional;
 
 pub use factory::CollectorFactory;
 pub use file::FileCollector;
@@ -12,7 +12,7 @@ pub use directory::DirectoryCollector;
 pub use manifest::ManifestCollector;
 pub use archive::ArchiveCollector;
 pub use link::LinkCollector;
-pub use condition::ConditionCollector;
+pub use conditional::ConditionalCollector;
 
 use crate::error::BError;
 use crate::cli::Cli;

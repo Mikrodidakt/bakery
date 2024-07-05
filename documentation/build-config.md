@@ -26,6 +26,7 @@ The build config is what describes building the product for bakery. A typical bu
                         "index": "0",
                         "name": "task1",
                         "disabled": "false",
+                        "condition": "true",
                         "recipes": [],
                         "artifacts": []
                 },
@@ -33,6 +34,7 @@ The build config is what describes building the product for bakery. A typical bu
                         "index": "1",
                         "type": "non-bitbake",
                         "disabled": "false",
+                        "condition": "true",
                         "name": "task2",
                         "builddir": "",
                         "build": "",
@@ -169,6 +171,28 @@ The name of the task should be unique
 
 A task can be a bitbake task or a non-bitbake task. The different types looks has a slightly different format. Default value is bitbake.
 
+## disabled
+
+Sometimes a task is needed but it should not be executed by default when not specifing a task and running a full build. For example a signing task that requires some additional resources like an HSM when signing so it should only be executed by a specific signing node then it can be disabled. It will then only be executed when the task is specificelly specified in the bakery command using the the task flag in the [build](sub-commands.md#Build).
+
+## condition
+
+Sometimes a task needs to only run under a specific condition. By default the condition is true but it is possible to use a [Context](build-config.md#context). For example bakery has the variant flag which will set the context variable $#[RELEASE_BUILD] to one which can then be used as a condition to only execute a specific task.
+
+```json
+{
+  "task": {
+    "index": "0",
+    "name": "task",
+    "condition": "$#[RELEASE_BUILD]",
+    "recipes": [
+      "recipe"
+    ],
+    "artifacts": []
+  }
+}
+```
+
 ### bitbake
 
 ```json
@@ -273,10 +297,6 @@ The clean command is only used by the non-bitbake task it can be a shell command
 
 The builddir is only used by the non-bitbake task and is used to change working directory before executing the build or clean command.
 
-#### disabled
-
-Sometimes a task is needed but it should not be executed by default when not specifing a task and running a full build. For example a signing task that requires some additional resources like an HSM when signing so it should only be executed by a specific signing node then it can be disabled. It will then only be executed when the task is specificelly specified in the bakery command using the the task flag in the [build](sub-commands.mk#Build).
-
 ## artifacts
 
 Each task has the capability to collect specific files. All collected files will be placed in the artifacts directory, which is defined in the workspace config. The artifacts directory is specified by the context variable ARTIFACTS_DIR. I will refer to the artifacts directory using the context variable $#[ARTIFACTS_DIR].
@@ -378,6 +398,32 @@ Create a symbolic link in the $#[ARTIFACTS_DIR] directory named 'link.txt' point
             "source": "test/file.txt"
         }
   ]
+```
+
+### conditional
+
+Create a symbolic link in the $#[ARTIFACTS_DIR] directory named 'link.txt' pointing to 'test/file.txt' if the 'condition' is true.
+
+```json
+  "artifacts": [
+        {
+            "type": "conditional",
+            "condition": "$#[ARCHIVER]",
+            "artifacts": [
+              {
+                "type": "link",
+                "name": "link.txt",
+                "source": "test/file.txt"
+              }
+            ]
+        }
+  ]
+```
+
+The following conditions are interpreted as true
+
+```bash
+"1" | "yes" | "y" | "Y" | "true" | "YES" | "TRUE" | "True" | "Yes"
 ```
 
 ### Context

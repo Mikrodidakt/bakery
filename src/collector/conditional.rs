@@ -9,15 +9,16 @@ use crate::workspace::WsArtifactsHandler;
 
 use std::path::PathBuf;
 
-pub struct ConditionCollector<'a> {
+pub struct ConditionalCollector<'a> {
     artifact: &'a WsArtifactsHandler,
     cli: Option<&'a Cli>,
 }
 
-impl<'a> Collector for ConditionCollector<'a> {
+impl<'a> Collector for ConditionalCollector<'a> {
     fn collect(&self, src: &PathBuf, dest: &PathBuf) -> Result<Vec<Collected>, BError> {
         let condition: bool = self.artifact.data().condition();
         let mut collected: Vec<Collected> = vec![];
+
         if condition {
             for child in self.artifact.children().iter() {
                 let collector: Box<dyn Collector> = CollectorFactory::create(child, None)?;
@@ -27,6 +28,7 @@ impl<'a> Collector for ConditionCollector<'a> {
         } else {
             self.info(self.cli, "Skipping collecting condition false".to_string());
         }
+
         Ok(collected)
     }
 
@@ -35,13 +37,14 @@ impl<'a> Collector for ConditionCollector<'a> {
             || self.artifact.children().is_empty() {
                 return Err(BError::ValueError(String::from("Directory node requires name and list of artifacts!")));
         }
+
         Ok(())
     }
 }
 
-impl<'a> ConditionCollector<'a> {
+impl<'a> ConditionalCollector<'a> {
     pub fn new(artifact: &'a WsArtifactsHandler, cli: Option<&'a Cli>) -> Self {
-        ConditionCollector {
+        ConditionalCollector {
             artifact,
             cli,
         }
@@ -54,7 +57,7 @@ mod tests {
     use crate::data::WsBuildData;
     use crate::helper::Helper;
     use crate::collector::{
-        ConditionCollector,
+        ConditionalCollector,
         Collector,
         Collected
     };
@@ -75,7 +78,7 @@ mod tests {
         ];
         let json_artifacts_config: &str = r#"
         {
-            "type": "condition",
+            "type": "conditional",
             "condition": "true",
             "artifacts": [
                 {
@@ -90,7 +93,7 @@ mod tests {
             &files,
             &build_data,
             json_artifacts_config);
-        let collector: ConditionCollector = ConditionCollector::new(&artifacts, None);
+        let collector: ConditionalCollector = ConditionalCollector::new(&artifacts, None);
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
         assert_eq!(&collected, &vec![
@@ -112,7 +115,7 @@ mod tests {
         ];
         let json_artifacts_config: &str = r#"
         {
-            "type": "condition",
+            "type": "conditional",
             "condition": "false",
             "artifacts": [
                 {
@@ -127,7 +130,7 @@ mod tests {
             &files,
             &build_data,
             json_artifacts_config);
-        let collector: ConditionCollector = ConditionCollector::new(&artifacts, None);
+        let collector: ConditionalCollector = ConditionalCollector::new(&artifacts, None);
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
         assert!(collected.is_empty());
@@ -146,7 +149,7 @@ mod tests {
         ];
         let json_artifacts_config: &str = r#"
         {
-            "type": "condition",
+            "type": "conditional",
             "condition": "$#[CONDITION]",
             "artifacts": [
                 {
@@ -189,7 +192,7 @@ mod tests {
         };
         let context: Context = Context::new(&variables);
         artifacts.expand_ctx(&context).unwrap();
-        let collector: ConditionCollector = ConditionCollector::new(&artifacts, None);
+        let collector: ConditionalCollector = ConditionalCollector::new(&artifacts, None);
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
         assert_eq!(&collected, &vec![
