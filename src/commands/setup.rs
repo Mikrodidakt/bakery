@@ -51,8 +51,8 @@ impl BCommand for SetupCommand {
 
       workspace.update_ctx(&context)?;
 
-      let upload: &WsTaskCmdHandler = workspace.config().setup();
-      upload.run(cli, &cli.env(), false, self.cmd.interactive)
+      let setup: &WsTaskCmdHandler = workspace.config().setup();
+      setup.run(cli, &cli.env(), false, self.cmd.interactive)
   }
 }
 
@@ -87,4 +87,140 @@ impl SetupCommand {
           },
       }
   }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+    use tempdir::TempDir;
+    use std::collections::HashMap;
+
+    use crate::cli::*;
+    use crate::error::BError;
+    use crate::commands::{BCommand, SetupCommand};
+    use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
+
+    #[test]
+    fn test_cmd_setup() {
+        let temp_dir: TempDir =
+        TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: &PathBuf = &temp_dir.into_path();
+        let json_ws_settings: &str = r#"
+        {
+            "version": "5",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "5",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {},
+            "context": [
+                "ARG1=arg1",
+                "ARG2=arg2",
+                "ARG3=arg3"
+            ],
+            "setup": {
+                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
+            }
+        }
+        "#;
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec![&format!("{}/scripts/script.sh", work_dir.display()), "arg1", "arg2", "arg3"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                env: HashMap::new(),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
+        mocked_system
+            .expect_env()
+            .returning(||HashMap::new());
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings).expect("Failed to parse settings");
+        let config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &settings).expect("Failed to parse build config");
+        let mut workspace: Workspace =
+            Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config)).expect("Failed to setup workspace");
+        let cli: Cli = Cli::new(
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            clap::Command::new("bakery"),
+            Some(vec!["bakery", "setup", "-c", "default"]),
+        );
+        let cmd: SetupCommand = SetupCommand::new();
+        let _result: Result<(), BError> = cmd.execute(&cli, &mut workspace);
+    }
+
+    #[test]
+    fn test_cmd_setup_ctx() {
+        let temp_dir: TempDir =
+        TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: &PathBuf = &temp_dir.into_path();
+        let json_ws_settings: &str = r#"
+        {
+            "version": "5",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "5",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "bb": {},
+            "context": [
+                "ARG1=arg1",
+                "ARG2=arg2",
+                "ARG3=arg3"
+            ],
+            "setup": {
+                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
+            }
+        }
+        "#;
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec![&format!("{}/scripts/script.sh", work_dir.display()), "arg1", "arg2", "arg4"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+                env: HashMap::new(),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
+        mocked_system
+            .expect_env()
+            .returning(||HashMap::new());
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings).expect("Failed to parse settings");
+        let config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &settings).expect("Failed to parse build config");
+        let mut workspace: Workspace =
+            Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config)).expect("Failed to setup workspace");
+        let cli: Cli = Cli::new(
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            clap::Command::new("bakery"),
+            Some(vec!["bakery", "setup", "-c", "default", "--context", "ARG3=arg4"]),
+        );
+        let cmd: SetupCommand = SetupCommand::new();
+        let _result: Result<(), BError> = cmd.execute(&cli, &mut workspace);
+    }
 }
