@@ -86,6 +86,36 @@ mod tests {
     }
 
     #[test]
+    fn test_get_setup_command() {
+        let cmd_handler: CmdHandler = CmdHandler::new();
+        let cmd: Result<&Box<dyn BCommand>, BError> = cmd_handler.get_cmd("setup");
+
+        match cmd {
+            Ok(command) => {
+                assert_eq!(command.cmd_str(), "setup");
+            }
+            Err(err) => {
+                assert!(false, "Expected OK result, but got an error '{}'", err);
+            }
+        }
+    }
+
+    #[test]
+    fn test_get_sync_command() {
+        let cmd_handler: CmdHandler = CmdHandler::new();
+        let cmd: Result<&Box<dyn BCommand>, BError> = cmd_handler.get_cmd("sync");
+
+        match cmd {
+            Ok(command) => {
+                assert_eq!(command.cmd_str(), "sync");
+            }
+            Err(err) => {
+                assert!(false, "Expected OK result, but got an error '{}'", err);
+            }
+        }
+    }
+
+    #[test]
     fn test_get_deploy_command() {
         let cmd_handler: CmdHandler = CmdHandler::new();
         let cmd: Result<&Box<dyn BCommand>, BError> = cmd_handler.get_cmd("deploy");
