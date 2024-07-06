@@ -259,11 +259,6 @@ mod tests {
             .with(mockall::predicate::eq(format!("execute bitbake build task '{}'", task_data.name())))
             .once()
             .returning(|_x| ());
-        mocked_logger
-            .expect_info()
-            .with(mockall::predicate::eq(format!("cd {} && devtool create-workspace && bitbake test-image", &build_dir.to_string_lossy().to_string())))
-            .once()
-            .returning(|_x| ());
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
@@ -361,11 +356,6 @@ mod tests {
         mocked_logger
             .expect_info()
             .with(mockall::predicate::eq(format!("execute bitbake build task '{}'", task_data.name())))
-            .once()
-            .returning(|_x| ());
-        mocked_logger
-            .expect_info()
-            .with(mockall::predicate::eq("devtool create-workspace".to_string()))
             .once()
             .returning(|_x| ());
         mocked_logger

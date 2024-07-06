@@ -57,6 +57,7 @@ impl BCommand for BuildCommand {
         let volumes: Vec<String> = self.get_arg_many(cli, "volume", BCOMMAND)?;
         let tasks: Vec<String> = self.get_arg_many(cli, "tasks", BCOMMAND)?;
         let variant: String = self.get_arg_str(cli, "variant", BCOMMAND)?;
+        let verbose: bool = self.get_arg_flag(cli, "verbose", BCOMMAND)?;
         let mut bb_variables: Vec<String> = Vec::new();
         let mut interactive: bool = false;
 
@@ -188,6 +189,12 @@ impl BuildCommand {
                     .help("The build config defining all the components for the full build")
                     .value_name("name")
                     .required(true),
+            )
+            .arg(
+                clap::Arg::new("verbose")
+                    .action(clap::ArgAction::SetTrue)
+                    .long("verbose")
+                    .help("Print verbose message."),
             )
             .arg(
                 clap::Arg::new("tasks")
@@ -451,11 +458,6 @@ mod tests {
             mocked_logger
                 .expect_info()
                 .with(mockall::predicate::eq(format!("execute bitbake build task '{}'", name)))
-                .once()
-                .returning(|_x| ());
-            mocked_logger
-                .expect_info()
-                .with(mockall::predicate::eq("devtool create-workspace".to_string()))
                 .once()
                 .returning(|_x| ());
             mocked_logger

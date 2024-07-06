@@ -76,22 +76,6 @@ impl WsConfigFileHandler {
             return WsBuildConfigHandler::from_str(&build_config_json, settings);
         }
 
-        /*
-        TODO: explore how we can setup a default.json to emit the need for specifying a build config everytime
-        when running the bakery command.
-        path = settings.work_dir().join(PathBuf::from("default.json"));
-        if path.exists() {
-            let build_config_json: String = JsonFileReader::new(path.to_string_lossy().to_string()).read_json()?;
-            return WsBuildConfigHandler::from_str(&build_config_json, settings);
-        }
-
-        path = self.bakery_dir.clone().join(PathBuf::from("configs/default.json"));
-        if path.exists() {
-            let build_config_json: String = JsonFileReader::new(path.to_string_lossy().to_string()).read_json()?;
-            return WsBuildConfigHandler::from_str(&build_config_json, settings);
-        }
-        */
-
         /* TODO: we should remove this and most likely refactor the code so that the sub-commands are responsible for the build config */
         if build_config.display().to_string() == "NA.json".to_string() {
             let dummy_config_json: &str = r#"

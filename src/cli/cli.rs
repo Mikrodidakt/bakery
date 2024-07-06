@@ -12,6 +12,7 @@ pub struct Cli {
     cmd_handler: CmdHandler,
     logger: Box<dyn Logger>,
     system: Box<dyn System>,
+    verbose: bool,
 }
 
 impl Cli {
@@ -39,6 +40,7 @@ impl Cli {
             cmd_handler,
             logger,
             system,
+            verbose: false,
         }
     }
 
@@ -49,7 +51,7 @@ impl Cli {
             cmd.push(' ');
         });
         //println!("log {}", String::from(cmd.as_str().trim_end()));
-        self.info(format!("{}", cmd.as_str().trim_end()));
+        self.debug(format!("{}", cmd.as_str().trim_end()));
         self.system.check_call(&CallParams{ cmd_line: cmd_line.to_owned(), env: env.to_owned(), shell })?;
         //self.system.test(String::from(cmd.as_str().trim_end()))?;
         Ok(())
@@ -112,6 +114,12 @@ impl Cli {
 
     pub fn info(&self, message: String) {
         (*self.logger).info(message);
+    }
+
+    pub fn debug(&self, message: String) {
+        if self.verbose {
+            (*self.logger).debug(message);
+        }
     }
 
     pub fn _warn(&self, message: String) {

@@ -682,11 +682,6 @@ mod tests {
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("devtool create-workspace".to_string()))
-            .once()
-            .returning(|_x| ());
-        mocked_logger
-            .expect_info()
             .with(mockall::predicate::eq("Dry run. Skipping build!".to_string()))
             .once()
             .returning(|_x| ());

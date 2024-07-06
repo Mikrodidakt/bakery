@@ -351,6 +351,8 @@ mod tests {
             "DEBUG_SYMBOLS".to_string() => "".to_string(),
             "DEVICE".to_string() => "".to_string(),
             "IMAGE".to_string() => "".to_string(),
+            "DATE".to_string() => chrono::offset::Local::now().format("%Y-%m-%d").to_string(),
+            "TIME".to_string() => chrono::offset::Local::now().format("%H:%M").to_string(),
         };
         ctx_variables.iter().for_each(|(key, value)|{
             mocked_logger

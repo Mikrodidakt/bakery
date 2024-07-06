@@ -9,6 +9,8 @@ pub trait Logger {
     fn error(&self, message: String);
 
     fn stdout(&self, message: String);
+
+    fn debug(&self, message: String);
 }
 
 pub struct BLogger {}
@@ -30,6 +32,10 @@ impl Logger for BLogger {
 
     fn error(&self, message: String) {
         eprintln!("ERROR: {}", message);
+    }
+
+    fn debug(&self, message: String) {
+        println!("debug: {}", message);
     }
 
     fn stdout(&self, message: String) {
