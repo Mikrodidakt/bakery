@@ -142,6 +142,14 @@ impl BCommand for BuildCommand {
         context.update(&extra_ctx);
         workspace.update_ctx(&context)?;
 
+        if verbose {
+            let variables: IndexMap<String, String> = workspace.context()?;
+            cli.debug(format!("Context varibles for build config '{}':", config));
+            variables.iter().for_each(|(key, value)| {
+                cli.stdout(format!("{}={}", key.to_ascii_uppercase(), value));
+            });
+        }
+
         if tasks.len() > 1 {
             // More then one task was specified on the command line
             for t_name in tasks {
@@ -194,7 +202,7 @@ impl BuildCommand {
                 clap::Arg::new("verbose")
                     .action(clap::ArgAction::SetTrue)
                     .long("verbose")
-                    .help("Print verbose message."),
+                    .help("Set verbose level."),
             )
             .arg(
                 clap::Arg::new("tasks")

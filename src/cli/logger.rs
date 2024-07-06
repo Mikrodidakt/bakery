@@ -35,7 +35,7 @@ impl Logger for BLogger {
     }
 
     fn debug(&self, message: String) {
-        println!("debug: {}", message);
+        println!("DEBUG: {}", message);
     }
 
     fn stdout(&self, message: String) {

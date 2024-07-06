@@ -30,6 +30,7 @@ impl Bakery {
                 .author("bakery by Mikrodidakt(mikro.io)"),
             None
         );
+
         Bakery {
             cli: cli,
         }
