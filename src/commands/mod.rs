@@ -14,6 +14,7 @@ use std::path::PathBuf;
 
 use crate::error::BError;
 use crate::cli::Cli;
+use crate::executers::DockerImage;
 use crate::workspace::Workspace;
 use crate::executers::docker::Docker;
 
@@ -51,7 +52,7 @@ pub trait BCommand {
          */
         let env: HashMap<String, String> = cli.env();
 
-        cli.info(format!("Bootstrap bakery into docker"));
+        cli.info(format!("Bootstrap bakery into '{}'", docker.image()));
 
         if !PathBuf::from("/usr/bin/docker").exists() {
             return Err(BError::DockerError());

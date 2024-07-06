@@ -172,6 +172,10 @@ impl Docker {
         path.exists()
     }
 
+    pub fn image(&self) -> &DockerImage {
+        &self.image
+    }
+
     pub fn new(image: DockerImage, interactive: bool) -> Self {
         Docker {
             image,
