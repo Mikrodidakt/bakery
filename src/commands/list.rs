@@ -43,13 +43,14 @@ impl BCommand for ListCommand {
         let ctx: bool = self.get_arg_flag(cli, "ctx", BCOMMAND)?;
         if config == "NA" { // default value if not specified
             // If no config is specified then we will list all supported build configs
+            cli.stdout(format!("{:<15} {:<52}", "NAME", "DESCRIPTION"));
             workspace
                 .build_configs()
                 .iter()
                 .for_each(|(path, description)| {
                     cli.stdout(format!(
-                        "{}: {}",
-                        path.file_name().unwrap().to_string_lossy(),
+                        "{:<15} - {:<50}",
+                        path.file_stem().unwrap().to_string_lossy(),
                         description
                     ));
                 });
@@ -59,14 +60,15 @@ impl BCommand for ListCommand {
                 if ctx {
                     workspace.expand_ctx()?;
                     let variables: IndexMap<String, String> = workspace.context()?;
-                    cli.info(format!("Context varibles for build config '{}':", config));
+                    cli.stdout(format!("Context varibles for build config '{}':", config));
                     variables.iter().for_each(|(key, value)| {
                         cli.stdout(format!("{}={}", key.to_ascii_uppercase(), value));
                     });
                 } else {
                     //cli.info(format!("The following tasks are supported by '{}'", config.as_str()));
+                    cli.stdout(format!("{:<15} {:<52} {}", "NAME", "DESCRIPTION", "ENABLED/DISABLED"));
                     workspace.config().tasks().iter().for_each(|(_name, task)| {
-                        cli.stdout(format!("{} - {}", task.data().name(), task.data().description()));
+                        cli.stdout(format!("{:<15} - {:<50} [{}]", task.data().name(), task.data().description(), if task.data().disabled() { "disabled" } else { "enabled" }));
                     });
                 }
             } else {
@@ -167,8 +169,13 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_stdout()
+            .with(mockall::predicate::eq(format!("{:<15} {:<52}", "NAME", "DESCRIPTION")))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_stdout()
             .with(mockall::predicate::eq(
-                "default.json: Test Description".to_string(),
+                format!("{:<15} - {:<50}", "default", "Test Description"),
             ))
             .once()
             .returning(|_x| ());
@@ -211,6 +218,7 @@ mod tests {
                 "task2": {
                     "index": "2",
                     "name": "task2",
+                    "disabled": "true",
                     "description": "test",
                     "type": "non-bitbake"
                 }
@@ -220,12 +228,17 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_stdout()
-            .with(mockall::predicate::eq("task1 - NA".to_string()))
+            .with(mockall::predicate::eq(format!("{:<15} {:<52} {}", "NAME", "DESCRIPTION", "ENABLED/DISABLED")))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_stdout()
-            .with(mockall::predicate::eq("task2 - test".to_string()))
+            .with(mockall::predicate::eq(format!("{:<15} - {:<50} [{}]", "task1", "NA", "enabled")))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_stdout()
+            .with(mockall::predicate::eq(format!("{:<15} - {:<50} [{}]", "task2", "test", "disabled")))
             .once()
             .returning(|_x| ());
         let _result: Result<(), BError> = helper_test_list_subcommand(
@@ -325,7 +338,7 @@ mod tests {
         "#;
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
-            .expect_info()
+            .expect_stdout()
             .with(mockall::predicate::eq("Context varibles for build config 'default':".to_string()))
             .once()
             .returning(|_x| ());
