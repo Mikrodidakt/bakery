@@ -50,12 +50,12 @@ impl WsTaskHandler {
         let executer: Box<dyn TaskExecuter>;
 
         if !force && self.data.disabled() {
-            cli.info(format!("Task '{}' is disabled in build config so execution is skipped", self.data.name()));
+            cli.info(format!("Task '{}' disabled, skipping", self.data.name()));
             return Ok(());
         }
 
         if !force && !self.data.condition() {
-            cli.info(format!("Task condition for task '{}' is not meet so execution is skipped", self.data.name()));
+            cli.info(format!("Task condition for '{}' is not met, skipping", self.data.name()));
             return Ok(());
         }
 
