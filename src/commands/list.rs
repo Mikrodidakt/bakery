@@ -7,7 +7,7 @@ use crate::workspace::Workspace;
 //use clap::{ArgMatches, value_parser};
 
 static BCOMMAND: &str = "list";
-static BCOMMAND_ABOUT: &str = "List all builds or the tasks available for a specific build.";
+static BCOMMAND_ABOUT: &str = "List all builds configs or all tasks available for a specific build config.";
 pub struct ListCommand {
     cmd: BBaseCommand,
     // Your struct fields and methods here
@@ -57,15 +57,20 @@ impl BCommand for ListCommand {
         } else {
             // List all tasks for a build config
             if workspace.valid_config(config.as_str()) {
+                cli.stdout(format!("name: {}\narch: {}\nmachine: {}\ndescription: {}\n",
+                    workspace.config().build_data().name(),
+                    workspace.config().build_data().product().arch(),
+                    workspace.config().build_data().bitbake().machine(),
+                    workspace.config().build_data().product().description()));
+
                 if ctx {
                     workspace.expand_ctx()?;
                     let variables: IndexMap<String, String> = workspace.context()?;
-                    cli.stdout(format!("Context varibles for build config '{}':", config));
+                    cli.stdout("Context variables:".to_string());
                     variables.iter().for_each(|(key, value)| {
                         cli.stdout(format!("{}={}", key.to_ascii_uppercase(), value));
                     });
                 } else {
-                    //cli.info(format!("The following tasks are supported by '{}'", config.as_str()));
                     cli.stdout(format!("{:<15} {:<52} {}", "NAME", "DESCRIPTION", "ENABLED/DISABLED"));
                     workspace.config().tasks().iter().for_each(|(_name, task)| {
                         cli.stdout(format!("{:<15} - {:<50} [{}]", task.data().name(), task.data().description(), if task.data().disabled() { "disabled" } else { "enabled" }));
@@ -228,6 +233,11 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_stdout()
+            .with(mockall::predicate::eq("name: default\narch: test-arch\nmachine: NA\ndescription: Test Description\n".to_string()))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_stdout()
             .with(mockall::predicate::eq(format!("{:<15} {:<52} {}", "NAME", "DESCRIPTION", "ENABLED/DISABLED")))
             .once()
             .returning(|_x| ());
@@ -339,7 +349,12 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_stdout()
-            .with(mockall::predicate::eq("Context varibles for build config 'default':".to_string()))
+            .with(mockall::predicate::eq("name: default\narch: test-arch\nmachine: test-machine\ndescription: Test Description\n".to_string()))
+            .once()
+            .returning(|_x| ());
+        mocked_logger
+            .expect_stdout()
+            .with(mockall::predicate::eq("Context variables:".to_string()))
             .once()
             .returning(|_x| ());
         let ctx_variables: IndexMap<String, String> = indexmap! {
