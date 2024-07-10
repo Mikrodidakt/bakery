@@ -5,7 +5,7 @@ use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
 use crate::workspace::Workspace;
 use crate::data::WsContextData;
-use crate::workspace::WsTaskCmdHandler;
+use crate::workspace::WsSubCmdHandler;
 
 static BCOMMAND: &str = "sync";
 static BCOMMAND_ABOUT: &str = "Sync workspace e.g sync/update git submodules.";
@@ -51,7 +51,7 @@ impl BCommand for SyncCommand {
 
       workspace.update_ctx(&context)?;
 
-      let sync: &WsTaskCmdHandler = workspace.config().sync();
+      let sync: &WsSubCmdHandler = workspace.config().sync();
       sync.run(cli, &cli.env(), false, self.cmd.interactive)
   }
 }

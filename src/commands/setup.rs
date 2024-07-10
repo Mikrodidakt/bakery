@@ -5,7 +5,7 @@ use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
 use crate::workspace::Workspace;
 use crate::data::WsContextData;
-use crate::workspace::WsTaskCmdHandler;
+use crate::workspace::WsSubCmdHandler;
 
 static BCOMMAND: &str = "setup";
 static BCOMMAND_ABOUT: &str = "Set up the workspace, e.g., initialize git submodules.";
@@ -51,7 +51,7 @@ impl BCommand for SetupCommand {
 
       workspace.update_ctx(&context)?;
 
-      let setup: &WsTaskCmdHandler = workspace.config().setup();
+      let setup: &WsSubCmdHandler = workspace.config().setup();
       setup.run(cli, &cli.env(), false, self.cmd.interactive)
   }
 }

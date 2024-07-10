@@ -1,18 +1,16 @@
 use crate::cli::Cli;
 use crate::error::BError;
-use crate::data::WsTaskCmdData;
-use crate::executers::{
-    TaskExecuter,
-};
+use crate::data::WsSubCmdData;
+use crate::executers::TaskExecuter;
 
 use std::collections::HashMap;
 
-pub struct TaskCmdExecuter<'a> {
+pub struct SubCmdExecuter<'a> {
     cli: &'a Cli,
-    data: &'a WsTaskCmdData,
+    data: &'a WsSubCmdData,
 }
 
-impl<'a> TaskExecuter for TaskCmdExecuter<'a> {
+impl<'a> TaskExecuter for SubCmdExecuter<'a> {
     fn exec(&self, env_variables: &HashMap<String, String>, dry_run: bool, _interactive: bool) -> Result<(), BError> {
         let cmd: Vec<String> = self.data.cmd().split(' ').map(|c| c.to_string()).collect();
 
@@ -25,9 +23,9 @@ impl<'a> TaskExecuter for TaskCmdExecuter<'a> {
     }
 }
 
-impl<'a> TaskCmdExecuter<'a> {
-    pub fn new(cli: &'a Cli, data: &'a WsTaskCmdData) -> Self {
-        TaskCmdExecuter {
+impl<'a> SubCmdExecuter<'a> {
+    pub fn new(cli: &'a Cli, data: &'a WsSubCmdData) -> Self {
+        SubCmdExecuter {
             cli,
             data,
         }
@@ -36,8 +34,8 @@ impl<'a> TaskCmdExecuter<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::data::WsTaskCmdData;
-    use crate::executers::{TaskCmdExecuter, TaskExecuter};
+    use crate::data::WsSubCmdData;
+    use crate::executers::{SubCmdExecuter, TaskExecuter};
 
     use std::collections::HashMap;
     use crate::cli::*;
@@ -48,7 +46,7 @@ mod tests {
         {
             "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
         }"#;
-        let data: WsTaskCmdData = WsTaskCmdData::from_str("deploy", json_build_config).expect("Failed to parse config data");
+        let data: WsSubCmdData = WsSubCmdData::from_str("deploy", json_build_config).expect("Failed to parse config data");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
@@ -68,7 +66,7 @@ mod tests {
             clap::Command::new("bakery"),
             Some(vec!["bakery"]),
         );
-        let executer: TaskCmdExecuter = TaskCmdExecuter::new(&cli, &data);
+        let executer: SubCmdExecuter = SubCmdExecuter::new(&cli, &data);
         executer.exec(&HashMap::new(), false, true).expect("Failed to execute deploy");
     }
 }

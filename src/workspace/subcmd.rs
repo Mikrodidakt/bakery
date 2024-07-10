@@ -1,27 +1,27 @@
 use crate::error::BError;
-use crate::executers::{TaskCmdExecuter, TaskExecuter};
+use crate::executers::{SubCmdExecuter, TaskExecuter};
 use crate::fs::ConfigFileReader;
 use crate::configs::Context;
-use crate::data::WsTaskCmdData;
+use crate::data::WsSubCmdData;
 use crate::cli::Cli;
 
 use serde_json::Value;
 use std::collections::HashMap;
 
-pub struct WsTaskCmdHandler {
-    data: WsTaskCmdData,
+pub struct WsSubCmdHandler {
+    data: WsSubCmdData,
 }
 
-impl WsTaskCmdHandler {
+impl WsSubCmdHandler {
     pub fn from_str(name: &str, json_config: &str) -> Result<Self, BError> {
         let data: Value = ConfigFileReader::parse(json_config)?;
         Self::new(name, &data)
     }
 
     pub fn new(name: &str, data: &Value) -> Result<Self, BError> {
-        let taskcmd_data: WsTaskCmdData = WsTaskCmdData::from_value(name, data)?;
+        let taskcmd_data: WsSubCmdData = WsSubCmdData::from_value(name, data)?;
 
-        Ok(WsTaskCmdHandler {
+        Ok(WsSubCmdHandler {
           data: taskcmd_data,
         })
     }
@@ -32,14 +32,14 @@ impl WsTaskCmdHandler {
     }
 
     pub fn run<'a>(&self, cli: &'a Cli, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
-        let executer: Box<dyn TaskExecuter> = Box::new(TaskCmdExecuter::new(cli, &self.data));
+        let executer: Box<dyn TaskExecuter> = Box::new(SubCmdExecuter::new(cli, &self.data));
         executer.exec(env_variables, dry_run, interactive)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::workspace::WsTaskCmdHandler;
+    use crate::workspace::WsSubCmdHandler;
 
     use std::collections::HashMap;
     use crate::cli::*;
@@ -50,7 +50,7 @@ mod tests {
         {
             "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
         }"#;
-        let handler: WsTaskCmdHandler = WsTaskCmdHandler::from_str("deploy", json_build_config).expect("Failed to parse build config");
+        let handler: WsSubCmdHandler = WsSubCmdHandler::from_str("deploy", json_build_config).expect("Failed to parse build config");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()

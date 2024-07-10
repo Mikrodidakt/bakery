@@ -4,16 +4,16 @@ use crate::configs::Context;
 use crate::error::BError;
 use crate::configs::Config;
 
-pub struct WsTaskCmdData {
+pub struct WsSubCmdData {
     name: String,
     cmd: String,
     docker: String,
 }
 
-impl Config for WsTaskCmdData {
+impl Config for WsSubCmdData {
 }
 
-impl WsTaskCmdData {
+impl WsSubCmdData {
     pub fn from_str(name: &str, json_string: &str) -> Result<Self, BError> {
       let data: Value = Self::parse(json_string)?;
       Self::from_value(name, &data)
@@ -34,7 +34,7 @@ impl WsTaskCmdData {
         let cmd: String = Self::get_str_value("cmd", data, Some(format!("echo \"INFO: currently no '{}' task defined\"", name)))?;
         let docker: String = Self::get_str_value("docker", data, Some(String::from("NA")))?;
 
-        Ok(WsTaskCmdData {
+        Ok(WsSubCmdData {
             name: String::from(name),
             cmd,
             docker,
@@ -54,7 +54,7 @@ impl WsTaskCmdData {
 
 #[cfg(test)]
 mod tests {
-    use crate::data::WsTaskCmdData;
+    use crate::data::WsSubCmdData;
     use crate::configs::Context;
     use indexmap::{IndexMap, indexmap};
 
@@ -63,7 +63,7 @@ mod tests {
         let json_build_config = r#"
         {
         }"#;
-        let data: WsTaskCmdData = WsTaskCmdData::from_str("deploy", json_build_config).expect("Failed to parse config data");
+        let data: WsSubCmdData = WsSubCmdData::from_str("deploy", json_build_config).expect("Failed to parse config data");
         assert_eq!(data.cmd(), "echo \"INFO: currently no 'deploy' task defined\"");
     }
 
@@ -73,7 +73,7 @@ mod tests {
         {
             "cmd": "/path/to/deploy/script.sh arg1 arg2 arg3"
         }"#;
-        let data: WsTaskCmdData = WsTaskCmdData::from_str("deploy", json_build_config).expect("Failed to parse config data");
+        let data: WsSubCmdData = WsSubCmdData::from_str("deploy", json_build_config).expect("Failed to parse config data");
         assert_eq!(data.cmd(), "/path/to/deploy/script.sh arg1 arg2 arg3");
     }
 
@@ -90,7 +90,7 @@ mod tests {
         {
             "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
         }"#;
-        let mut data: WsTaskCmdData = WsTaskCmdData::from_str("deploy", json_build_config).expect("Failed to parse config data");
+        let mut data: WsSubCmdData = WsSubCmdData::from_str("deploy", json_build_config).expect("Failed to parse config data");
         assert_eq!(data.cmd(), "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]");
         data.expand_ctx(&ctx).unwrap();
         assert_eq!(data.cmd(), "/path/to/deploy/script.sh arg1 arg2 arg3");

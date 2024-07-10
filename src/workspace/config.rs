@@ -4,7 +4,7 @@ use serde_json::Value;
 use crate::workspace::{
     WsSettingsHandler,
     WsTaskHandler,
-    WsTaskCmdHandler,
+    WsSubCmdHandler,
 };
 use crate::data::{WsBuildData, WsContextData};
 use crate::error::BError;
@@ -14,10 +14,10 @@ use crate::configs::Context;
 pub struct WsBuildConfigHandler {
     data: WsBuildData,
     tasks: IndexMap<String, WsTaskHandler>,
-    deploy: WsTaskCmdHandler,
-    upload: WsTaskCmdHandler,
-    setup: WsTaskCmdHandler,
-    sync: WsTaskCmdHandler,
+    deploy: WsSubCmdHandler,
+    upload: WsSubCmdHandler,
+    setup: WsSubCmdHandler,
+    sync: WsSubCmdHandler,
 }
 
 impl WsBuildConfigHandler {
@@ -29,10 +29,10 @@ impl WsBuildConfigHandler {
     pub fn new(data: &Value, settings: &WsSettingsHandler) -> Result<Self, BError> {
         let build_data: WsBuildData = WsBuildData::new(data, settings)?;
         let tasks: IndexMap<String, WsTaskHandler> = build_data.get_tasks(data)?;
-        let deploy: WsTaskCmdHandler = WsTaskCmdHandler::new("deploy", data)?;
-        let upload: WsTaskCmdHandler = WsTaskCmdHandler::new("upload", data)?;
-        let setup: WsTaskCmdHandler = WsTaskCmdHandler::new("setup", data)?;
-        let sync: WsTaskCmdHandler = WsTaskCmdHandler::new("sync", data)?;
+        let deploy: WsSubCmdHandler = WsSubCmdHandler::new("deploy", data)?;
+        let upload: WsSubCmdHandler = WsSubCmdHandler::new("upload", data)?;
+        let setup: WsSubCmdHandler = WsSubCmdHandler::new("setup", data)?;
+        let sync: WsSubCmdHandler = WsSubCmdHandler::new("sync", data)?;
 
         if build_data.version() != "5" {
             return Err(BError::InvalidBuildConfigError(build_data.version().to_string()));
@@ -87,19 +87,19 @@ impl WsBuildConfigHandler {
         &self.tasks
     }
 
-    pub fn deploy(&self) -> &WsTaskCmdHandler {
+    pub fn deploy(&self) -> &WsSubCmdHandler {
         &self.deploy
     }
 
-    pub fn upload(&self) -> &WsTaskCmdHandler {
+    pub fn upload(&self) -> &WsSubCmdHandler {
         &self.upload
     }
 
-    pub fn setup(&self) -> &WsTaskCmdHandler {
+    pub fn setup(&self) -> &WsSubCmdHandler {
         &self.setup
     }
 
-    pub fn sync(&self) -> &WsTaskCmdHandler {
+    pub fn sync(&self) -> &WsSubCmdHandler {
         &self.sync
     }
 
@@ -116,7 +116,7 @@ impl WsBuildConfigHandler {
 mod tests {
     use std::path::PathBuf;
 
-    use crate::workspace::{WsBuildConfigHandler, WsSettingsHandler, WsTaskCmdHandler, WsTaskHandler};
+    use crate::workspace::{WsBuildConfigHandler, WsSettingsHandler, WsSubCmdHandler, WsTaskHandler};
     use crate::error::BError;
 
     #[test]
