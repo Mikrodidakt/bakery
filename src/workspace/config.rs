@@ -14,10 +14,7 @@ use crate::configs::Context;
 pub struct WsBuildConfigHandler {
     data: WsBuildData,
     tasks: IndexMap<String, WsTaskHandler>,
-    deploy: WsSubCmdHandler,
-    upload: WsSubCmdHandler,
-    setup: WsSubCmdHandler,
-    sync: WsSubCmdHandler,
+    subcmds: IndexMap<String, WsSubCmdHandler>,
 }
 
 impl WsBuildConfigHandler {
@@ -29,10 +26,7 @@ impl WsBuildConfigHandler {
     pub fn new(data: &Value, settings: &WsSettingsHandler) -> Result<Self, BError> {
         let build_data: WsBuildData = WsBuildData::new(data, settings)?;
         let tasks: IndexMap<String, WsTaskHandler> = build_data.get_tasks(data)?;
-        let deploy: WsSubCmdHandler = WsSubCmdHandler::new("deploy", data)?;
-        let upload: WsSubCmdHandler = WsSubCmdHandler::new("upload", data)?;
-        let setup: WsSubCmdHandler = WsSubCmdHandler::new("setup", data)?;
-        let sync: WsSubCmdHandler = WsSubCmdHandler::new("sync", data)?;
+        let subcmds: IndexMap<String, WsSubCmdHandler> = build_data.get_subcmds(data)?;
 
         if build_data.version() != "5" {
             return Err(BError::InvalidBuildConfigError(build_data.version().to_string()));
@@ -40,11 +34,8 @@ impl WsBuildConfigHandler {
 
         Ok(WsBuildConfigHandler {
             data: build_data,
-            deploy,
-            upload,
-            setup,
             tasks,
-            sync,
+            subcmds,
         })
     }
 
@@ -61,10 +52,9 @@ impl WsBuildConfigHandler {
         for (_name, task) in self.tasks.iter_mut() {
             task.expand_ctx(self.data.context().ctx())?;
         }
-        self.deploy.expand_ctx(self.data.context().ctx())?;
-        self.upload.expand_ctx(self.data.context().ctx())?;
-        self.setup.expand_ctx(self.data.context().ctx())?;
-        self.sync.expand_ctx(self.data.context().ctx())?;
+        for (_name, cmd) in self.subcmds.iter_mut() {
+            cmd.expand_ctx(self.data.context().ctx())?;
+        }
         Ok(())
     }
 
@@ -83,24 +73,39 @@ impl WsBuildConfigHandler {
         }
     }
 
+    pub fn subcmd(&self, cmd: &str) -> Result<&WsSubCmdHandler, BError> {
+        match self.subcmds.get(cmd) {
+            Some(config) => {
+                return Ok(config);
+            },
+            None => {
+                return Err(BError::ValueError(format!("Sub-command '{}' does not exists in build config", cmd)));
+            }
+        }
+    }
+
     pub fn tasks(&self) -> &IndexMap<String, WsTaskHandler> {
         &self.tasks
     }
 
+    pub fn subcmds(&self) -> &IndexMap<String, WsSubCmdHandler> {
+        &self.subcmds
+    }
+
     pub fn deploy(&self) -> &WsSubCmdHandler {
-        &self.deploy
+        &self.subcmd("deploy").expect("Failed to get deploy built-in sub-command")
     }
 
     pub fn upload(&self) -> &WsSubCmdHandler {
-        &self.upload
+        &self.subcmd("upload").expect("Failed to get upload built-in sub-command")
     }
 
     pub fn setup(&self) -> &WsSubCmdHandler {
-        &self.setup
+        &self.subcmd("setup").expect("Failed to get setup built-in sub-command")
     }
 
     pub fn sync(&self) -> &WsSubCmdHandler {
-        &self.sync
+        &self.subcmd("sync").expect("Failed to get sync built-in sub-command")
     }
 
     pub fn description(&self) -> &str {
