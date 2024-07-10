@@ -7,7 +7,7 @@ use crate::configs::Context;
 use crate::error::BError;
 use crate::workspace::{WsArtifactsHandler, WsSettingsHandler, WsTaskHandler, WsSubCmdHandler};
 use crate::fs::ConfigFileReader;
-use crate::data::{WsConfigData, WsProductData, WsBitbakeData, WsContextData};
+use crate::data::{WsConfigData, WsProductData, WsBitbakeData, WsContextData, WsIncludeData};
 use crate::data::context;
 
 pub struct WsBuildData {
@@ -15,6 +15,7 @@ pub struct WsBuildData {
     config: WsConfigData,
     product: WsProductData,
     bitbake: WsBitbakeData,
+    include: WsIncludeData,
     context: WsContextData,
     settings: WsSettingsHandler,
 }
@@ -47,6 +48,9 @@ impl WsBuildData {
         // needed when executing a bitbake task defined in the build
         // config
         let bitbake: WsBitbakeData = WsBitbakeData::from_value(data, settings)?;
+        // The include segment is to define additional json files that contains
+        // defined tasks that are used by multiple build configs
+        let include: WsIncludeData = WsIncludeData::from_value(data, settings)?;
         // The context segment contains all the context variables used
         // by other parts of the build config
         let mut context: WsContextData = WsContextData::from_value(data)?;
@@ -83,6 +87,7 @@ impl WsBuildData {
             config,
             product,
             bitbake,
+            include,
             context,
             settings: settings.clone(), // for now lets clone it
         })
@@ -143,7 +148,6 @@ impl WsBuildData {
                 Ok((cmd.to_owned(), subcmd))
             })
             .collect::<Result<IndexMap<_, _>, BError>>()?;
-
         Ok(subcmds)
     }
 

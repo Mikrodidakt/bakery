@@ -19,6 +19,7 @@ impl WsConfigData {
     pub fn from_value(data: &Value) -> Result<Self, BError> {
         let version: String = Self::get_str_value("version", &data, None)?;
         let name: String = Self::get_str_value("name", &data, Some(String::from("NA")))?;
+
         Ok(WsConfigData {
             version,
             name,

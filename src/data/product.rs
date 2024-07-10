@@ -20,6 +20,7 @@ impl WsProductData {
         let name: String = Self::get_str_value("name", &data, Some(String::from("NA")))?;
         let description: String = Self::get_str_value("description", &data, Some(String::from("NA")))?;
         let arch: String = Self::get_str_value("arch", &data, Some(String::from("NA")))?;
+
         Ok(WsProductData {
             name,
             arch,
@@ -48,7 +49,7 @@ mod tests {
     #[test]
     fn test_ws_product_data_default() {
         let json_default_build_config = r#"
-        {                                                                                                                   
+        {
             "version": "4"
         }"#;
         let data: WsProductData = WsProductData::from_str(json_default_build_config).expect("Failed to parse product data");
@@ -60,7 +61,7 @@ mod tests {
     #[test]
     fn test_ws_product_data() {
         let json_default_build_config = r#"
-        {                                                                                                                   
+        {
             "version": "4",
             "name": "test-name",
             "description": "test description",
