@@ -35,6 +35,10 @@ impl WsSubCmdHandler {
         let executer: Box<dyn TaskExecuter> = Box::new(SubCmdExecuter::new(cli, &self.data));
         executer.exec(env_variables, dry_run, interactive)
     }
+
+    pub fn data(&self) -> &WsSubCmdData {
+        &self.data
+    }
 }
 
 #[cfg(test)]

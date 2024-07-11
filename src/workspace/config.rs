@@ -1,15 +1,11 @@
 use indexmap::IndexMap;
 use serde_json::Value;
 
-use crate::workspace::{
-    WsSettingsHandler,
-    WsTaskHandler,
-    WsSubCmdHandler,
-};
+use crate::configs::Context;
 use crate::data::{WsBuildData, WsContextData};
 use crate::error::BError;
 use crate::fs::ConfigFileReader;
-use crate::configs::Context;
+use crate::workspace::{WsSettingsHandler, WsSubCmdHandler, WsTaskHandler};
 
 pub struct WsBuildConfigHandler {
     data: WsBuildData,
@@ -29,7 +25,9 @@ impl WsBuildConfigHandler {
         let subcmds: IndexMap<String, WsSubCmdHandler> = build_data.get_subcmds(data)?;
 
         if build_data.version() != "5" {
-            return Err(BError::InvalidBuildConfigError(build_data.version().to_string()));
+            return Err(BError::InvalidBuildConfigError(
+                build_data.version().to_string(),
+            ));
         }
 
         Ok(WsBuildConfigHandler {
@@ -66,9 +64,12 @@ impl WsBuildConfigHandler {
         match self.tasks.get(task) {
             Some(config) => {
                 return Ok(config);
-            },
+            }
             None => {
-                return Err(BError::ValueError(format!("Task '{}' does not exists in build config", task)));
+                return Err(BError::ValueError(format!(
+                    "Task '{}' does not exists in build config",
+                    task
+                )));
             }
         }
     }
@@ -77,22 +78,44 @@ impl WsBuildConfigHandler {
         match self.subcmds.get(cmd) {
             Some(config) => {
                 return Ok(config);
-            },
+            }
             None => {
-                return Err(BError::ValueError(format!("Sub-command '{}' does not exists in build config", cmd)));
+                return Err(BError::ValueError(format!(
+                    "Sub-command '{}' does not exists in build config",
+                    cmd
+                )));
             }
         }
     }
 
-    pub fn transfer_tasks(&mut self, iter: &mut IndexMap<String, WsTaskHandler>) {
+    pub fn transfer_tasks(&mut self, tasks: &mut IndexMap<String, WsTaskHandler>) {
         for (key, value) in self.tasks.drain(..) {
-            iter.insert(key, value);
+            if !tasks.contains_key(&key) {
+                tasks.insert(key, value);
+            }
         }
     }
 
-    pub fn transfer_subcmds(&mut self, iter: &mut IndexMap<String, WsSubCmdHandler>) {
+    pub fn transfer_subcmds(&mut self, subcmds: &mut IndexMap<String, WsSubCmdHandler>) {
         for (key, value) in self.subcmds.drain(..) {
-            iter.insert(key, value);
+            if !subcmds.contains_key(&key) {
+                match subcmds.get(&key) {
+                    Some(cmd) => {
+                        /*
+                         * If the command is the default then we can overwrite it
+                         */
+                        if cmd.data().cmd()
+                            == &format!(
+                                "echo \"INFO: currently no '{}' sub-command defined\"",
+                                cmd.data().name()
+                            )
+                        {
+                            subcmds.insert(key.clone(), value);
+                        }
+                    }
+                    None => {}
+                }
+            }
         }
     }
 
@@ -110,19 +133,27 @@ impl WsBuildConfigHandler {
     }
 
     pub fn deploy(&self) -> &WsSubCmdHandler {
-        &self.subcmd("deploy").expect("Failed to get deploy built-in sub-command")
+        &self
+            .subcmd("deploy")
+            .expect("Failed to get deploy built-in sub-command")
     }
 
     pub fn upload(&self) -> &WsSubCmdHandler {
-        &self.subcmd("upload").expect("Failed to get upload built-in sub-command")
+        &self
+            .subcmd("upload")
+            .expect("Failed to get upload built-in sub-command")
     }
 
     pub fn setup(&self) -> &WsSubCmdHandler {
-        &self.subcmd("setup").expect("Failed to get setup built-in sub-command")
+        &self
+            .subcmd("setup")
+            .expect("Failed to get setup built-in sub-command")
     }
 
     pub fn sync(&self) -> &WsSubCmdHandler {
-        &self.subcmd("sync").expect("Failed to get sync built-in sub-command")
+        &self
+            .subcmd("sync")
+            .expect("Failed to get sync built-in sub-command")
     }
 
     pub fn description(&self) -> &str {
@@ -138,8 +169,10 @@ impl WsBuildConfigHandler {
 mod tests {
     use std::path::PathBuf;
 
-    use crate::workspace::{WsBuildConfigHandler, WsSettingsHandler, WsSubCmdHandler, WsTaskHandler};
     use crate::error::BError;
+    use crate::workspace::{
+        WsBuildConfigHandler, WsSettingsHandler, WsSubCmdHandler, WsTaskHandler,
+    };
 
     #[test]
     fn test_ws_config_default() {
@@ -155,33 +188,88 @@ mod tests {
             "arch": "test-arch"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
-        let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
+        let mut ws_settings: WsSettingsHandler =
+            WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let ws_config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings)
+                .expect("Failed to parse build config");
         assert_eq!(ws_config.build_data().version(), "5".to_string());
         assert_eq!(ws_config.build_data().name(), "test-name".to_string());
-        assert_eq!(ws_config.build_data().product().name(), "test-name".to_string());
-        assert_eq!(ws_config.build_data().product().arch(), "test-arch".to_string());
-        assert_eq!(ws_config.build_data().product().description(), "Test Description".to_string());
+        assert_eq!(
+            ws_config.build_data().product().name(),
+            "test-name".to_string()
+        );
+        assert_eq!(
+            ws_config.build_data().product().arch(),
+            "test-arch".to_string()
+        );
+        assert_eq!(
+            ws_config.build_data().product().description(),
+            "Test Description".to_string()
+        );
         assert_eq!(ws_config.build_data().bitbake().distro(), "NA".to_string());
         assert_eq!(ws_config.build_data().bitbake().machine(), "NA".to_string());
-        assert_eq!(ws_config.build_data().bitbake().build_dir(), PathBuf::from("/workspace/builds/test-name"));
-        assert_eq!(ws_config.build_data().bitbake().build_config_dir(), PathBuf::from("/workspace/builds/test-name/conf"));
-        assert_eq!(ws_config.build_data().bitbake().deploy_dir(), PathBuf::from("/workspace/builds/test-name/tmp/deploy/images"));
-        assert_eq!(ws_config.build_data().bitbake().dl_dir(), PathBuf::from("/workspace/.cache/download"));
-        assert_eq!(ws_config.build_data().bitbake().sstate_dir(), PathBuf::from("/workspace/.cache/test-arch/sstate-cache"));
-        assert_eq!(ws_config.build_data().bitbake().bblayers_conf_path(), PathBuf::from("/workspace/builds/test-name/conf/bblayers.conf"));
+        assert_eq!(
+            ws_config.build_data().bitbake().build_dir(),
+            PathBuf::from("/workspace/builds/test-name")
+        );
+        assert_eq!(
+            ws_config.build_data().bitbake().build_config_dir(),
+            PathBuf::from("/workspace/builds/test-name/conf")
+        );
+        assert_eq!(
+            ws_config.build_data().bitbake().deploy_dir(),
+            PathBuf::from("/workspace/builds/test-name/tmp/deploy/images")
+        );
+        assert_eq!(
+            ws_config.build_data().bitbake().dl_dir(),
+            PathBuf::from("/workspace/.cache/download")
+        );
+        assert_eq!(
+            ws_config.build_data().bitbake().sstate_dir(),
+            PathBuf::from("/workspace/.cache/test-arch/sstate-cache")
+        );
+        assert_eq!(
+            ws_config.build_data().bitbake().bblayers_conf_path(),
+            PathBuf::from("/workspace/builds/test-name/conf/bblayers.conf")
+        );
         assert!(ws_config.build_data().bitbake().bblayers_conf().is_empty());
-        assert_eq!(ws_config.build_data().bitbake().local_conf_path(), PathBuf::from("/workspace/builds/test-name/conf/local.conf"));
+        assert_eq!(
+            ws_config.build_data().bitbake().local_conf_path(),
+            PathBuf::from("/workspace/builds/test-name/conf/local.conf")
+        );
         assert!(!ws_config.build_data().bitbake().local_conf().is_empty());
         let mut conf_str: String = String::new();
-        conf_str.push_str(&format!("MACHINE ?= \"{}\"\n", ws_config.build_data().bitbake().machine()));
-        conf_str.push_str(&format!("PRODUCT_NAME ?= \"{}\"\n", ws_config.build_data().product().name()));
-        conf_str.push_str(&format!("DISTRO ?= \"{}\"\n", ws_config.build_data().bitbake().distro()));
-        conf_str.push_str(&format!("SSTATE_DIR ?= \"{}\"\n", ws_config.build_data().bitbake().sstate_dir().to_str().unwrap()));
-        conf_str.push_str(&format!("DL_DIR ?= \"{}\"\n", ws_config.build_data().bitbake().dl_dir().to_str().unwrap()));
+        conf_str.push_str(&format!(
+            "MACHINE ?= \"{}\"\n",
+            ws_config.build_data().bitbake().machine()
+        ));
+        conf_str.push_str(&format!(
+            "PRODUCT_NAME ?= \"{}\"\n",
+            ws_config.build_data().product().name()
+        ));
+        conf_str.push_str(&format!(
+            "DISTRO ?= \"{}\"\n",
+            ws_config.build_data().bitbake().distro()
+        ));
+        conf_str.push_str(&format!(
+            "SSTATE_DIR ?= \"{}\"\n",
+            ws_config
+                .build_data()
+                .bitbake()
+                .sstate_dir()
+                .to_str()
+                .unwrap()
+        ));
+        conf_str.push_str(&format!(
+            "DL_DIR ?= \"{}\"\n",
+            ws_config.build_data().bitbake().dl_dir().to_str().unwrap()
+        ));
         assert_eq!(ws_config.build_data().bitbake().local_conf(), conf_str);
-        assert_eq!(ws_config.build_data().bitbake().docker_image(), "NA".to_string());
-
+        assert_eq!(
+            ws_config.build_data().bitbake().docker_image(),
+            "NA".to_string()
+        );
     }
 
     #[test]
@@ -206,10 +294,16 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
-        let mut ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
+        let mut ws_settings: WsSettingsHandler =
+            WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let mut ws_config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings)
+                .expect("Failed to parse build config");
         ws_config.expand_ctx().unwrap();
-        assert_eq!(ws_config.build_data().bitbake().docker_image(), "test-registry/test-image:0.1");
+        assert_eq!(
+            ws_config.build_data().bitbake().docker_image(),
+            "test-registry/test-image:0.1"
+        );
     }
 
     #[test]
@@ -226,8 +320,11 @@ mod tests {
             "arch": "test-arch"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
-        let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
+        let mut ws_settings: WsSettingsHandler =
+            WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let ws_config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings)
+                .expect("Failed to parse build config");
         assert!(ws_config.tasks().is_empty());
     }
 
@@ -312,17 +409,21 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
-        let mut ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
+        let mut ws_settings: WsSettingsHandler =
+            WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let mut ws_config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings)
+                .expect("Failed to parse build config");
         ws_config.expand_ctx().unwrap();
         for mut i in 1..9 {
-            let result: Result<&WsTaskHandler, BError> = ws_config.task(format!("task{}", i).as_str());
+            let result: Result<&WsTaskHandler, BError> =
+                ws_config.task(format!("task{}", i).as_str());
             match result {
                 Ok(task) => {
                     if !task.data().condition() {
                         panic!("Failed to evaluate condition nbr {}", i);
                     }
-                },
+                }
                 Err(e) => {
                     panic!("{}", e.to_string());
                 }
@@ -364,11 +465,20 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
-        let mut ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
+        let mut ws_settings: WsSettingsHandler =
+            WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let mut ws_config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings)
+                .expect("Failed to parse build config");
         ws_config.expand_ctx().unwrap();
-        assert_eq!(ws_config.task("task1").unwrap().data().build_dir(), &PathBuf::from("/workspace/task1/build/dir"));
-        assert_eq!(ws_config.task("task2").unwrap().data().build_dir(), &PathBuf::from("/workspace/builds/test-name"));
+        assert_eq!(
+            ws_config.task("task1").unwrap().data().build_dir(),
+            &PathBuf::from("/workspace/task1/build/dir")
+        );
+        assert_eq!(
+            ws_config.task("task2").unwrap().data().build_dir(),
+            &PathBuf::from("/workspace/builds/test-name")
+        );
     }
 
     #[test]
@@ -408,19 +518,31 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
-        let mut ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
+        let mut ws_settings: WsSettingsHandler =
+            WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let mut ws_config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings)
+                .expect("Failed to parse build config");
         ws_config.expand_ctx().unwrap();
-        assert_eq!(ws_config.task("task1").unwrap().data().build_dir(), &PathBuf::from("/workspace/test/task1/build/dir"));
-        assert_eq!(ws_config.task("task2").unwrap().data().build_dir(), &PathBuf::from("/workspace/builds/test-name"));
+        assert_eq!(
+            ws_config.task("task1").unwrap().data().build_dir(),
+            &PathBuf::from("/workspace/test/task1/build/dir")
+        );
+        assert_eq!(
+            ws_config.task("task2").unwrap().data().build_dir(),
+            &PathBuf::from("/workspace/builds/test-name")
+        );
         {
             let result: Result<&WsTaskHandler, BError> = ws_config.task("task3");
             match result {
                 Ok(_task) => {
                     panic!("We should have recived an error because we have no task3 defined!");
-                },
+                }
                 Err(e) => {
-                    assert_eq!(e.to_string(), "Task 'task3' does not exists in build config".to_string());
+                    assert_eq!(
+                        e.to_string(),
+                        "Task 'task3' does not exists in build config".to_string()
+                    );
                 }
             }
         }
@@ -481,13 +603,19 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
-        let ws_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings).expect("Failed to parse build config");
+        let mut ws_settings: WsSettingsHandler =
+            WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let ws_config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings)
+                .expect("Failed to parse build config");
 
         let mut i: i32 = 0;
         ws_config.tasks().iter().for_each(|(name, task)| {
             assert_eq!(name, &format!("task{}", i));
-            assert_eq!(task.data().build_dir(), &PathBuf::from(format!("/workspace/test/task{}", i)));
+            assert_eq!(
+                task.data().build_dir(),
+                &PathBuf::from(format!("/workspace/test/task{}", i))
+            );
             assert_eq!(task.data().build_cmd(), &format!("cmd{}", i));
             assert_eq!(task.data().clean_cmd(), &format!("clean{}", i));
             task.artifacts().iter().for_each(|a| {
@@ -511,15 +639,20 @@ mod tests {
             "arch": "test-arch"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let mut ws_settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
-        let result: Result<WsBuildConfigHandler, BError> = WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings);
+        let mut ws_settings: WsSettingsHandler =
+            WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let result: Result<WsBuildConfigHandler, BError> =
+            WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings);
         match result {
             Ok(_cfg) => {
                 assert!(false, "Expected an error");
             }
             Err(err) => {
-                assert_eq!("The build config version '4' is not compatible with current bakery version. \
-                    Update config to match the format of version '5'", err.to_string());
+                assert_eq!(
+                    "The build config version '4' is not compatible with current bakery version. \
+                    Update config to match the format of version '5'",
+                    err.to_string()
+                );
             }
         }
     }

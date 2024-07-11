@@ -31,7 +31,7 @@ impl WsSubCmdData {
     }
 
     pub fn new(name: &str, data: &Value) -> Result<Self, BError> {
-        let cmd: String = Self::get_str_value("cmd", data, Some(format!("echo \"INFO: currently no '{}' task defined\"", name)))?;
+        let cmd: String = Self::get_str_value("cmd", data, Some(format!("echo \"INFO: currently no '{}' sub-command defined\"", name)))?;
         let docker: String = Self::get_str_value("docker", data, Some(String::from("NA")))?;
 
         Ok(WsSubCmdData {
@@ -50,6 +50,10 @@ impl WsSubCmdData {
     pub fn cmd(&self) -> &String {
         &self.cmd
     }
+
+    pub fn name(&self) -> &String {
+        &self.name
+    }
 }
 
 #[cfg(test)]
@@ -64,7 +68,7 @@ mod tests {
         {
         }"#;
         let data: WsSubCmdData = WsSubCmdData::from_str("deploy", json_build_config).expect("Failed to parse config data");
-        assert_eq!(data.cmd(), "echo \"INFO: currently no 'deploy' task defined\"");
+        assert_eq!(data.cmd(), "echo \"INFO: currently no 'deploy' sub-command defined\"");
     }
 
     #[test]
