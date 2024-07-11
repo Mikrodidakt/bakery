@@ -69,7 +69,7 @@ impl WsConfigFileHandler {
         for config in main_config.build_data().included_configs().iter() {
             let cfg_json: String = ConfigFileReader::new(config).read_json()?;
             let mut cfg: WsBuildConfigHandler = WsBuildConfigHandler::from_str(&cfg_json, settings)?;
-            main_config.extend(&mut cfg);
+            main_config.merge(&mut cfg);
         }
 
         return Ok(main_config);
@@ -119,7 +119,7 @@ mod tests {
 
     use crate::helper::Helper;
     use crate::configs::WsConfigFileHandler;
-    use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
+    use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, WsTaskHandler, WsSubCmdHandler};
     use crate::error::BError;
 
     fn write_json_conf(path: &PathBuf, json_str: &str) {
@@ -287,5 +287,122 @@ mod tests {
         write_json_conf(&settings.configs_dir().join("test.json"),  build_conf_configs_dir);
         let config: WsBuildConfigHandler = cfg_handler.build_config("test", &settings).expect("Failed parse build config");
         assert_eq!(config.build_data().name(), "ws-configs-build-config");
+    }
+
+    #[test]
+    fn test_cfg_handler_ws_include_configs() {
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: PathBuf = PathBuf::from(temp_dir.path()).join("workspace");
+        let home_dir: PathBuf = PathBuf::from(temp_dir.path()).join("home");
+        let cfg_handler: WsConfigFileHandler = WsConfigFileHandler::new(&work_dir, &home_dir);
+        let settings: WsSettingsHandler = cfg_handler.ws_settings().expect("Failed parse workspace settings");
+        Helper::setup_test_ws_default_dirs(&work_dir);
+        let main_build_config = r#"
+        {
+            "version": "5",
+            "name": "main-build-config",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "include": [
+                "config1",
+                "config2"
+            ],
+            "tasks": {
+                "task0": {
+                    "index": "0",
+                    "name": "task0",
+                    "type": "non-bitbake",
+                    "builddir": "test/main",
+                    "build": "main",
+                    "clean": "main",
+                    "artifacts": [
+                        {
+                            "source": "test/main-file.txt"
+                        }
+                    ]
+                }
+            },
+            "setup": {
+                "cmd": "main"
+            }
+        }"#;
+        write_json_conf(&settings.work_dir().join("main.json"),  main_build_config);
+        let build_config1 = r#"
+        {
+            "version": "5",
+            "tasks": {
+                "task0": {
+                    "index": "0",
+                    "name": "task0",
+                    "type": "non-bitbake",
+                    "builddir": "test/config1",
+                    "build": "config1",
+                    "clean": "config1",
+                    "artifacts": [
+                        {
+                            "source": "test/config.txt"
+                        }
+                    ]
+                },
+                "task1": {
+                    "index": "1",
+                    "name": "task1",
+                    "type": "non-bitbake",
+                    "builddir": "test/config1",
+                    "build": "config1",
+                    "clean": "config1",
+                    "artifacts": [
+                        {
+                            "source": "test/config.txt"
+                        }
+                    ]
+                }
+            },
+            "setup": {
+                "cmd": "config1"
+            },
+            "sync": {
+                "cmd": "config1"
+            }
+        }"#;
+        write_json_conf(&settings.include_dir().join("config1.json"),  build_config1);
+        let build_config2 = r#"
+        {
+            "version": "5",
+            "tasks": {
+                "task2": {
+                    "index": "2",
+                    "name": "task2",
+                    "type": "non-bitbake",
+                    "builddir": "test/config2",
+                    "build": "config2",
+                    "clean": "config2",
+                    "artifacts": [
+                        {
+                            "source": "test/config.txt"
+                        }
+                    ]
+                }
+            },
+            "upload": {
+                "cmd": "config2"
+            }
+        }"#;
+        write_json_conf(&settings.include_dir().join("config2.json"),  build_config2);
+        let config: WsBuildConfigHandler = cfg_handler.build_config("main", &settings).expect("Failed parse build config");
+        assert_eq!(config.build_data().name(), "main-build-config");
+        let t0: &WsTaskHandler = config.tasks().get("task0").unwrap();
+        assert_eq!(t0.data().build_cmd(), "main");
+        let t1: &WsTaskHandler = config.tasks().get("task1").unwrap();
+        assert_eq!(t1.data().build_cmd(), "config1");
+        let t2: &WsTaskHandler = config.tasks().get("task2").unwrap();
+        assert_eq!(t2.data().build_cmd(), "config2");
+        let setup: &WsSubCmdHandler = config.subcmds().get("setup").unwrap();
+        assert_eq!(setup.data().cmd(), "main");
+        let sync: &WsSubCmdHandler = config.subcmds().get("sync").unwrap();
+        assert_eq!(sync.data().cmd(), "config1");
+        let upload: &WsSubCmdHandler = config.subcmds().get("upload").unwrap();
+        assert_eq!(upload.data().cmd(), "config2");
     }
 }

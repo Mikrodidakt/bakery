@@ -99,6 +99,8 @@ impl WsBuildConfigHandler {
     pub fn transfer_subcmds(&mut self, subcmds: &mut IndexMap<String, WsSubCmdHandler>) {
         for (key, value) in self.subcmds.drain(..) {
             if !subcmds.contains_key(&key) {
+                subcmds.insert(key.clone(), value);
+            } else {
                 match subcmds.get(&key) {
                     Some(cmd) => {
                         /*
@@ -119,7 +121,7 @@ impl WsBuildConfigHandler {
         }
     }
 
-    pub fn extend(&mut self, cfg: &mut WsBuildConfigHandler) {
+    pub fn merge(&mut self, cfg: &mut WsBuildConfigHandler) {
         cfg.transfer_tasks(&mut self.tasks);
         cfg.transfer_subcmds(&mut self.subcmds);
     }
@@ -655,5 +657,124 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn test_ws_config_extend() {
+        let json_settings = r#"
+        {
+            "version": "4"
+        }"#;
+        let json_main_build_config = r#"
+        {
+            "version": "5",
+            "name": "main",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "tasks": {
+                "task0": {
+                    "index": "0",
+                    "name": "task0",
+                    "type": "non-bitbake",
+                    "builddir": "test/main",
+                    "build": "main",
+                    "clean": "main",
+                    "artifacts": [
+                        {
+                            "source": "test/main-file.txt"
+                        }
+                    ]
+                }
+            },
+            "setup": {
+                "cmd": "main"
+            }
+        }"#;
+        let json_include_config1 = r#"
+        {
+            "version": "5",
+            "tasks": {
+                "task0": {
+                    "index": "0",
+                    "name": "task0",
+                    "type": "non-bitbake",
+                    "builddir": "test/config1",
+                    "build": "config1",
+                    "clean": "config1",
+                    "artifacts": [
+                        {
+                            "source": "test/config.txt"
+                        }
+                    ]
+                },
+                "task1": {
+                    "index": "1",
+                    "name": "task1",
+                    "type": "non-bitbake",
+                    "builddir": "test/config1",
+                    "build": "config1",
+                    "clean": "config1",
+                    "artifacts": [
+                        {
+                            "source": "test/config.txt"
+                        }
+                    ]
+                }
+            },
+            "setup": {
+                "cmd": "config1"
+            },
+            "sync": {
+                "cmd": "config1"
+            }
+        }"#;
+        let json_include_config2 = r#"
+        {
+            "version": "5",
+            "tasks": {
+                "task2": {
+                    "index": "2",
+                    "name": "task2",
+                    "type": "non-bitbake",
+                    "builddir": "test/config2",
+                    "build": "config2",
+                    "clean": "config2",
+                    "artifacts": [
+                        {
+                            "source": "test/config.txt"
+                        }
+                    ]
+                }
+            },
+            "upload": {
+                "cmd": "config2"
+            }
+        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let mut ws_settings: WsSettingsHandler =
+            WsSettingsHandler::from_str(&work_dir, json_settings).unwrap();
+        let mut ws_main_config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_main_build_config, &mut ws_settings)
+                .expect("Failed to parse build config");
+        let mut ws_include_config1: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_include_config1, &mut ws_settings)
+                .expect("Failed to parse build config");
+        let mut ws_include_config2: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_include_config2, &mut ws_settings)
+                .expect("Failed to parse build config");
+        ws_main_config.merge(&mut ws_include_config1);
+        ws_main_config.merge(&mut ws_include_config2);
+        let t0: &WsTaskHandler = ws_main_config.tasks().get("task0").unwrap();
+        assert_eq!(t0.data().build_cmd(), "main");
+        let t1: &WsTaskHandler = ws_main_config.tasks().get("task1").unwrap();
+        assert_eq!(t1.data().build_cmd(), "config1");
+        let t2: &WsTaskHandler = ws_main_config.tasks().get("task2").unwrap();
+        assert_eq!(t2.data().build_cmd(), "config2");
+        let setup: &WsSubCmdHandler = ws_main_config.subcmds().get("setup").unwrap();
+        assert_eq!(setup.data().cmd(), "main");
+        let sync: &WsSubCmdHandler = ws_main_config.subcmds().get("sync").unwrap();
+        assert_eq!(sync.data().cmd(), "config1");
+        let upload: &WsSubCmdHandler = ws_main_config.subcmds().get("upload").unwrap();
+        assert_eq!(upload.data().cmd(), "config2");
     }
 }
