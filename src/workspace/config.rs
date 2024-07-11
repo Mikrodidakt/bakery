@@ -660,7 +660,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ws_config_extend() {
+    fn test_ws_config_merge() {
         let json_settings = r#"
         {
             "version": "4"
