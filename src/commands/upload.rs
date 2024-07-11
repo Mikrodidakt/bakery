@@ -5,7 +5,7 @@ use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
 use crate::workspace::Workspace;
 use crate::data::WsContextData;
-use crate::workspace::WsSubCmdHandler;
+use crate::workspace::WsCustomSubCmdHandler;
 use crate::executers::Docker;
 
 static BCOMMAND: &str = "upload";
@@ -63,7 +63,7 @@ impl BCommand for UploadCommand {
 
       workspace.update_ctx(&context)?;
 
-      let upload: &WsSubCmdHandler = workspace.config().upload();
+      let upload: &WsCustomSubCmdHandler = workspace.config().upload();
       upload.run(cli, &cli.env(), false, self.cmd.interactive)
   }
 }

@@ -1,27 +1,27 @@
 use crate::error::BError;
-use crate::executers::{SubCmdExecuter, TaskExecuter};
+use crate::executers::{CustomSubCmdExecuter, TaskExecuter};
 use crate::fs::ConfigFileReader;
 use crate::configs::Context;
-use crate::data::WsSubCmdData;
+use crate::data::WsCustomSubCmdData;
 use crate::cli::Cli;
 
 use serde_json::Value;
 use std::collections::HashMap;
 
-pub struct WsSubCmdHandler {
-    data: WsSubCmdData,
+pub struct WsCustomSubCmdHandler {
+    data: WsCustomSubCmdData,
 }
 
-impl WsSubCmdHandler {
+impl WsCustomSubCmdHandler {
     pub fn from_str(name: &str, json_config: &str) -> Result<Self, BError> {
         let data: Value = ConfigFileReader::parse(json_config)?;
         Self::new(name, &data)
     }
 
     pub fn new(name: &str, data: &Value) -> Result<Self, BError> {
-        let taskcmd_data: WsSubCmdData = WsSubCmdData::from_value(name, data)?;
+        let taskcmd_data: WsCustomSubCmdData = WsCustomSubCmdData::from_value(name, data)?;
 
-        Ok(WsSubCmdHandler {
+        Ok(WsCustomSubCmdHandler {
           data: taskcmd_data,
         })
     }
@@ -32,18 +32,18 @@ impl WsSubCmdHandler {
     }
 
     pub fn run<'a>(&self, cli: &'a Cli, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
-        let executer: Box<dyn TaskExecuter> = Box::new(SubCmdExecuter::new(cli, &self.data));
+        let executer: Box<dyn TaskExecuter> = Box::new(CustomSubCmdExecuter::new(cli, &self.data));
         executer.exec(env_variables, dry_run, interactive)
     }
 
-    pub fn data(&self) -> &WsSubCmdData {
+    pub fn data(&self) -> &WsCustomSubCmdData {
         &self.data
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::workspace::WsSubCmdHandler;
+    use crate::workspace::WsCustomSubCmdHandler;
 
     use std::collections::HashMap;
     use crate::cli::*;
@@ -54,7 +54,7 @@ mod tests {
         {
             "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
         }"#;
-        let handler: WsSubCmdHandler = WsSubCmdHandler::from_str("deploy", json_build_config).expect("Failed to parse build config");
+        let handler: WsCustomSubCmdHandler = WsCustomSubCmdHandler::from_str("deploy", json_build_config).expect("Failed to parse build config");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()

@@ -119,7 +119,7 @@ mod tests {
 
     use crate::helper::Helper;
     use crate::configs::WsConfigFileHandler;
-    use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, WsTaskHandler, WsSubCmdHandler};
+    use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, WsTaskHandler, WsCustomSubCmdHandler};
     use crate::error::BError;
 
     fn write_json_conf(path: &PathBuf, json_str: &str) {
@@ -398,11 +398,11 @@ mod tests {
         assert_eq!(t1.data().build_cmd(), "config1");
         let t2: &WsTaskHandler = config.tasks().get("task2").unwrap();
         assert_eq!(t2.data().build_cmd(), "config2");
-        let setup: &WsSubCmdHandler = config.subcmds().get("setup").unwrap();
+        let setup: &WsCustomSubCmdHandler = config.subcmds().get("setup").unwrap();
         assert_eq!(setup.data().cmd(), "main");
-        let sync: &WsSubCmdHandler = config.subcmds().get("sync").unwrap();
+        let sync: &WsCustomSubCmdHandler = config.subcmds().get("sync").unwrap();
         assert_eq!(sync.data().cmd(), "config1");
-        let upload: &WsSubCmdHandler = config.subcmds().get("upload").unwrap();
+        let upload: &WsCustomSubCmdHandler = config.subcmds().get("upload").unwrap();
         assert_eq!(upload.data().cmd(), "config2");
     }
 }

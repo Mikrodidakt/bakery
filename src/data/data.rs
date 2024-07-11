@@ -5,7 +5,7 @@ use chrono;
 
 use crate::configs::Context;
 use crate::error::BError;
-use crate::workspace::{WsArtifactsHandler, WsSettingsHandler, WsTaskHandler, WsSubCmdHandler};
+use crate::workspace::{WsArtifactsHandler, WsSettingsHandler, WsTaskHandler, WsCustomSubCmdHandler};
 use crate::fs::ConfigFileReader;
 use crate::data::{WsConfigData, WsProductData, WsBitbakeData, WsContextData, WsIncludeData};
 use crate::data::context;
@@ -140,11 +140,11 @@ impl WsBuildData {
         }
     }
 
-    pub fn get_subcmds(&self, data: &Value) -> Result<IndexMap<String, WsSubCmdHandler>, BError> {
+    pub fn get_subcmds(&self, data: &Value) -> Result<IndexMap<String, WsCustomSubCmdHandler>, BError> {
         let names = ["deploy", "upload", "setup", "sync"];
-        let subcmds: IndexMap<String, WsSubCmdHandler> = names.iter()
+        let subcmds: IndexMap<String, WsCustomSubCmdHandler> = names.iter()
             .map(|&cmd| {
-                let subcmd: WsSubCmdHandler = WsSubCmdHandler::new(cmd, data)?;
+                let subcmd: WsCustomSubCmdHandler = WsCustomSubCmdHandler::new(cmd, data)?;
                 Ok((cmd.to_owned(), subcmd))
             })
             .collect::<Result<IndexMap<_, _>, BError>>()?;

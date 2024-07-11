@@ -3,7 +3,7 @@ use indexmap::{IndexMap, indexmap};
 
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
-use crate::workspace::{Workspace, WsSubCmdHandler};
+use crate::workspace::{Workspace, WsCustomSubCmdHandler};
 use crate::data::{WsContextData, CTX_KEY_IMAGE, CTX_KEY_DEVICE};
 
 static BCOMMAND: &str = "deploy";
@@ -68,7 +68,7 @@ impl BCommand for DeployCommand {
          */
         workspace.update_ctx(&context)?;
 
-        let deploy: &WsSubCmdHandler = workspace.config().deploy();
+        let deploy: &WsCustomSubCmdHandler = workspace.config().deploy();
         deploy.run(cli, &cli.env(), false, self.cmd.interactive)
     }
 }

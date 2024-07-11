@@ -3,11 +3,11 @@ pub mod settings;
 pub mod config;
 pub mod tasks;
 pub mod artifact;
-pub mod subcmd;
+pub mod customsubcmd;
 
 pub use workspace::Workspace;
 pub use settings::WsSettingsHandler;
 pub use config::WsBuildConfigHandler;
 pub use tasks::WsTaskHandler;
 pub use artifact::WsArtifactsHandler;
-pub use subcmd::WsSubCmdHandler;
+pub use customsubcmd::WsCustomSubCmdHandler;

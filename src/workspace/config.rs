@@ -5,12 +5,12 @@ use crate::configs::Context;
 use crate::data::{WsBuildData, WsContextData};
 use crate::error::BError;
 use crate::fs::ConfigFileReader;
-use crate::workspace::{WsSettingsHandler, WsSubCmdHandler, WsTaskHandler};
+use crate::workspace::{WsSettingsHandler, WsCustomSubCmdHandler, WsTaskHandler};
 
 pub struct WsBuildConfigHandler {
     data: WsBuildData,
     tasks: IndexMap<String, WsTaskHandler>,
-    subcmds: IndexMap<String, WsSubCmdHandler>,
+    subcmds: IndexMap<String, WsCustomSubCmdHandler>,
 }
 
 impl WsBuildConfigHandler {
@@ -22,7 +22,7 @@ impl WsBuildConfigHandler {
     pub fn new(data: &Value, settings: &WsSettingsHandler) -> Result<Self, BError> {
         let build_data: WsBuildData = WsBuildData::new(data, settings)?;
         let tasks: IndexMap<String, WsTaskHandler> = build_data.get_tasks(data)?;
-        let subcmds: IndexMap<String, WsSubCmdHandler> = build_data.get_subcmds(data)?;
+        let subcmds: IndexMap<String, WsCustomSubCmdHandler> = build_data.get_subcmds(data)?;
 
         if build_data.version() != "5" {
             return Err(BError::InvalidBuildConfigError(
@@ -74,7 +74,7 @@ impl WsBuildConfigHandler {
         }
     }
 
-    pub fn subcmd(&self, cmd: &str) -> Result<&WsSubCmdHandler, BError> {
+    pub fn subcmd(&self, cmd: &str) -> Result<&WsCustomSubCmdHandler, BError> {
         match self.subcmds.get(cmd) {
             Some(config) => {
                 return Ok(config);
@@ -96,7 +96,7 @@ impl WsBuildConfigHandler {
         }
     }
 
-    pub fn transfer_subcmds(&mut self, subcmds: &mut IndexMap<String, WsSubCmdHandler>) {
+    pub fn transfer_subcmds(&mut self, subcmds: &mut IndexMap<String, WsCustomSubCmdHandler>) {
         for (key, value) in self.subcmds.drain(..) {
             if !subcmds.contains_key(&key) {
                 subcmds.insert(key.clone(), value);
@@ -130,29 +130,29 @@ impl WsBuildConfigHandler {
         &self.tasks
     }
 
-    pub fn subcmds(&self) -> &IndexMap<String, WsSubCmdHandler> {
+    pub fn subcmds(&self) -> &IndexMap<String, WsCustomSubCmdHandler> {
         &self.subcmds
     }
 
-    pub fn deploy(&self) -> &WsSubCmdHandler {
+    pub fn deploy(&self) -> &WsCustomSubCmdHandler {
         &self
             .subcmd("deploy")
             .expect("Failed to get deploy built-in sub-command")
     }
 
-    pub fn upload(&self) -> &WsSubCmdHandler {
+    pub fn upload(&self) -> &WsCustomSubCmdHandler {
         &self
             .subcmd("upload")
             .expect("Failed to get upload built-in sub-command")
     }
 
-    pub fn setup(&self) -> &WsSubCmdHandler {
+    pub fn setup(&self) -> &WsCustomSubCmdHandler {
         &self
             .subcmd("setup")
             .expect("Failed to get setup built-in sub-command")
     }
 
-    pub fn sync(&self) -> &WsSubCmdHandler {
+    pub fn sync(&self) -> &WsCustomSubCmdHandler {
         &self
             .subcmd("sync")
             .expect("Failed to get sync built-in sub-command")
@@ -173,7 +173,7 @@ mod tests {
 
     use crate::error::BError;
     use crate::workspace::{
-        WsBuildConfigHandler, WsSettingsHandler, WsSubCmdHandler, WsTaskHandler,
+        WsBuildConfigHandler, WsSettingsHandler, WsCustomSubCmdHandler, WsTaskHandler,
     };
 
     #[test]
@@ -770,11 +770,11 @@ mod tests {
         assert_eq!(t1.data().build_cmd(), "config1");
         let t2: &WsTaskHandler = ws_main_config.tasks().get("task2").unwrap();
         assert_eq!(t2.data().build_cmd(), "config2");
-        let setup: &WsSubCmdHandler = ws_main_config.subcmds().get("setup").unwrap();
+        let setup: &WsCustomSubCmdHandler = ws_main_config.subcmds().get("setup").unwrap();
         assert_eq!(setup.data().cmd(), "main");
-        let sync: &WsSubCmdHandler = ws_main_config.subcmds().get("sync").unwrap();
+        let sync: &WsCustomSubCmdHandler = ws_main_config.subcmds().get("sync").unwrap();
         assert_eq!(sync.data().cmd(), "config1");
-        let upload: &WsSubCmdHandler = ws_main_config.subcmds().get("upload").unwrap();
+        let upload: &WsCustomSubCmdHandler = ws_main_config.subcmds().get("upload").unwrap();
         assert_eq!(upload.data().cmd(), "config2");
     }
 }
