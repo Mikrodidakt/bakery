@@ -110,6 +110,7 @@ impl WsTaskData {
         self.build = ctx.expand_str(&self.build)?;
         self.clean = ctx.expand_str(&self.clean)?;
         self.condition = ctx.expand_str(&self.condition)?;
+        self.disabled = ctx.expand_str(&self.disabled)?;
         for r in self.recipes.iter_mut() {
             *r = ctx.expand_str(r)?;
         }

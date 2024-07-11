@@ -43,13 +43,13 @@ impl BCommand for ListCommand {
         let ctx: bool = self.get_arg_flag(cli, "ctx", BCOMMAND)?;
         if config == "NA" { // default value if not specified
             // If no config is specified then we will list all supported build configs
-            cli.stdout(format!("{:<15} {:<52}", "NAME", "DESCRIPTION"));
+            cli.stdout(format!("{:<25} {:<52}", "NAME", "DESCRIPTION"));
             workspace
                 .build_configs()
                 .iter()
                 .for_each(|(path, description)| {
                     cli.stdout(format!(
-                        "{:<15} - {:<50}",
+                        "{:<25} - {:<50}",
                         path.file_stem().unwrap().to_string_lossy(),
                         description
                     ));
@@ -57,6 +57,7 @@ impl BCommand for ListCommand {
         } else {
             // List all tasks for a build config
             if workspace.valid_config(config.as_str()) {
+                workspace.expand_ctx()?;
                 cli.stdout(format!("name: {}\narch: {}\nmachine: {}\ndescription: {}\n",
                     workspace.config().build_data().name(),
                     workspace.config().build_data().product().arch(),
@@ -64,7 +65,6 @@ impl BCommand for ListCommand {
                     workspace.config().build_data().product().description()));
 
                 if ctx {
-                    workspace.expand_ctx()?;
                     let variables: IndexMap<String, String> = workspace.context()?;
                     cli.stdout("Context variables:".to_string());
                     variables.iter().for_each(|(key, value)| {
