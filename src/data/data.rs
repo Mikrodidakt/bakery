@@ -151,6 +151,10 @@ impl WsBuildData {
         Ok(subcmds)
     }
 
+    pub fn included_configs(&self) -> Vec<PathBuf> {
+        self.include.configs().clone()
+    }
+
     pub fn name(&self) -> &str {
         self.config.name()
     }

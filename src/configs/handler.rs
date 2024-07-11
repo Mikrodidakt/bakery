@@ -4,6 +4,8 @@ use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
 use crate::fs::ConfigFileReader;
 use crate::error::BError;
 
+use super::Config;
+
 const WORKSPACE_SETTINGS: &str = "workspace.json";
 
 pub struct WsConfigFileHandler {
@@ -55,15 +57,32 @@ impl WsConfigFileHandler {
         return WsSettingsHandler::from_str(&self.work_dir, default_settings);
     }
 
-    pub fn build_config(self, name: &str, settings: &WsSettingsHandler) -> Result<WsBuildConfigHandler, BError> {
+    pub fn setup_build_config(&self, path: &PathBuf, settings: &WsSettingsHandler) -> Result<WsBuildConfigHandler, BError> {
+        let build_config_json: String = ConfigFileReader::new(&path).read_json()?;
+        let mut main_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(&build_config_json, settings)?;
+
+        /*
+         * Iterate over any included build config and extend the main build config with the included
+         * build configs. Currently the included build configs will only extend the main config with
+         * the tasks and the any of the built-in sub-commands sync, setup, upload, deploy
+         */
+        for config in main_config.build_data().included_configs().iter() {
+            let cfg_json: String = ConfigFileReader::new(config).read_json()?;
+            let mut cfg: WsBuildConfigHandler = WsBuildConfigHandler::from_str(&cfg_json, settings)?;
+            main_config.extend(&mut cfg);
+        }
+
+        return Ok(main_config);
+    }
+
+    pub fn build_config(&self, name: &str, settings: &WsSettingsHandler) -> Result<WsBuildConfigHandler, BError> {
         let mut build_config: PathBuf = PathBuf::from(name);
         build_config.set_extension("json");
         let mut path: PathBuf = settings.work_dir().join(build_config.clone());
 
         /* We start by looking for the build config in the workspace/work directory */
         if path.exists() {
-            let build_config_json: String = ConfigFileReader::new(&path).read_json()?;
-            return WsBuildConfigHandler::from_str(&build_config_json, settings);
+            return self.setup_build_config(&path, settings);
         }
 
         /*
@@ -72,8 +91,7 @@ impl WsConfigFileHandler {
          */
         path = settings.configs_dir().join(build_config.clone());
         if path.exists() {
-            let build_config_json: String = ConfigFileReader::new(&path).read_json()?;
-            return WsBuildConfigHandler::from_str(&build_config_json, settings);
+            return self.setup_build_config(&path, settings);
         }
 
         /* TODO: we should remove this and most likely refactor the code so that the sub-commands are responsible for the build config */

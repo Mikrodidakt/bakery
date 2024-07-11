@@ -1,11 +1,12 @@
 use serde_json::Value;
+use std::path::PathBuf;
 
 use crate::error::BError;
 use crate::configs::Config;
 use crate::workspace::WsSettingsHandler;
 
 pub struct WsIncludeData {
-    includes: Vec<String>,
+    configs: Vec<PathBuf>,
 }
 
 impl Config for WsIncludeData {}
@@ -17,10 +18,20 @@ impl WsIncludeData {
     }
 
     pub fn from_value(data: &Value, settings: &WsSettingsHandler) -> Result<Self, BError> {
-        let includes: Vec<String> = Self::get_array_value("includes", data, Some(vec![]))?;
+        let configs: Vec<String> = Self::get_array_value("include", data, Some(vec![]))?;
+        let paths: Vec<PathBuf> = configs.iter()
+            .map(|config| {
+                let path: PathBuf = settings.include_dir().join(PathBuf::from(format!("{}.json", config)));
+                Ok(path)
+            })
+            .collect::<Result<Vec<_>, BError>>()?;
 
         Ok(WsIncludeData {
-            includes,
+            configs: paths,
         })
+    }
+
+    pub fn configs(&self) -> &Vec<PathBuf> {
+        &self.configs
     }
 }

@@ -84,6 +84,23 @@ impl WsBuildConfigHandler {
         }
     }
 
+    pub fn transfer_tasks(&mut self, iter: &mut IndexMap<String, WsTaskHandler>) {
+        for (key, value) in self.tasks.drain(..) {
+            iter.insert(key, value);
+        }
+    }
+
+    pub fn transfer_subcmds(&mut self, iter: &mut IndexMap<String, WsSubCmdHandler>) {
+        for (key, value) in self.subcmds.drain(..) {
+            iter.insert(key, value);
+        }
+    }
+
+    pub fn extend(&mut self, cfg: &mut WsBuildConfigHandler) {
+        cfg.transfer_tasks(&mut self.tasks);
+        cfg.transfer_subcmds(&mut self.subcmds);
+    }
+
     pub fn tasks(&self) -> &IndexMap<String, WsTaskHandler> {
         &self.tasks
     }
