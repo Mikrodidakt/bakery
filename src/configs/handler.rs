@@ -67,7 +67,14 @@ impl WsConfigFileHandler {
          * the tasks and the any of the built-in sub-commands sync, setup, upload, deploy
          */
         for config in main_config.build_data().included_configs().iter() {
-            let cfg_json: String = ConfigFileReader::new(config).read_json()?;
+            let cfg_include_json: String = ConfigFileReader::new(config).read_json()?;
+            let cfg_bitbake_json: String = main_config.build_data().bitbake().to_string();
+            /*
+             * The included build config does not and shot not contain anything but the tasks and custome sub commands but because
+             * each task is handling it's own build dir which is setup by the bb segment we need to inject the bb to the WsBuildConfigHandler
+             * string.
+             */
+            let cfg_json: String = format!("{},{}}}", cfg_include_json.trim_end().trim_end_matches('}').trim_start(), cfg_bitbake_json);
             let mut cfg: WsBuildConfigHandler = WsBuildConfigHandler::from_str(&cfg_json, settings)?;
             main_config.merge(&mut cfg);
         }
@@ -304,6 +311,23 @@ mod tests {
             "name": "main-build-config",
             "description": "Test Description",
             "arch": "test-arch",
+            "bb": {
+                "machine": "test-machine",
+                "distro": "test-distro",
+                "deploydir": "tmp/test/deploy",
+                "docker": "test-registry/test-image:0.1",
+                "initenv": "layers/test/oe-my-init-env",
+                "bblayersconf": [
+                    "BB_LAYERS_CONF_TEST_LINE_1",
+                    "BB_LAYERS_CONF_TEST_LINE_2",
+                    "BB_LAYERS_CONF_TEST_LINE_3"
+                ],
+                "localconf": [
+                    "BB_LOCAL_CONF_TEST_LINE_1",
+                    "BB_LOCAL_CONF_TEST_LINE_2",
+                    "BB_LOCAL_CONF_TEST_LINE_3"
+                ]
+            },
             "include": [
                 "config1",
                 "config2"
@@ -394,10 +418,13 @@ mod tests {
         assert_eq!(config.build_data().name(), "main-build-config");
         let t0: &WsTaskHandler = config.tasks().get("task0").unwrap();
         assert_eq!(t0.data().build_cmd(), "main");
+        assert_eq!(t0.data().build_dir(), &settings.work_dir().join("test/main"));
         let t1: &WsTaskHandler = config.tasks().get("task1").unwrap();
         assert_eq!(t1.data().build_cmd(), "config1");
+        assert_eq!(t1.data().build_dir(), &settings.work_dir().join("test/config1"));
         let t2: &WsTaskHandler = config.tasks().get("task2").unwrap();
         assert_eq!(t2.data().build_cmd(), "config2");
+        assert_eq!(t2.data().build_dir(), &settings.work_dir().join("test/config2"));
         let setup: &WsCustomSubCmdHandler = config.subcmds().get("setup").unwrap();
         assert_eq!(setup.data().cmd(), "main");
         let sync: &WsCustomSubCmdHandler = config.subcmds().get("sync").unwrap();

@@ -7,6 +7,7 @@ use crate::workspace::WsSettingsHandler;
 use crate::configs::Config;
 
 pub struct WsBitbakeData {
+    data: Value,
     product: String, // This is required and is not part of the bitbake segment but is used when putting the bitbake data together
     arch: String, // This is required and is not part of the bitbake segment but is used when putting the bitbake data together
     machine: String, // Optional but if there is a task with type bitbake defined it might fail
@@ -51,6 +52,7 @@ impl WsBitbakeData {
         let init_env: String = Self::get_str_value("initenv", bb_data, Some(String::from("layers/poky/oe-init-build-env")))?;
 
         Ok(WsBitbakeData {
+            data: bb_data.clone(),
             product,
             arch,
             machine,
@@ -105,6 +107,11 @@ impl WsBitbakeData {
         conf_str.push_str(&format!("SSTATE_DIR ?= \"{}\"\n", self.sstate_dir().to_str().unwrap()));
         conf_str.push_str(&format!("DL_DIR ?= \"{}\"\n", self.dl_dir().to_str().unwrap()));
         conf_str
+    }
+
+    pub fn to_string(&self) -> String {
+        let bb_str: String = format!("\"bb\": {}", self.data.to_string());
+        bb_str.clone()
     }
 
     pub fn machine(&self) -> &str {
@@ -299,5 +306,35 @@ mod tests {
         data.expand_ctx(&context).unwrap();
         assert_eq!(data.bblayers_conf(), "BAKERY_WORKDIR=\"${TOPDIR}/../..\"\nBBLAYERS ?= \" \\\n       /bakery-ws/layers/meta-test \\\n       /bakery-ws/builds/workspace \\\n\"\n");
         assert_eq!(data.local_conf(), "BAKERY_WORKSPACE_DIR ?= \"/bakery-ws/builds/workspace\"\nPACKAGE_CLASSES ?= \"package_rpm\"\nBB_DISKMON_DIRS ?= \"\\\n    STOPTASKS,${TMPDIR},1G,100K \\\n    HALT,${SSTATE_DIR},100M,1K \\\n    HALT,/tmp,10M,1K\"\nCONF_VERSION = \"2\"\nMACHINE ?= \"test-machine\"\nPRODUCT_NAME ?= \"test-name\"\nDISTRO ?= \"test-distro\"\nSSTATE_DIR ?= \"/bakery-ws/.cache/test-arch/sstate-cache\"\nDL_DIR ?= \"/bakery-ws/.cache/download\"\n");
+    }
+
+    #[test]
+    fn test_ws_bitbake_data_to_string() {
+        let json_settings: &str = r#"
+        {
+            "version": "5"
+        }"#;
+        let json_build_config = r#"
+        {
+            "version": "5",
+            "name": "test-name",
+            "arch": "test-arch",
+            "bb": {
+                "machine": "test-machine",
+                "distro": "test-distro",
+                "deploydir": "tmp/test/deploy",
+                "docker": "test-registry/test-image:0.1",
+                "initenv": "layers/test/oe-my-init-env",
+                "bblayersconf": [
+                ],
+                "localconf": [
+                ]
+            }
+        }"#;
+        let json_bb = r#""bb": {"bblayersconf":[],"deploydir":"tmp/test/deploy","distro":"test-distro","docker":"test-registry/test-image:0.1","initenv":"layers/test/oe-my-init-env","localconf":[],"machine":"test-machine"}"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
+        let data: WsBitbakeData = WsBitbakeData::from_str(json_build_config, &settings).expect("Failed to parse product data");
+        assert_eq!(data.to_string(), json_bb);
     }
 }
