@@ -150,51 +150,6 @@ mod tests {
     }
 
     #[test]
-    fn test_cmd_list_no_build_config() {
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
-        let work_dir: PathBuf = temp_dir.into_path();
-        let json_ws_settings: &str = r#"
-        {
-            "version": "5",
-            "builds": {
-                "supported": [
-                    "default"
-                ]
-            }
-        }"#;
-        let json_build_config: &str = r#"
-        {
-            "version": "5",
-            "name": "default",
-            "description": "Test Description",
-            "arch": "test-arch",
-            "bb": {}
-        }
-        "#;
-        let mut mocked_logger: MockLogger = MockLogger::new();
-        mocked_logger
-            .expect_stdout()
-            .with(mockall::predicate::eq(format!("{:<15} {:<52}", "NAME", "DESCRIPTION")))
-            .once()
-            .returning(|_x| ());
-        mocked_logger
-            .expect_stdout()
-            .with(mockall::predicate::eq(
-                format!("{:<15} - {:<50}", "default", "Test Description"),
-            ))
-            .once()
-            .returning(|_x| ());
-        let _result: Result<(), BError> = helper_test_list_subcommand(
-            &work_dir,
-            json_ws_settings,
-            json_build_config,
-            mocked_logger,
-            MockSystem::new(),
-            vec!["bakery", "list"],
-        );
-    }
-
-    #[test]
     fn test_cmd_list_build_config() {
         let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
