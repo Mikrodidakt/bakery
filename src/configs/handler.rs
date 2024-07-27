@@ -64,13 +64,13 @@ impl WsConfigFileHandler {
         /*
          * Iterate over any included build config and extend the main build config with the included
          * build configs. Currently the included build configs will only extend the main config with
-         * the tasks and the any of the built-in sub-commands sync, setup, upload, deploy
+         * the tasks and any of the built-in sub-commands sync, setup, upload, deploy
          */
         for config in main_config.build_data().included_configs().iter() {
             let cfg_include_json: String = ConfigFileReader::new(config).read_json()?;
             let cfg_bitbake_json: String = main_config.build_data().bitbake().to_string();
             /*
-             * The included build config does not and shot not contain anything but the tasks and custome sub commands but because
+             * The included build config does not and should not contain anything but the tasks and custom sub commands but because
              * each task is handling it's own build dir which is setup by the bb segment we need to inject the bb to the WsBuildConfigHandler
              * string.
              */
