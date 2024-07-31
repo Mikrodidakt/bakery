@@ -60,6 +60,8 @@ impl WsConfigFileHandler {
     pub fn setup_build_config(&self, path: &PathBuf, settings: &WsSettingsHandler) -> Result<WsBuildConfigHandler, BError> {
         let build_config_json: String = ConfigFileReader::new(&path).read_json()?;
         let mut main_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(&build_config_json, settings)?;
+        let cfg_bitbake_json: String = main_config.build_data().bitbake().to_string();
+        let cfg_product_json: String = main_config.build_data().product().to_string();
 
         /*
          * Iterate over any included build config and extend the main build config with the included
@@ -68,13 +70,12 @@ impl WsConfigFileHandler {
          */
         for config in main_config.build_data().included_configs().iter() {
             let cfg_include_json: String = ConfigFileReader::new(config).read_json()?;
-            let cfg_bitbake_json: String = main_config.build_data().bitbake().to_string();
             /*
              * The included build config does not and should not contain anything but the tasks and custom sub commands but because
              * each task is handling it's own build dir which is setup by the bb segment we need to inject the bb to the WsBuildConfigHandler
              * string.
              */
-            let cfg_json: String = format!("{},{}}}", cfg_include_json.trim_end().trim_end_matches('}').trim_start(), cfg_bitbake_json);
+            let cfg_json: String = format!("{},{},{}}}", cfg_include_json.trim_end().trim_end_matches('}').trim_start(), cfg_product_json, cfg_bitbake_json);
             let mut cfg: WsBuildConfigHandler = WsBuildConfigHandler::from_str(&cfg_json, settings)?;
             main_config.merge(&mut cfg);
         }
@@ -308,7 +309,7 @@ mod tests {
         let main_build_config = r#"
         {
             "version": "5",
-            "name": "main-build-config",
+            "name": "test-product",
             "description": "Test Description",
             "arch": "test-arch",
             "bb": {
@@ -372,10 +373,9 @@ mod tests {
                 "task1": {
                     "index": "1",
                     "name": "task1",
-                    "type": "non-bitbake",
-                    "builddir": "test/config1",
-                    "build": "config1",
-                    "clean": "config1",
+                    "recipes": [
+                        "test"
+                    ],
                     "artifacts": [
                         {
                             "source": "test/config.txt"
@@ -415,13 +415,13 @@ mod tests {
         }"#;
         write_json_conf(&settings.include_dir().join("config2.json"),  build_config2);
         let config: WsBuildConfigHandler = cfg_handler.build_config("main", &settings).expect("Failed parse build config");
-        assert_eq!(config.build_data().name(), "main-build-config");
+        assert_eq!(config.build_data().name(), "test-product");
         let t0: &WsTaskHandler = config.tasks().get("task0").unwrap();
         assert_eq!(t0.data().build_cmd(), "main");
         assert_eq!(t0.data().build_dir(), &settings.work_dir().join("test/main"));
         let t1: &WsTaskHandler = config.tasks().get("task1").unwrap();
-        assert_eq!(t1.data().build_cmd(), "config1");
-        assert_eq!(t1.data().build_dir(), &settings.work_dir().join("test/config1"));
+        assert_eq!(t1.data().recipes(), &vec!["test"]);
+        assert_eq!(t1.data().build_dir(), &settings.work_dir().join("builds/test-product"));
         let t2: &WsTaskHandler = config.tasks().get("task2").unwrap();
         assert_eq!(t2.data().build_cmd(), "config2");
         assert_eq!(t2.data().build_dir(), &settings.work_dir().join("test/config2"));

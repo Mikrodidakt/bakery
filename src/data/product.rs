@@ -39,6 +39,11 @@ impl WsProductData {
     pub fn description(&self) -> &str {
         &self.description
     }
+
+    pub fn to_string(&self) -> String {
+        let product_str: String = format!("\"name\": \"{}\",\"arch\": \"{}\", \"description\": \"{}\"", self.name, self.arch, self.description);
+        product_str.clone()
+    }
 }
 
 
