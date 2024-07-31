@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use crate::main;
 use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
 use crate::fs::ConfigFileReader;
 use crate::error::BError;
@@ -57,11 +58,17 @@ impl WsConfigFileHandler {
         return WsSettingsHandler::from_str(&self.work_dir, default_settings);
     }
 
+    fn config_header(&self, config: &WsBuildConfigHandler) -> String {
+        let cfg_bitbake_json: String = config.build_data().bitbake().to_string();
+        let cfg_product_json: String = config.build_data().product().to_string();
+        let cfg_header_json: String = format!("{},{}", cfg_product_json, cfg_bitbake_json);
+        cfg_header_json.clone()
+    }
+
     pub fn setup_build_config(&self, path: &PathBuf, settings: &WsSettingsHandler) -> Result<WsBuildConfigHandler, BError> {
         let build_config_json: String = ConfigFileReader::new(&path).read_json()?;
         let mut main_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(&build_config_json, settings)?;
-        let cfg_bitbake_json: String = main_config.build_data().bitbake().to_string();
-        let cfg_product_json: String = main_config.build_data().product().to_string();
+        let cfg_header_json: String = self.config_header(&main_config);
 
         /*
          * Iterate over any included build config and extend the main build config with the included
@@ -75,7 +82,8 @@ impl WsConfigFileHandler {
              * each task is handling it's own build dir which is setup by the bb segment we need to inject the bb to the WsBuildConfigHandler
              * string.
              */
-            let cfg_json: String = format!("{},{},{}}}", cfg_include_json.trim_end().trim_end_matches('}').trim_start(), cfg_product_json, cfg_bitbake_json);
+            let cfg_json: String = format!("{{{},{}}}", cfg_header_json, cfg_include_json.trim_start().trim_start_matches('{').trim_end().trim_end_matches('}'));
+            println!("{}", cfg_json);
             let mut cfg: WsBuildConfigHandler = WsBuildConfigHandler::from_str(&cfg_json, settings)?;
             main_config.merge(&mut cfg);
         }
