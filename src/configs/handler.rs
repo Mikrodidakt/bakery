@@ -83,7 +83,6 @@ impl WsConfigFileHandler {
              * string.
              */
             let cfg_json: String = format!("{{{},{}}}", cfg_header_json, cfg_include_json.trim_start().trim_start_matches('{').trim_end().trim_end_matches('}'));
-            println!("{}", cfg_json);
             let mut cfg: WsBuildConfigHandler = WsBuildConfigHandler::from_str(&cfg_json, settings)?;
             main_config.merge(&mut cfg);
         }
