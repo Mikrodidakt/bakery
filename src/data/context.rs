@@ -16,7 +16,6 @@ pub const CTX_KEY_ARCH: &str = "ARCH";
 pub const CTX_KEY_DISTRO: &str = "DISTRO";
 pub const CTX_KEY_BB_BUILD_DIR: &str = "BB_BUILD_DIR";
 pub const CTX_KEY_BB_DEPLOY_DIR: &str = "BB_DEPLOY_DIR";
-pub const CTX_KEY_PRODUCT_NAME: &str = "PRODUCT_NAME";
 pub const CTX_KEY_ARTIFACTS_DIR: &str = "ARTIFACTS_DIR";
 pub const CTX_KEY_LAYERS_DIR: &str = "LAYERS_DIR";
 pub const CTX_KEY_SCRIPTS_DIR: &str = "SCRIPTS_DIR";
@@ -34,6 +33,11 @@ pub const CTX_KEY_DEVICE: &str = "DEVICE";
 pub const CTX_KEY_IMAGE: &str = "IMAGE";
 pub const CTX_KEY_DATE: &str = "DATE";
 pub const CTX_KEY_TIME: &str = "TIME";
+// By default all of these are the same unless they
+// are specificly defined in the build config
+pub const CTX_KEY_PRODUCT_NAME: &str = "PRODUCT_NAME";
+pub const CTX_KEY_PROJECT_NAME: &str = "PROJECT_NAME";
+pub const CTX_KEY_NAME: &str = "NAME";
 
 impl Config for WsContextData {}
 
@@ -60,6 +64,8 @@ impl WsContextData {
             CTX_KEY_BB_BUILD_DIR |
             CTX_KEY_BB_DEPLOY_DIR |
             CTX_KEY_PRODUCT_NAME |
+            CTX_KEY_PROJECT_NAME |
+            CTX_KEY_NAME |
             CTX_KEY_WORK_DIR |
             CTX_KEY_LAYERS_DIR |
             CTX_KEY_BUILDS_DIR => false,
@@ -95,6 +101,8 @@ impl WsContextData {
             CTX_KEY_ARCH.to_string() => "".to_string(),
             CTX_KEY_DISTRO.to_string() => "".to_string(),
             CTX_KEY_PRODUCT_NAME.to_string() => "".to_string(),
+            CTX_KEY_PROJECT_NAME.to_string() => "".to_string(),
+            CTX_KEY_NAME.to_string() => "".to_string(),
             CTX_KEY_BB_BUILD_DIR.to_string() => "".to_string(),
             CTX_KEY_BB_DEPLOY_DIR.to_string() => "".to_string(),
             CTX_KEY_ARTIFACTS_DIR.to_string() => "".to_string(),
@@ -169,6 +177,8 @@ mod tests {
         CTX_KEY_DISTRO,
         CTX_KEY_BUILD_VARIANT,
         CTX_KEY_PRODUCT_NAME,
+        CTX_KEY_PROJECT_NAME,
+        CTX_KEY_NAME,
         CTX_KEY_BB_BUILD_DIR,
         CTX_KEY_BB_DEPLOY_DIR,
         CTX_KEY_ARTIFACTS_DIR,
@@ -202,6 +212,8 @@ mod tests {
         assert!(data.get_ctx_value(CTX_KEY_ARCH).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_DISTRO).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_PRODUCT_NAME).is_empty());
+        assert!(data.get_ctx_value(CTX_KEY_PROJECT_NAME).is_empty());
+        assert!(data.get_ctx_value(CTX_KEY_NAME).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_DEVICE).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_IMAGE).is_empty());
         assert_eq!(

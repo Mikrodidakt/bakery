@@ -18,6 +18,8 @@ impl WsConfigData {
 
     pub fn from_value(data: &Value) -> Result<Self, BError> {
         let version: String = Self::get_str_value("version", &data, None)?;
+        // Duplication from WsProductData which is also keeping track of the name
+        // for now leave it but should potentially move it
         let name: String = Self::get_str_value("name", &data, Some(String::from("NA")))?;
 
         Ok(WsConfigData {

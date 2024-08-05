@@ -7,6 +7,8 @@ The build config is what describes building the product for bakery. A typical bu
 {
         "version": "5",
         "name": "",
+        "product": "",
+        "project": "",
         "description": "",
         "arch": "",
         "context": [
@@ -78,9 +80,9 @@ The build config can be split up in
 
 The config version is used to mark breaking changes to the build config format currently it is at version 5. If the format changes the version will be bumped and bakery will allert that the build config format needs to be migrated to the new format.
 
-## name
+## name, product & project
 
-The name is currently both the build config name and the product name this might change but currently this should match the build config name.
+Normaly only the name is needed and the product and project will be set to match the name but sometimes the product and projects needs to be different and can then be set to a specific value that is different from the name of the build config.
 
 # Product Data
 
@@ -218,7 +220,7 @@ Bakery will by default look for tasks.json and subcommands.json under includes d
 configs/include
 ```
 
-Both the configs dir and include dir can be set in the workspace.json for more information please see [workspace config](workspace-config.md). The format of a included build config is the same as the product build config but it should only include the defined tasks and custom subcommands. 
+Both the configs dir and include dir can be set in the workspace.json for more information please see [workspace config](workspace-config.md). The format of a included build config is the same as the product build config but it should only include the defined tasks and custom subcommands.
 
 # Tasks Data
 
