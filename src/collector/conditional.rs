@@ -33,9 +33,8 @@ impl<'a> Collector for ConditionalCollector<'a> {
     }
 
     fn verify_attributes(&self) -> Result<(), BError> {
-        if self.artifact.data().name().is_empty()
-            || self.artifact.children().is_empty() {
-                return Err(BError::ValueError(String::from("Directory node requires name and list of artifacts!")));
+        if self.artifact.children().is_empty() {
+                return Err(BError::ValueError(String::from("Conditional node requires list of artifacts!")));
         }
 
         Ok(())
@@ -94,6 +93,7 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: ConditionalCollector = ConditionalCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
         assert_eq!(&collected, &vec![
@@ -131,6 +131,7 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: ConditionalCollector = ConditionalCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
         assert!(collected.is_empty());
@@ -193,6 +194,7 @@ mod tests {
         let context: Context = Context::new(&variables);
         artifacts.expand_ctx(&context).unwrap();
         let collector: ConditionalCollector = ConditionalCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
         assert_eq!(&collected, &vec![

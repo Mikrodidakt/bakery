@@ -95,6 +95,7 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: DirectoryCollector = DirectoryCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
         assert_eq!(&collected, &vec![
@@ -148,6 +149,7 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: DirectoryCollector = DirectoryCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
         assert_eq!(&collected, &vec![
@@ -210,6 +212,7 @@ mod tests {
         let context: Context = Context::new(&variables);
         artifacts.expand_ctx(&context).unwrap();
         let collector: DirectoryCollector = DirectoryCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
         assert_eq!(&collected, &vec![

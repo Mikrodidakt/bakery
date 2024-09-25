@@ -149,6 +149,7 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: FileCollector = FileCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         let dest: PathBuf = build_data.settings().artifacts_dir().clone().join(src_file_name);
         assert_eq!(collected, vec![
@@ -181,6 +182,7 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: FileCollector = FileCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         let dest: PathBuf = build_data.settings().artifacts_dir().clone().join(dest_file_name);
         assert_eq!(collected, vec![
@@ -213,6 +215,7 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: FileCollector = FileCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         let dest: PathBuf = build_data.settings().artifacts_dir().clone().join(dest_file_name);
         assert_eq!(collected, vec![
@@ -245,6 +248,7 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: FileCollector = FileCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         let dest: PathBuf = build_data.settings().artifacts_dir().clone().join(dest_file_name);
         assert_eq!(collected, vec![
@@ -279,6 +283,7 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: FileCollector = FileCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
         assert_eq!(&collected, &vec![
@@ -326,6 +331,7 @@ mod tests {
         let context: Context = Context::new(&variables);
         artifacts.expand_ctx(&context).unwrap();
         let collector: FileCollector = FileCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         let dest: PathBuf = build_data.settings().artifacts_dir().clone().join(dest_file_name);
         assert_eq!(collected, vec![
@@ -352,6 +358,7 @@ mod tests {
             &build_data
         ).expect("Failed to parse config");
         let collector: FileCollector = FileCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let result: Result<Vec<Collected>, BError> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir());
         match result {
             Ok(_status) => {

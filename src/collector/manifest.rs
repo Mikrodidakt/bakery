@@ -93,6 +93,7 @@ mod tests {
             &build_data,
             json_artifacts_config);
         let collector: ManifestCollector = ManifestCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         let manifest_file: PathBuf = build_data.settings().artifacts_dir().clone().join("manifest.json");
         assert_eq!(collected, vec![Collected { src: PathBuf::from(""), dest: manifest_file.clone() }]);
@@ -142,6 +143,7 @@ mod tests {
         let context: Context = Context::new(&variables);
         artifacts.expand_ctx(&context).unwrap();
         let collector: ManifestCollector = ManifestCollector::new(&artifacts, None);
+        assert!(collector.verify_attributes().is_ok());
         let collected: Vec<Collected> = collector.collect(&task_build_dir, &build_data.settings().artifacts_dir()).expect("Failed to collect artifacts");
         let manifest_file: PathBuf = build_data.settings().artifacts_dir().clone().join("ctxmanifest.json");
         assert_eq!(collected, vec![Collected { src: PathBuf::from(""), dest: manifest_file.clone() }]);
