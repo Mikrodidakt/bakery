@@ -3,8 +3,8 @@ use std::collections::HashMap;
 
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
-use crate::workspace::Workspace;
 use crate::data::WsContextData;
+use crate::workspace::Workspace;
 use crate::workspace::WsCustomSubCmdHandler;
 
 static BCOMMAND: &str = "sync";
@@ -15,50 +15,53 @@ pub struct SyncCommand {
 }
 
 impl BCommand for SyncCommand {
-  fn get_config_name(&self, cli: &Cli) -> String {
-      if let Some(sub_matches) = cli.get_args().subcommand_matches(BCOMMAND) {
-          if sub_matches.contains_id("config") {
-              if let Some(value) = sub_matches.get_one::<String>("config") {
-                  return value.clone();
-              }
-          }
-      }
+    fn get_config_name(&self, cli: &Cli) -> String {
+        if let Some(sub_matches) = cli.get_args().subcommand_matches(BCOMMAND) {
+            if sub_matches.contains_id("config") {
+                if let Some(value) = sub_matches.get_one::<String>("config") {
+                    return value.clone();
+                }
+            }
+        }
 
-      return String::from("default");
-  }
+        return String::from("default");
+    }
 
-  fn cmd_str(&self) -> &str {
-      &self.cmd.cmd_str
-  }
+    fn cmd_str(&self) -> &str {
+        &self.cmd.cmd_str
+    }
 
-  fn subcommand(&self) -> &clap::Command {
-      &self.cmd.sub_cmd
-  }
+    fn subcommand(&self) -> &clap::Command {
+        &self.cmd.sub_cmd
+    }
 
-  fn is_docker_required(&self) -> bool {
-      self.cmd.require_docker
-  }
+    fn is_docker_required(&self) -> bool {
+        self.cmd.require_docker
+    }
 
-  fn execute(&self, cli: &Cli, workspace: &mut Workspace) -> Result<(), BError> {
-      let config: String = self.get_arg_str(cli, "config", BCOMMAND)?;
-      let ctx: Vec<String> = self.get_arg_many(cli, "ctx", BCOMMAND)?;
-      let args_context: IndexMap<String, String> = self.setup_context(ctx);
-      let context: WsContextData = WsContextData::new(&args_context)?;
+    fn execute(&self, cli: &Cli, workspace: &mut Workspace) -> Result<(), BError> {
+        let config: String = self.get_arg_str(cli, "config", BCOMMAND)?;
+        let ctx: Vec<String> = self.get_arg_many(cli, "ctx", BCOMMAND)?;
+        let args_context: IndexMap<String, String> = self.setup_context(ctx);
+        let context: WsContextData = WsContextData::new(&args_context)?;
 
-      if !workspace.valid_config(config.as_str()) {
-          return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
-      }
+        if !workspace.valid_config(config.as_str()) {
+            return Err(BError::CliError(format!(
+                "Unsupported build config '{}'",
+                config
+            )));
+        }
 
-      workspace.update_ctx(&context)?;
+        workspace.update_ctx(&context)?;
 
-      let sync: &WsCustomSubCmdHandler = workspace.config().sync();
-      sync.run(cli, &cli.env(), false, self.cmd.interactive)
-  }
+        let sync: &WsCustomSubCmdHandler = workspace.config().sync();
+        sync.run(cli, &cli.env(), false, self.cmd.interactive)
+    }
 }
 
 impl SyncCommand {
-  pub fn new() -> Self {
-      let subcmd: clap::Command = clap::Command::new(BCOMMAND)
+    pub fn new() -> Self {
+        let subcmd: clap::Command = clap::Command::new(BCOMMAND)
       .about(BCOMMAND_ABOUT)
       .arg(
         clap::Arg::new("config")
@@ -69,6 +72,12 @@ impl SyncCommand {
             .required(true),
       )
       .arg(
+        clap::Arg::new("verbose")
+            .action(clap::ArgAction::SetTrue)
+            .long("verbose")
+            .help("Set verbose level."),
+      )
+      .arg(
         clap::Arg::new("ctx")
             .action(clap::ArgAction::Append)
             .short('x')
@@ -76,34 +85,34 @@ impl SyncCommand {
             .value_name("KEY=VALUE")
             .help("Adding variable to the context. Any KEY that already exists in the context will be overwriten."),
       );
-      // Initialize and return a new SetupCommand instance
-      SyncCommand {
-          // Initialize fields if any
-          cmd: BBaseCommand {
-              cmd_str: String::from(BCOMMAND),
-              sub_cmd: subcmd,
-              interactive: true,
-              require_docker: false,
-          },
-      }
-  }
+        // Initialize and return a new SetupCommand instance
+        SyncCommand {
+            // Initialize fields if any
+            cmd: BBaseCommand {
+                cmd_str: String::from(BCOMMAND),
+                sub_cmd: subcmd,
+                interactive: true,
+                require_docker: false,
+            },
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::path::PathBuf;
     use tempdir::TempDir;
-    use std::collections::HashMap;
 
     use crate::cli::*;
-    use crate::error::BError;
     use crate::commands::{BCommand, SyncCommand};
+    use crate::error::BError;
     use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
 
     #[test]
     fn test_cmd_sync() {
         let temp_dir: TempDir =
-        TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: &PathBuf = &temp_dir.into_path();
         let json_ws_settings: &str = r#"
         {
@@ -135,23 +144,29 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec![&format!("{}/scripts/script.sh", work_dir.display()), "arg1", "arg2", "arg3"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
+                cmd_line: vec![
+                    &format!("{}/scripts/script.sh", work_dir.display()),
+                    "arg1",
+                    "arg2",
+                    "arg3",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
                 env: HashMap::new(),
                 shell: true,
             }))
             .once()
             .returning(|_x| Ok(()));
-        mocked_system
-            .expect_env()
-            .returning(||HashMap::new());
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings).expect("Failed to parse settings");
+        mocked_system.expect_env().returning(|| HashMap::new());
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings)
+            .expect("Failed to parse settings");
         let config: WsBuildConfigHandler =
-            WsBuildConfigHandler::from_str(json_build_config, &settings).expect("Failed to parse build config");
+            WsBuildConfigHandler::from_str(json_build_config, &settings)
+                .expect("Failed to parse build config");
         let mut workspace: Workspace =
-            Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config)).expect("Failed to setup workspace");
+            Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config))
+                .expect("Failed to setup workspace");
         let cli: Cli = Cli::new(
             Box::new(BLogger::new()),
             Box::new(mocked_system),
@@ -165,7 +180,7 @@ mod tests {
     #[test]
     fn test_cmd_sync_ctx() {
         let temp_dir: TempDir =
-        TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: &PathBuf = &temp_dir.into_path();
         let json_ws_settings: &str = r#"
         {
@@ -197,28 +212,41 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec![&format!("{}/scripts/script.sh", work_dir.display()), "arg1", "arg2", "arg4"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
+                cmd_line: vec![
+                    &format!("{}/scripts/script.sh", work_dir.display()),
+                    "arg1",
+                    "arg2",
+                    "arg4",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
                 env: HashMap::new(),
                 shell: true,
             }))
             .once()
             .returning(|_x| Ok(()));
-        mocked_system
-            .expect_env()
-            .returning(||HashMap::new());
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings).expect("Failed to parse settings");
+        mocked_system.expect_env().returning(|| HashMap::new());
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings)
+            .expect("Failed to parse settings");
         let config: WsBuildConfigHandler =
-            WsBuildConfigHandler::from_str(json_build_config, &settings).expect("Failed to parse build config");
+            WsBuildConfigHandler::from_str(json_build_config, &settings)
+                .expect("Failed to parse build config");
         let mut workspace: Workspace =
-            Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config)).expect("Failed to setup workspace");
+            Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config))
+                .expect("Failed to setup workspace");
         let cli: Cli = Cli::new(
             Box::new(BLogger::new()),
             Box::new(mocked_system),
             clap::Command::new("bakery"),
-            Some(vec!["bakery", "sync", "-c", "default", "--context", "ARG3=arg4"]),
+            Some(vec![
+                "bakery",
+                "sync",
+                "-c",
+                "default",
+                "--context",
+                "ARG3=arg4",
+            ]),
         );
         let cmd: SyncCommand = SyncCommand::new();
         let _result: Result<(), BError> = cmd.execute(&cli, &mut workspace);

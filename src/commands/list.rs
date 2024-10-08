@@ -97,6 +97,12 @@ impl ListCommand {
                     .default_value("NA"),
             )
             .arg(
+                clap::Arg::new("verbose")
+                    .action(clap::ArgAction::SetTrue)
+                    .long("verbose")
+                    .help("Set verbose level."),
+            )
+            .arg(
                 clap::Arg::new("ctx")
                     .action(clap::ArgAction::SetTrue)
                     .long("ctx")

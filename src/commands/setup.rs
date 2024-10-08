@@ -69,6 +69,12 @@ impl SetupCommand {
             .required(true),
       )
       .arg(
+        clap::Arg::new("verbose")
+            .action(clap::ArgAction::SetTrue)
+            .long("verbose")
+            .help("Set verbose level."),
+      )
+      .arg(
         clap::Arg::new("ctx")
             .action(clap::ArgAction::Append)
             .short('x')

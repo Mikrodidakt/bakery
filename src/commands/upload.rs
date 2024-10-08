@@ -89,6 +89,12 @@ impl UploadCommand {
             .help("Docker volume to mount bind when boot strapping into docker."),
       )
       .arg(
+        clap::Arg::new("verbose")
+            .action(clap::ArgAction::SetTrue)
+            .long("verbose")
+            .help("Set verbose level."),
+      )
+      .arg(
         clap::Arg::new("ctx")
             .action(clap::ArgAction::Append)
             .short('x')

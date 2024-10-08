@@ -142,6 +142,12 @@ impl ShellCommand {
                 .default_value("NA"),
         )
         .arg(
+            clap::Arg::new("verbose")
+                .action(clap::ArgAction::SetTrue)
+                .long("verbose")
+                .help("Set verbose level."),
+        )
+        .arg(
             clap::Arg::new("volume")
                 .action(clap::ArgAction::Append)
                 .short('v')
