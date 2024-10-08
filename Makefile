@@ -13,6 +13,11 @@ build:
 build-release:
 	./scripts/do_build_release.sh
 
+## format             - Format the code using rustfmt
+.PHONY: format
+format:
+	cargo fmt
+
 ## test               - Run all tests using cargo
 .PHONY: test
 test:
