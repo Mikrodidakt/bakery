@@ -1,12 +1,12 @@
 use indexmap::IndexMap;
 use std::collections::HashMap;
 
-use crate::commands::{BCommand, BBaseCommand};
-use crate::data::WsContextData;
-use crate::workspace::{Workspace, WsTaskHandler};
 use crate::cli::Cli;
+use crate::commands::{BBaseCommand, BCommand};
+use crate::data::WsContextData;
 use crate::error::BError;
 use crate::executers::Docker;
+use crate::workspace::{Workspace, WsTaskHandler};
 
 static BCOMMAND: &str = "clean";
 static BCOMMAND_ABOUT: &str = "Clean one or all tasks defined in a build config.";
@@ -48,7 +48,10 @@ impl BCommand for CleanCommand {
         let context: WsContextData = WsContextData::new(&args_context)?;
 
         if !workspace.valid_config(config.as_str()) {
-            return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
+            return Err(BError::CliError(format!(
+                "Unsupported build config '{}'",
+                config
+            )));
         }
 
         /*
@@ -57,8 +60,17 @@ impl BCommand for CleanCommand {
          * be run inside of docker and if we are already inside docker we should not try and bootstrap into a
          * second docker container.
          */
-        if !workspace.settings().docker_disabled() && self.is_docker_required() && !Docker::inside_docker() {
-            return self.bootstrap(&cli.get_cmd_line(), cli, workspace, &vec![], self.cmd.interactive);
+        if !workspace.settings().docker_disabled()
+            && self.is_docker_required()
+            && !Docker::inside_docker()
+        {
+            return self.bootstrap(
+                &cli.get_cmd_line(),
+                cli,
+                workspace,
+                &vec![],
+                self.cmd.interactive,
+            );
         }
 
         /*
@@ -129,40 +141,41 @@ impl CleanCommand {
         // Initialize and return a new BuildCommand instance
         CleanCommand {
             // Initialize fields if any
-            cmd : BBaseCommand {
+            cmd: BBaseCommand {
                 cmd_str: String::from(BCOMMAND),
                 sub_cmd: subcmd,
                 interactive: true,
                 require_docker: true,
-            }
+            },
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::path::PathBuf;
     use tempdir::TempDir;
-    use std::collections::HashMap;
 
     use crate::cli::*;
     use crate::commands::{BCommand, CleanCommand};
     use crate::error::BError;
     use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
 
-    fn helper_test_clean_subcommand(json_ws_settings: &str, json_build_config: &str,
-            work_dir: &PathBuf, logger: Box<dyn Logger>, system: Box<dyn System>, cmd_line: Vec<&str>) -> Result<(), BError> {
+    fn helper_test_clean_subcommand(
+        json_ws_settings: &str,
+        json_build_config: &str,
+        work_dir: &PathBuf,
+        logger: Box<dyn Logger>,
+        system: Box<dyn System>,
+        cmd_line: Vec<&str>,
+    ) -> Result<(), BError> {
         let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings)?;
         let config: WsBuildConfigHandler =
             WsBuildConfigHandler::from_str(json_build_config, &settings)?;
         let mut workspace: Workspace =
             Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config))?;
-        let cli: Cli = Cli::new(
-            logger,
-            system,
-            clap::Command::new("bakery"),
-            Some(cmd_line),
-        );
+        let cli: Cli = Cli::new(logger, system, clap::Command::new("bakery"), Some(cmd_line));
         let cmd: CleanCommand = CleanCommand::new();
         cmd.execute(&cli, &mut workspace)
     }
@@ -200,17 +213,25 @@ mod tests {
             }
         }
         "#;
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let build_dir: PathBuf = work_dir.join("test-dir");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "rm", "-rf", "dir-to-delete"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
+                cmd_line: vec![
+                    "cd",
+                    &build_dir.to_string_lossy().to_string(),
+                    "&&",
+                    "rm",
+                    "-rf",
+                    "dir-to-delete",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
                 env: HashMap::new(),
                 shell: true,
             }))

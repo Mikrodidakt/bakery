@@ -17,7 +17,7 @@ impl ConfigFileReader {
 
     pub fn new(file_path: &PathBuf) -> Self {
         ConfigFileReader {
-            file_path: file_path.clone()
+            file_path: file_path.clone(),
         }
     }
 

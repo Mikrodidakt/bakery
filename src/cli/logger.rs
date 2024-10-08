@@ -42,6 +42,3 @@ impl Logger for BLogger {
         println!("{}", message);
     }
 }
-
-
-

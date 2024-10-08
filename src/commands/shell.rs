@@ -3,11 +3,12 @@ use std::path::PathBuf;
 
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
-use crate::workspace::Workspace;
 use crate::executers::{Docker, DockerImage};
+use crate::workspace::Workspace;
 
 static BCOMMAND: &str = "shell";
-static BCOMMAND_ABOUT: &str = "Initiate a shell within Docker or execute any command within the BitBake environment.";
+static BCOMMAND_ABOUT: &str =
+    "Initiate a shell within Docker or execute any command within the BitBake environment.";
 pub struct ShellCommand {
     cmd: BBaseCommand,
     // Your struct fields and methods here
@@ -52,11 +53,11 @@ impl BCommand for ShellCommand {
          * be run inside of docker and if we are already inside docker we should not try and bootstrap into a
          * second docker container.
          */
-        if !workspace.settings().docker_disabled() && self.is_docker_required() && !Docker::inside_docker() {
-            let mut cmd_line: Vec<String> = vec![
-                String::from("bakery"),
-                String::from("shell"),
-            ];
+        if !workspace.settings().docker_disabled()
+            && self.is_docker_required()
+            && !Docker::inside_docker()
+        {
+            let mut cmd_line: Vec<String> = vec![String::from("bakery"), String::from("shell")];
 
             if docker_pull {
                 self.docker_pull(cli, workspace)?;
@@ -69,41 +70,26 @@ impl BCommand for ShellCommand {
              */
             if !cmd.is_empty() {
                 if !config.is_empty() {
-                    cmd_line.append(&mut vec![
-                        String::from("-c"),
-                        config,
-                    ]);
+                    cmd_line.append(&mut vec![String::from("-c"), config]);
                 }
 
                 if !docker.is_empty() {
-                    cmd_line.append(&mut vec![
-                        String::from("-d"),
-                        docker,
-                    ]);
+                    cmd_line.append(&mut vec![String::from("-d"), docker]);
                 }
 
                 if !volumes.is_empty() {
-                    volumes.iter().for_each(|key_value|{
-                        cmd_line.append(&mut vec![
-                            String::from("-v"),
-                            key_value.to_string(),
-                        ]);
+                    volumes.iter().for_each(|key_value| {
+                        cmd_line.append(&mut vec![String::from("-v"), key_value.to_string()]);
                     })
                 }
 
                 if !env.is_empty() {
-                    env.iter().for_each(|key_value|{
-                        cmd_line.append(&mut vec![
-                            String::from("-e"),
-                            key_value.to_string(),
-                        ])
+                    env.iter().for_each(|key_value| {
+                        cmd_line.append(&mut vec![String::from("-e"), key_value.to_string()])
                     })
                 }
 
-                cmd_line.append(&mut vec![
-                    String::from("-r"),
-                    format!("\"{}\"", cmd),
-                ]);
+                cmd_line.append(&mut vec![String::from("-r"), format!("\"{}\"", cmd)]);
 
                 return self.bootstrap(&cmd_line, cli, workspace, &volumes, true);
             }
@@ -116,7 +102,10 @@ impl BCommand for ShellCommand {
         }
 
         if !workspace.valid_config(config.as_str()) {
-            return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
+            return Err(BError::CliError(format!(
+                "Unsupported build config '{}'",
+                config
+            )));
         }
 
         workspace.expand_ctx()?;
@@ -198,14 +187,22 @@ impl ShellCommand {
     }
 
     fn setup_env(&self, env: Vec<String>) -> HashMap<String, String> {
-        let variables: HashMap<String, String> = env.iter().map(|e|{
-            let v: Vec<&str> = e.split('=').collect();
-            (v[0].to_string(), v[1].to_string())
-        }).collect();
+        let variables: HashMap<String, String> = env
+            .iter()
+            .map(|e| {
+                let v: Vec<&str> = e.split('=').collect();
+                (v[0].to_string(), v[1].to_string())
+            })
+            .collect();
         variables
     }
 
-    fn bb_build_env(&self, cli: &Cli, workspace: &Workspace, args_env_variables: &HashMap<String, String>) -> Result<HashMap<String, String>, BError> {
+    fn bb_build_env(
+        &self,
+        cli: &Cli,
+        workspace: &Workspace,
+        args_env_variables: &HashMap<String, String>,
+    ) -> Result<HashMap<String, String>, BError> {
         let init_env: PathBuf = workspace.config().build_data().bitbake().init_env_file();
 
         /*
@@ -216,7 +213,10 @@ impl ShellCommand {
 
         /* Sourcing the init env file and returning all the env variables available including from the shell */
         cli.info(format!("source init env file {}", init_env.display()));
-        let mut env: HashMap<String, String> = cli.source_init_env(&init_env, &workspace.config().build_data().bitbake().build_dir())?;
+        let mut env: HashMap<String, String> = cli.source_init_env(
+            &init_env,
+            &workspace.config().build_data().bitbake().build_dir(),
+        )?;
         /*
          * Any variable that should be able to passthrough into bitbake needs to be defined as part of the bb passthrough variable
          * we define some defaults that should always be possible to passthrough
@@ -234,20 +234,30 @@ impl ShellCommand {
         });
 
         if env.contains_key("BB_ENV_PASSTHROUGH_ADDITIONS") {
-            bb_env_passthrough_additions.push_str(env.get("BB_ENV_PASSTHROUGH_ADDITIONS").unwrap_or(&String::from("")));
+            bb_env_passthrough_additions.push_str(
+                env.get("BB_ENV_PASSTHROUGH_ADDITIONS")
+                    .unwrap_or(&String::from("")),
+            );
         }
 
-        env.insert(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), bb_env_passthrough_additions);
+        env.insert(
+            String::from("BB_ENV_PASSTHROUGH_ADDITIONS"),
+            bb_env_passthrough_additions,
+        );
         Ok(env)
     }
 
-    pub fn run_bitbake_shell(&self, cli: &Cli, workspace: &Workspace, args_env_variables: &HashMap<String, String>, docker: &String) -> Result<(), BError> {
-        let cmd_line: Vec<String> = vec![
-            String::from("/bin/bash"),
-            String::from("-i"),
-        ];
+    pub fn run_bitbake_shell(
+        &self,
+        cli: &Cli,
+        workspace: &Workspace,
+        args_env_variables: &HashMap<String, String>,
+        docker: &String,
+    ) -> Result<(), BError> {
+        let cmd_line: Vec<String> = vec![String::from("/bin/bash"), String::from("-i")];
 
-        let mut env: HashMap<String, String> = self.bb_build_env(cli, workspace, args_env_variables)?;
+        let mut env: HashMap<String, String> =
+            self.bb_build_env(cli, workspace, args_env_variables)?;
         /*
          * Set the BAKERY_CURRENT_BUILD_CONFIG and BAKERY_WORKSPACE env variable used by the aliases in
          * /etc/bakery/bakery.bashrc which is sourced by /etc/bash.bashrc when running an interactive
@@ -255,8 +265,18 @@ impl ShellCommand {
          * in the shell without having to specify the build config or change directory since it is selected
          * when starting the shell
          */
-        env.insert(String::from("BAKERY_WORKSPACE"), workspace.settings().work_dir().to_string_lossy().to_string());
-        env.insert(String::from("BAKERY_CURRENT_BUILD_CONFIG"), workspace.config().build_data().product().name().to_string());
+        env.insert(
+            String::from("BAKERY_WORKSPACE"),
+            workspace
+                .settings()
+                .work_dir()
+                .to_string_lossy()
+                .to_string(),
+        );
+        env.insert(
+            String::from("BAKERY_CURRENT_BUILD_CONFIG"),
+            workspace.config().build_data().product().name().to_string(),
+        );
 
         cli.info(String::from("Start shell setting up bitbake build env"));
         if !docker.is_empty() {
@@ -268,7 +288,14 @@ impl ShellCommand {
         cli.check_call(&cmd_line, &env, true)
     }
 
-    pub fn run_cmd(&self, cmd: &String, cli: &Cli, workspace: &Workspace, args_env_variables: &HashMap<String, String>, docker: &String) -> Result<(), BError> {
+    pub fn run_cmd(
+        &self,
+        cmd: &String,
+        cli: &Cli,
+        workspace: &Workspace,
+        args_env_variables: &HashMap<String, String>,
+        docker: &String,
+    ) -> Result<(), BError> {
         let cmd_line: Vec<String> = vec![
             String::from("/bin/bash"),
             String::from("-i"),
@@ -290,17 +317,24 @@ impl ShellCommand {
         cli.check_call(&cmd_line, &env, true)
     }
 
-    pub fn run_shell(&self, cli: &Cli, workspace: &Workspace, docker: &String) -> Result<(), BError> {
-        let cmd_line: Vec<String> = vec![
-            String::from("/bin/bash"),
-            String::from("-i"),
-        ];
+    pub fn run_shell(
+        &self,
+        cli: &Cli,
+        workspace: &Workspace,
+        docker: &String,
+    ) -> Result<(), BError> {
+        let cmd_line: Vec<String> = vec![String::from("/bin/bash"), String::from("-i")];
 
         cli.info(String::from("Starting shell"));
         if !docker.is_empty() {
             let image: DockerImage = DockerImage::new(&docker)?;
             let executer: Docker = Docker::new(image, true);
-            return executer.run_cmd(&cmd_line, &HashMap::new(), &workspace.settings().work_dir(), cli);
+            return executer.run_cmd(
+                &cmd_line,
+                &HashMap::new(),
+                &workspace.settings().work_dir(),
+                cli,
+            );
         }
 
         cli.check_call(&cmd_line, &HashMap::new(), true)

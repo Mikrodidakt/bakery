@@ -5,8 +5,8 @@ pub mod system;
 
 pub use bakery::Bakery;
 pub use cli::Cli;
-pub use logger::{BLogger, Logger};
-pub use system::{BSystem, System, CallParams};
 #[cfg(test)]
 pub use logger::MockLogger;
+pub use logger::{BLogger, Logger};
 pub use system::MockSystem;
+pub use system::{BSystem, CallParams, System};

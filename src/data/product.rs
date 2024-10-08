@@ -1,6 +1,6 @@
-use serde_json::Value;
-use crate::error::BError;
 use crate::configs::Config;
+use crate::error::BError;
+use serde_json::Value;
 
 pub struct WsProductData {
     name: String,
@@ -24,7 +24,8 @@ impl WsProductData {
         let name: String = Self::get_str_value("name", &data, Some(String::from("NA")))?;
         let project: String = Self::get_str_value("project", &data, Some(name.clone()))?;
         let product: String = Self::get_str_value("product", &data, Some(name.clone()))?;
-        let description: String = Self::get_str_value("description", &data, Some(String::from("NA")))?;
+        let description: String =
+            Self::get_str_value("description", &data, Some(String::from("NA")))?;
         let arch: String = Self::get_str_value("arch", &data, Some(String::from("NA")))?;
 
         Ok(WsProductData {
@@ -57,11 +58,13 @@ impl WsProductData {
     }
 
     pub fn to_string(&self) -> String {
-        let product_str: String = format!("\"name\": \"{}\",\"arch\": \"{}\", \"description\": \"{}\"", self.name, self.arch, self.description);
+        let product_str: String = format!(
+            "\"name\": \"{}\",\"arch\": \"{}\", \"description\": \"{}\"",
+            self.name, self.arch, self.description
+        );
         product_str.clone()
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -73,7 +76,8 @@ mod tests {
         {
             "version": "4"
         }"#;
-        let data: WsProductData = WsProductData::from_str(json_default_build_config).expect("Failed to parse product data");
+        let data: WsProductData = WsProductData::from_str(json_default_build_config)
+            .expect("Failed to parse product data");
         assert_eq!(data.name(), "NA");
         assert_eq!(data.project(), data.name());
         assert_eq!(data.product(), data.name());
@@ -90,7 +94,8 @@ mod tests {
             "description": "test description",
             "arch": "test-arch"
         }"#;
-        let data: WsProductData = WsProductData::from_str(json_default_build_config).expect("Failed to parse product data");
+        let data: WsProductData = WsProductData::from_str(json_default_build_config)
+            .expect("Failed to parse product data");
         assert_eq!(data.name(), "test-name");
         assert_eq!(data.project(), data.name());
         assert_eq!(data.product(), data.name());
@@ -108,7 +113,8 @@ mod tests {
             "description": "test description",
             "arch": "test-arch"
         }"#;
-        let data: WsProductData = WsProductData::from_str(json_default_build_config).expect("Failed to parse product data");
+        let data: WsProductData = WsProductData::from_str(json_default_build_config)
+            .expect("Failed to parse product data");
         assert_eq!(data.name(), "test-name");
         assert_eq!(data.project(), "test-project");
         assert_eq!(data.product(), data.name());
@@ -126,7 +132,8 @@ mod tests {
             "description": "test description",
             "arch": "test-arch"
         }"#;
-        let data: WsProductData = WsProductData::from_str(json_default_build_config).expect("Failed to parse product data");
+        let data: WsProductData = WsProductData::from_str(json_default_build_config)
+            .expect("Failed to parse product data");
         assert_eq!(data.name(), "test-name");
         assert_eq!(data.project(), data.name());
         assert_eq!(data.product(), "test-product");

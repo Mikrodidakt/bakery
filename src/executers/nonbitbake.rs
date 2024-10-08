@@ -1,11 +1,7 @@
 use crate::cli::Cli;
-use crate::error::BError;
 use crate::data::WsTaskData;
-use crate::executers::{
-    TaskExecuter,
-    Docker,
-    DockerImage,
-};
+use crate::error::BError;
+use crate::executers::{Docker, DockerImage, TaskExecuter};
 
 use std::collections::HashMap;
 
@@ -15,8 +11,16 @@ pub struct NonBBCleanExecuter<'a> {
 }
 
 impl<'a> TaskExecuter for NonBBCleanExecuter<'a> {
-    fn exec(&self, args_env_variables: &HashMap<String, String>, _dry_run: bool, interactive: bool) -> Result<(), BError> {
-        self.cli.info(format!("execute bitbake clean task '{}'", self.task_data.name()));
+    fn exec(
+        &self,
+        args_env_variables: &HashMap<String, String>,
+        _dry_run: bool,
+        interactive: bool,
+    ) -> Result<(), BError> {
+        self.cli.info(format!(
+            "execute bitbake clean task '{}'",
+            self.task_data.name()
+        ));
         let mut cmd_line: Vec<String> = vec![];
         let cmd: String = self.task_data.clean_cmd().to_owned();
         cmd_line.append(&mut vec![
@@ -35,7 +39,12 @@ impl<'a> TaskExecuter for NonBBCleanExecuter<'a> {
         if !docker_str.is_empty() {
             let image: DockerImage = DockerImage::new(docker_str)?;
             let docker: Docker = Docker::new(image, interactive);
-            docker.run_cmd(&mut cmd_line, args_env_variables, self.task_data.build_dir(), &self.cli)?;
+            docker.run_cmd(
+                &mut cmd_line,
+                args_env_variables,
+                self.task_data.build_dir(),
+                &self.cli,
+            )?;
         } else {
             self.cli.check_call(&cmd_line, args_env_variables, true)?;
         }
@@ -46,10 +55,7 @@ impl<'a> TaskExecuter for NonBBCleanExecuter<'a> {
 
 impl<'a> NonBBCleanExecuter<'a> {
     pub fn new(cli: &'a Cli, task_data: &'a WsTaskData) -> Self {
-        NonBBCleanExecuter {
-            cli,
-            task_data,
-        }
+        NonBBCleanExecuter { cli, task_data }
     }
 }
 
@@ -59,15 +65,29 @@ pub struct NonBBBuildExecuter<'a> {
 }
 
 impl<'a> TaskExecuter for NonBBBuildExecuter<'a> {
-    fn exec(&self, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+    fn exec(
+        &self,
+        env_variables: &HashMap<String, String>,
+        dry_run: bool,
+        interactive: bool,
+    ) -> Result<(), BError> {
         if dry_run {
             self.cli.info("Dry run. Skipping build!".to_string());
             return Ok(());
         }
 
         let exec_dir: &std::path::PathBuf = self.task_data.build_dir();
-        let mut cmd_line: Vec<String> = vec!["cd".to_string(), exec_dir.to_string_lossy().to_string(), "&&".to_string()];
-        let mut cmd: Vec<String> = self.task_data.build_cmd().split(' ').map(|c| c.to_string()).collect();
+        let mut cmd_line: Vec<String> = vec![
+            "cd".to_string(),
+            exec_dir.to_string_lossy().to_string(),
+            "&&".to_string(),
+        ];
+        let mut cmd: Vec<String> = self
+            .task_data
+            .build_cmd()
+            .split(' ')
+            .map(|c| c.to_string())
+            .collect();
         cmd_line.append(&mut cmd);
 
         if !self.task_data.docker_image().is_empty() && self.task_data.docker_image() != "NA" {
@@ -83,10 +103,7 @@ impl<'a> TaskExecuter for NonBBBuildExecuter<'a> {
 
 impl<'a> NonBBBuildExecuter<'a> {
     pub fn new(cli: &'a Cli, task_data: &'a WsTaskData) -> Self {
-        NonBBBuildExecuter {
-            cli,
-            task_data,
-        }
+        NonBBBuildExecuter { cli, task_data }
     }
 }
 
@@ -97,13 +114,14 @@ mod tests {
     use tempdir::TempDir;
 
     use crate::cli::*;
-    use crate::executers::{NonBBBuildExecuter, TaskExecuter, NonBBCleanExecuter};
     use crate::data::{WsBuildData, WsTaskData};
+    use crate::executers::{NonBBBuildExecuter, NonBBCleanExecuter, TaskExecuter};
     use crate::helper::Helper;
 
     #[test]
     fn test_nonbitbake_executer() {
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let build_dir: PathBuf = work_dir.join("test-dir");
         let env_variables: HashMap<String, String> = HashMap::new();
@@ -124,15 +142,21 @@ mod tests {
             "clean": "rm -rf test-dir"
         }"#;
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
-        let task_data: WsTaskData = WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task config");
+        let task_data: WsTaskData =
+            WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task config");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "test.sh"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
+                cmd_line: vec![
+                    "cd",
+                    &build_dir.to_string_lossy().to_string(),
+                    "&&",
+                    "test.sh",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
                 env: HashMap::new(),
                 shell: true,
             }))
@@ -145,12 +169,15 @@ mod tests {
             Some(vec!["bakery"]),
         );
         let executer: NonBBBuildExecuter = NonBBBuildExecuter::new(&cli, &task_data);
-        executer.exec(&env_variables, false, true).expect("Failed to execute task");
+        executer
+            .exec(&env_variables, false, true)
+            .expect("Failed to execute task");
     }
 
     #[test]
     fn test_nonbitbake_executer_dry_run() {
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let env_variables: HashMap<String, String> = HashMap::new();
         let json_build_config: &str = r#"
@@ -170,11 +197,14 @@ mod tests {
             "clean": "rm -rf test-dir"
         }"#;
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
-        let task_data: WsTaskData = WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task config");
+        let task_data: WsTaskData =
+            WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task config");
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Dry run. Skipping build!".to_string()))
+            .with(mockall::predicate::eq(
+                "Dry run. Skipping build!".to_string(),
+            ))
             .once()
             .returning(|_x| ());
         let cli: Cli = Cli::new(
@@ -184,7 +214,9 @@ mod tests {
             Some(vec!["bakery"]),
         );
         let executer: NonBBBuildExecuter = NonBBBuildExecuter::new(&cli, &task_data);
-        executer.exec(&env_variables, true, true).expect("Failed to execute task");
+        executer
+            .exec(&env_variables, true, true)
+            .expect("Failed to execute task");
     }
 
     /*
@@ -239,7 +271,8 @@ mod tests {
 
     #[test]
     fn test_nonbitbake_clean_executer() {
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let build_dir: PathBuf = work_dir.join("test-dir");
         let env_variables: HashMap<String, String> = HashMap::new();
@@ -260,15 +293,23 @@ mod tests {
             "clean": "rm -rf dir-to-delete"
         }"#;
         let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
-        let task_data: WsTaskData = WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task config");
+        let task_data: WsTaskData =
+            WsTaskData::from_str(json_task_config, &data).expect("Failed to parse task config");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "rm", "-rf", "dir-to-delete"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
+                cmd_line: vec![
+                    "cd",
+                    &build_dir.to_string_lossy().to_string(),
+                    "&&",
+                    "rm",
+                    "-rf",
+                    "dir-to-delete",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
                 env: HashMap::new(),
                 shell: true,
             }))
@@ -281,6 +322,8 @@ mod tests {
             Some(vec!["bakery"]),
         );
         let executer: NonBBCleanExecuter = NonBBCleanExecuter::new(&cli, &task_data);
-        executer.exec(&env_variables, false, true).expect("Failed to execute task");
+        executer
+            .exec(&env_variables, false, true)
+            .expect("Failed to execute task");
     }
 }

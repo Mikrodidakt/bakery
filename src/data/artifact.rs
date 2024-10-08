@@ -1,8 +1,8 @@
 use serde_json::Value;
 
+use crate::configs::Config;
 use crate::configs::Context;
 use crate::error::BError;
-use crate::configs::Config;
 
 #[derive(Clone, Eq, Hash, PartialEq, Debug)]
 pub enum AType {
@@ -25,8 +25,7 @@ pub struct WsArtifactData {
     pub condition: String, // The condition is only used if the type is conditional
 }
 
-impl Config for WsArtifactData {
-}
+impl Config for WsArtifactData {}
 
 impl WsArtifactData {
     pub fn from_str(json_string: &str) -> Result<Self, BError> {
@@ -46,51 +45,75 @@ impl WsArtifactData {
         let manifest: String = Self::get_str_manifest("content", &data, Some(String::from("{}")))?;
         let condition: String = Self::get_str_value("condition", &data, Some(String::from("")))?;
 
-        if ttype != "file" && ttype != "directory" && ttype != "archive" && ttype != "manifest" && ttype != "link" && ttype != "conditional" {
-            return Err(BError::ParseArtifactsError(format!("Invalid type '{}'", ttype)));
+        if ttype != "file"
+            && ttype != "directory"
+            && ttype != "archive"
+            && ttype != "manifest"
+            && ttype != "link"
+            && ttype != "conditional"
+        {
+            return Err(BError::ParseArtifactsError(format!(
+                "Invalid type '{}'",
+                ttype
+            )));
         }
         if ttype == "file" && source.is_empty() {
-            return Err(BError::ParseArtifactsError(format!("The 'file' type requires a 'source'")));
+            return Err(BError::ParseArtifactsError(format!(
+                "The 'file' type requires a 'source'"
+            )));
         }
         if ttype == "directory" && name.is_empty() {
-            return Err(BError::ParseArtifactsError(format!("The 'directory' type requires a 'name'")));
+            return Err(BError::ParseArtifactsError(format!(
+                "The 'directory' type requires a 'name'"
+            )));
         }
         if ttype == "archive" && name.is_empty() {
-            return Err(BError::ParseArtifactsError(format!("The 'archive' type requires a 'name'")));
+            return Err(BError::ParseArtifactsError(format!(
+                "The 'archive' type requires a 'name'"
+            )));
         }
         if ttype == "manifest" && name.is_empty() {
-            return Err(BError::ParseArtifactsError(format!("The 'manifest' type requires a 'name'")));
+            return Err(BError::ParseArtifactsError(format!(
+                "The 'manifest' type requires a 'name'"
+            )));
         }
         if ttype == "link" && (name.is_empty() || source.is_empty()) {
-            return Err(BError::ParseArtifactsError(format!("The 'link' type requires a 'name' and 'source'")));
+            return Err(BError::ParseArtifactsError(format!(
+                "The 'link' type requires a 'name' and 'source'"
+            )));
         }
         if ttype == "conditional" && condition.is_empty() {
-            return Err(BError::ParseArtifactsError(format!("The 'conditional' type requires a 'condition'")));
+            return Err(BError::ParseArtifactsError(format!(
+                "The 'conditional' type requires a 'condition'"
+            )));
         }
 
         let enum_ttype: AType;
         match ttype.as_str() {
             "file" => {
                 enum_ttype = AType::File;
-            },
+            }
             "directory" => {
                 enum_ttype = AType::Directory;
-            },
+            }
             "archive" => {
                 enum_ttype = AType::Archive;
-            },
+            }
             "manifest" => {
                 enum_ttype = AType::Manifest;
-            },
+            }
             "link" => {
                 enum_ttype = AType::Link;
-            },
+            }
             "conditional" => {
                 enum_ttype = AType::Conditional;
-            },
+            }
             _ => {
-                return Err(BError::ParseArtifactsError(format!("Invalid type '{}'", ttype)));
-            },
+                return Err(BError::ParseArtifactsError(format!(
+                    "Invalid type '{}'",
+                    ttype
+                )));
+            }
         }
 
         //let source: PathBuf = task_build_dir.clone().join(PathBuf::from(source_str));
@@ -112,27 +135,30 @@ impl WsArtifactData {
                 self.name = ctx.expand_str(&self.name)?;
                 self.source = ctx.expand_str(&self.source)?;
                 self.dest = ctx.expand_str(&self.dest)?;
-            },
+            }
             AType::Directory => {
                 self.name = ctx.expand_str(&self.name)?;
-            },
+            }
             AType::Archive => {
                 self.name = ctx.expand_str(&self.name)?;
-            },
+            }
             AType::Manifest => {
                 self.name = ctx.expand_str(&self.name)?;
                 self.manifest = ctx.expand_str(&self.manifest)?;
-            },
+            }
             AType::Link => {
                 self.name = ctx.expand_str(&self.name)?;
                 self.source = ctx.expand_str(&self.source)?;
-            },
+            }
             AType::Conditional => {
                 self.condition = ctx.expand_str(&self.condition)?;
-            },
+            }
             _ => {
-                panic!("Invalid 'artifact' format in build config. Invalid type '{:?}'", self.atype);
-            },
+                panic!(
+                    "Invalid 'artifact' format in build config. Invalid type '{:?}'",
+                    self.atype
+                );
+            }
         }
         Ok(())
     }
@@ -167,16 +193,13 @@ impl WsArtifactData {
 
 #[cfg(test)]
 mod tests {
+    use indexmap::{indexmap, IndexMap};
     use serde_json::Value;
-    use indexmap::{IndexMap, indexmap};
 
+    use crate::configs::Context;
+    use crate::data::{AType, WsArtifactData};
     use crate::error::BError;
     use crate::helper::Helper;
-    use crate::data::{
-        WsArtifactData,
-        AType,
-    };
-    use crate::configs::Context;
 
     #[test]
     fn test_ws_artifact_data_source() {
@@ -185,8 +208,10 @@ mod tests {
             "source": "file1.txt"
         }
         "#;
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let data: WsArtifactData =
+            WsArtifactData::new(&value).expect("Failed to parse artifact data");
         assert!(data.name().is_empty());
         assert_eq!(data.atype(), &AType::File);
         assert_eq!(data.source(), "file1.txt");
@@ -201,8 +226,10 @@ mod tests {
             "dest": "dest"
         }
         "#;
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let data: WsArtifactData =
+            WsArtifactData::new(&value).expect("Failed to parse artifact data");
         assert!(data.name.is_empty());
         assert_eq!(data.atype(), &AType::File);
         assert_eq!(data.source(), "file1.txt");
@@ -211,15 +238,17 @@ mod tests {
 
     #[test]
     fn test_ws_artifact_data_file_type() {
-        let json_artifact_config: &str  = r#"
+        let json_artifact_config: &str = r#"
         {
             "type": "file",
             "source": "file1.txt",
             "dest": "dest"
         }
         "#;
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let data: WsArtifactData =
+            WsArtifactData::new(&value).expect("Failed to parse artifact data");
         assert!(data.name().is_empty());
         assert_eq!(data.atype(), &AType::File);
         assert_eq!(data.source(), "file1.txt");
@@ -239,8 +268,10 @@ mod tests {
             ]
         }
         "#;
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let data: WsArtifactData =
+            WsArtifactData::new(&value).expect("Failed to parse artifact data");
         assert_eq!(data.atype(), &AType::Directory);
         assert_eq!(data.name(), "dir");
     }
@@ -254,14 +285,18 @@ mod tests {
             "dest": "dest"
         }
         "#;
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
         let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value);
         match result {
             Ok(_data) => {
                 panic!("We should have recived an error because the type is invalid!");
             }
             Err(e) => {
-                assert_eq!(e.to_string(), String::from("Invalid 'artifact' node in build config. Invalid type 'invalid'"));
+                assert_eq!(
+                    e.to_string(),
+                    String::from("Invalid 'artifact' node in build config. Invalid type 'invalid'")
+                );
             }
         }
     }
@@ -273,7 +308,8 @@ mod tests {
             "type": "directory"
         }
         "#;
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
         let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value);
         match result {
             Ok(_rconfig) => {
@@ -292,7 +328,8 @@ mod tests {
             "type": "manifest"
         }
         "#;
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
         let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value);
         match result {
             Ok(_rconfig) => {
@@ -333,8 +370,10 @@ mod tests {
         }
         "#;
         let context: Context = Context::new(&ctx_variables);
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let mut data: WsArtifactData =
+            WsArtifactData::new(&value).expect("Failed to parse artifact data");
         data.expand_ctx(&context).unwrap();
         assert_eq!(data.name(), "test-archive.zip");
     }
@@ -363,8 +402,10 @@ mod tests {
         }
         "#;
         let context: Context = Context::new(&ctx_variables);
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let mut data: WsArtifactData =
+            WsArtifactData::new(&value).expect("Failed to parse artifact data");
         data.expand_ctx(&context).unwrap();
         assert_eq!(data.name(), "test-manifest.json");
         assert!(!data.manifest().is_empty());
@@ -383,8 +424,10 @@ mod tests {
         }
         "#;
         let context: Context = Context::new(&ctx_variables);
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let mut data: WsArtifactData =
+            WsArtifactData::new(&value).expect("Failed to parse artifact data");
         data.expand_ctx(&context).unwrap();
         assert_eq!(data.name(), "test-manifest.json");
         assert!(!data.manifest().is_empty());
@@ -400,8 +443,10 @@ mod tests {
             "source": "file.txt"
         }
         "#;
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let data: WsArtifactData =
+            WsArtifactData::new(&value).expect("Failed to parse artifact data");
         assert!(data.dest().is_empty());
         assert_eq!(data.atype(), &AType::Link);
         assert_eq!(data.source(), "file.txt");
@@ -421,8 +466,10 @@ mod tests {
         }
         "#;
         let context: Context = Context::new(&ctx_variables);
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let mut data: WsArtifactData =
+            WsArtifactData::new(&value).expect("Failed to parse artifact data");
         data.expand_ctx(&context).unwrap();
         assert!(data.dest().is_empty());
         assert_eq!(data.atype(), &AType::Link);
@@ -437,7 +484,8 @@ mod tests {
             "type": "link"
         }
         "#;
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
         let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value);
         match result {
             Ok(_rconfig) => {
@@ -457,7 +505,8 @@ mod tests {
             "name": "link.txt"
         }
         "#;
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
         let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value);
         match result {
             Ok(_rconfig) => {
@@ -476,7 +525,8 @@ mod tests {
             "type": "conditional"
         }
         "#;
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
         let result: Result<WsArtifactData, BError> = WsArtifactData::new(&value);
         match result {
             Ok(_rconfig) => {
@@ -496,8 +546,10 @@ mod tests {
             "condition": "true"
         }
         "#;
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let data: WsArtifactData =
+            WsArtifactData::new(&value).expect("Failed to parse artifact data");
         assert_eq!(data.atype(), &AType::Conditional);
         assert!(data.condition());
     }
@@ -514,8 +566,10 @@ mod tests {
         }
         "#;
         let context: Context = Context::new(&ctx_variables);
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let mut data: WsArtifactData =
+            WsArtifactData::new(&value).expect("Failed to parse artifact data");
         data.expand_ctx(&context).unwrap();
         assert_eq!(data.atype(), &AType::Conditional);
         assert!(data.condition());
@@ -533,8 +587,10 @@ mod tests {
         }
         "#;
         let context: Context = Context::new(&ctx_variables);
-        let value: Value = Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
-        let mut data: WsArtifactData = WsArtifactData::new(&value).expect("Failed to parse artifact data");
+        let value: Value =
+            Helper::parse(json_artifact_config).expect("Failed to parse artifact config");
+        let mut data: WsArtifactData =
+            WsArtifactData::new(&value).expect("Failed to parse artifact data");
         data.expand_ctx(&context).unwrap();
         assert_eq!(data.atype(), &AType::Conditional);
         assert!(!data.condition());

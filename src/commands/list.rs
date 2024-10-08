@@ -7,7 +7,8 @@ use crate::workspace::Workspace;
 //use clap::{ArgMatches, value_parser};
 
 static BCOMMAND: &str = "list";
-static BCOMMAND_ABOUT: &str = "List all builds configs or all tasks available for a specific build config.";
+static BCOMMAND_ABOUT: &str =
+    "List all builds configs or all tasks available for a specific build config.";
 pub struct ListCommand {
     cmd: BBaseCommand,
     // Your struct fields and methods here
@@ -41,7 +42,8 @@ impl BCommand for ListCommand {
     fn execute(&self, cli: &Cli, workspace: &mut Workspace) -> Result<(), BError> {
         let config: String = self.get_arg_str(cli, "config", BCOMMAND)?;
         let ctx: bool = self.get_arg_flag(cli, "ctx", BCOMMAND)?;
-        if config == "NA" { // default value if not specified
+        if config == "NA" {
+            // default value if not specified
             // If no config is specified then we will list all supported build configs
             cli.stdout(format!("{:<25} {:<52}", "NAME", "DESCRIPTION"));
             workspace
@@ -58,11 +60,13 @@ impl BCommand for ListCommand {
             // List all tasks for a build config
             if workspace.valid_config(config.as_str()) {
                 workspace.expand_ctx()?;
-                cli.stdout(format!("name: {}\narch: {}\nmachine: {}\ndescription: {}\n",
+                cli.stdout(format!(
+                    "name: {}\narch: {}\nmachine: {}\ndescription: {}\n",
                     workspace.config().build_data().name(),
                     workspace.config().build_data().product().arch(),
                     workspace.config().build_data().bitbake().machine(),
-                    workspace.config().build_data().product().description()));
+                    workspace.config().build_data().product().description()
+                ));
 
                 if ctx {
                     let variables: IndexMap<String, String> = workspace.context()?;
@@ -71,13 +75,31 @@ impl BCommand for ListCommand {
                         cli.stdout(format!("{}={}", key.to_ascii_uppercase(), value));
                     });
                 } else {
-                    cli.stdout(format!("{:<15} {:<52} {}", "NAME", "DESCRIPTION", "ENABLED/DISABLED"));
+                    cli.stdout(format!(
+                        "{:<15} {:<52} {}",
+                        "NAME", "DESCRIPTION", "ENABLED/DISABLED"
+                    ));
                     workspace.config().tasks().iter().for_each(|(_name, task)| {
-                        cli.stdout(format!("{:<15} - {:<50} [{}]", task.data().name(), task.data().description(), if task.data().disabled() { "disabled" } else { "enabled" }));
+                        cli.stdout(format!(
+                            "{:<15} - {:<50} [{}]",
+                            task.data().name(),
+                            task.data().description(),
+                            if task.data().disabled() {
+                                "disabled"
+                            } else {
+                                "enabled"
+                            }
+                        ));
                     });
+                    cli.stdout("".to_string());
+                    cli.stdout("NOTE: a enabled task will be executed as part of the build command while a".to_string());
+                    cli.stdout("disabled task will only be executed if explicitly selected by the build command".to_string());
                 }
             } else {
-                return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
+                return Err(BError::CliError(format!(
+                    "Unsupported build config '{}'",
+                    config
+                )));
             }
         }
         Ok(())
@@ -123,8 +145,8 @@ impl ListCommand {
 
 #[cfg(test)]
 mod tests {
+    use indexmap::{indexmap, IndexMap};
     use std::path::PathBuf;
-    use indexmap::{IndexMap, indexmap};
     use tempdir::TempDir;
 
     use crate::cli::*;
@@ -157,7 +179,8 @@ mod tests {
 
     #[test]
     fn test_cmd_list_build_config() {
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let json_ws_settings: &str = r#"
         {
@@ -194,22 +217,34 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_stdout()
-            .with(mockall::predicate::eq("name: default\narch: test-arch\nmachine: NA\ndescription: Test Description\n".to_string()))
+            .with(mockall::predicate::eq(
+                "name: default\narch: test-arch\nmachine: NA\ndescription: Test Description\n"
+                    .to_string(),
+            ))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_stdout()
-            .with(mockall::predicate::eq(format!("{:<15} {:<52} {}", "NAME", "DESCRIPTION", "ENABLED/DISABLED")))
+            .with(mockall::predicate::eq(format!(
+                "{:<15} {:<52} {}",
+                "NAME", "DESCRIPTION", "ENABLED/DISABLED"
+            )))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_stdout()
-            .with(mockall::predicate::eq(format!("{:<15} - {:<50} [{}]", "task1", "NA", "enabled")))
+            .with(mockall::predicate::eq(format!(
+                "{:<15} - {:<50} [{}]",
+                "task1", "NA", "enabled"
+            )))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_stdout()
-            .with(mockall::predicate::eq(format!("{:<15} - {:<50} [{}]", "task2", "test", "disabled")))
+            .with(mockall::predicate::eq(format!(
+                "{:<15} - {:<50} [{}]",
+                "task2", "test", "disabled"
+            )))
             .once()
             .returning(|_x| ());
         let _result: Result<(), BError> = helper_test_list_subcommand(
@@ -224,7 +259,8 @@ mod tests {
 
     #[test]
     fn test_cmd_list_invalid_build_config() {
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let json_ws_settings: &str = r#"
         {
@@ -279,7 +315,8 @@ mod tests {
 
     #[test]
     fn test_cmd_list_ctx() {
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let json_ws_settings: &str = r#"
         {
@@ -346,7 +383,7 @@ mod tests {
             "DATE".to_string() => chrono::offset::Local::now().format("%Y-%m-%d").to_string(),
             "TIME".to_string() => chrono::offset::Local::now().format("%H:%M").to_string(),
         };
-        ctx_variables.iter().for_each(|(key, value)|{
+        ctx_variables.iter().for_each(|(key, value)| {
             mocked_logger
                 .expect_stdout()
                 .with(mockall::predicate::eq(format!("{}={}", key, value)))

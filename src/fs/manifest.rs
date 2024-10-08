@@ -15,17 +15,24 @@ impl Manifest {
         let name: String = path
             .file_name()
             .and_then(|file_name| file_name.to_str())
-            .ok_or(BError::ParseManifestError("Manifest file name is not valid UTF-8!".to_string()))?
+            .ok_or(BError::ParseManifestError(
+                "Manifest file name is not valid UTF-8!".to_string(),
+            ))?
             .to_string();
 
         let suffix: String = path
             .extension()
             .and_then(|extension| extension.to_str())
-            .ok_or(BError::ParseManifestError("Manifest file extension is not valid UTF-8!".to_string()))?
+            .ok_or(BError::ParseManifestError(
+                "Manifest file extension is not valid UTF-8!".to_string(),
+            ))?
             .to_string();
 
         if suffix != "json" {
-            return Err(BError::ParseManifestError(format!("Unsupported manifest extension '{}'!", suffix)));
+            return Err(BError::ParseManifestError(format!(
+                "Unsupported manifest extension '{}'!",
+                suffix
+            )));
         }
 
         Ok(Manifest {

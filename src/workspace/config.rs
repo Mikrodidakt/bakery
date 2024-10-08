@@ -5,7 +5,7 @@ use crate::configs::Context;
 use crate::data::{WsBuildData, WsContextData};
 use crate::error::BError;
 use crate::fs::ConfigFileReader;
-use crate::workspace::{WsSettingsHandler, WsCustomSubCmdHandler, WsTaskHandler};
+use crate::workspace::{WsCustomSubCmdHandler, WsSettingsHandler, WsTaskHandler};
 
 pub struct WsBuildConfigHandler {
     data: WsBuildData,
@@ -173,7 +173,7 @@ mod tests {
 
     use crate::error::BError;
     use crate::workspace::{
-        WsBuildConfigHandler, WsSettingsHandler, WsCustomSubCmdHandler, WsTaskHandler,
+        WsBuildConfigHandler, WsCustomSubCmdHandler, WsSettingsHandler, WsTaskHandler,
     };
 
     #[test]

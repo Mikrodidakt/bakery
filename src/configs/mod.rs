@@ -1,29 +1,37 @@
-pub mod settings;
 pub mod context;
 pub mod handler;
+pub mod settings;
 
-pub use settings::WsSettings;
 pub use context::Context;
 pub use handler::WsConfigFileHandler;
+pub use settings::WsSettings;
 
+use crate::error::BError;
 use indexmap::IndexMap;
 use serde_json::Value;
-use crate::error::BError;
 pub trait Config {
-    fn get_str_manifest(name: &str, data: &Value, default: Option<String>) -> Result<String, BError> {
+    fn get_str_manifest(
+        name: &str,
+        data: &Value,
+        default: Option<String>,
+    ) -> Result<String, BError> {
         match data.get(name) {
             Some(value) => {
                 if value.is_object() {
                     return Ok(value.to_string());
                 }
-                return Err(BError::ParseError(format!("Failed to parse manifest. Error when reading object '{}'", name)));
+                return Err(BError::ParseError(format!(
+                    "Failed to parse manifest. Error when reading object '{}'",
+                    name
+                )));
             }
-            None => {
-                match default {
-                    Some(default_value) => Ok(default_value),
-                    None => Err(BError::ValueError(format!("Failed to read manifest value '{}'", name))),
-                }
-            }
+            None => match default {
+                Some(default_value) => Ok(default_value),
+                None => Err(BError::ValueError(format!(
+                    "Failed to read manifest value '{}'",
+                    name
+                ))),
+            },
         }
     }
 
@@ -32,55 +40,66 @@ pub trait Config {
         match value {
             Some(value) => {
                 return Ok(value.to_string());
-            },
-            None => {
-                match default {
-                    Some(default_value) => Ok(default_value),
-                    None => Err(BError::ValueError(format!("Failed to read string value '{}'", name))),
-                }
             }
+            None => match default {
+                Some(default_value) => Ok(default_value),
+                None => Err(BError::ValueError(format!(
+                    "Failed to read string value '{}'",
+                    name
+                ))),
+            },
         }
     }
 
     fn get_u32_value(name: &str, data: &Value, default: Option<u32>) -> Result<u32, BError> {
         let value: Option<&str> = data.get(name).and_then(|v| v.as_str());
         match value {
-            Some(value) => {
-                match value.parse::<u32>() {
-                    Ok(n) => Ok(n),
-                    Err(_err) => Err(BError::ValueError(format!("Failed to read int value '{}'", name))),
-                }
+            Some(value) => match value.parse::<u32>() {
+                Ok(n) => Ok(n),
+                Err(_err) => Err(BError::ValueError(format!(
+                    "Failed to read int value '{}'",
+                    name
+                ))),
             },
-            None => {
-                match default {
-                    Some(default_value) => Ok(default_value),
-                    None => Err(BError::ValueError(format!("Failed to read string value '{}'", name))),
-                }
-            }
+            None => match default {
+                Some(default_value) => Ok(default_value),
+                None => Err(BError::ValueError(format!(
+                    "Failed to read string value '{}'",
+                    name
+                ))),
+            },
         }
     }
 
-    fn get_array_value(name: &str, data: &Value, default: Option<Vec<String>>) -> Result<Vec<String>, BError> {
+    fn get_array_value(
+        name: &str,
+        data: &Value,
+        default: Option<Vec<String>>,
+    ) -> Result<Vec<String>, BError> {
         match data.get(name) {
             Some(array_value) => {
                 if array_value.is_array() {
                     return Ok(array_value
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .filter_map(|v| v.as_str())
-                    .map(|s| s.to_owned())
-                    .collect());
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .filter_map(|v| v.as_str())
+                        .map(|s| s.to_owned())
+                        .collect());
                 } else {
-                    return Err(BError::ParseError(format!("Failed to read array '{}'", name)));
+                    return Err(BError::ParseError(format!(
+                        "Failed to read array '{}'",
+                        name
+                    )));
                 }
             }
-            None => {
-                match default {
-                    Some(default_value) => Ok(default_value),
-                    None => Err(BError::ValueError(format!("Failed to read array value '{}'", name))),
-                }
-            }
+            None => match default {
+                Some(default_value) => Ok(default_value),
+                None => Err(BError::ValueError(format!(
+                    "Failed to read array value '{}'",
+                    name
+                ))),
+            },
         }
     }
 
@@ -98,13 +117,16 @@ pub trait Config {
                             let value = parts[1].to_string();
                             hashmap.insert(
                                 String::from(key.trim_matches('"')),
-                                String::from(value.trim_matches('"'))
+                                String::from(value.trim_matches('"')),
                             );
                         }
                     }
                     Ok(hashmap)
                 } else {
-                    return Err(BError::ParseError(format!("Failed to parse hashmap. Error when reading object '{}'", name)));
+                    return Err(BError::ParseError(format!(
+                        "Failed to parse hashmap. Error when reading object '{}'",
+                        name
+                    )));
                 }
             }
             None => {
@@ -116,15 +138,16 @@ pub trait Config {
     fn get_value<'a>(name: &str, data: &'a Value) -> Result<&'a Value, BError> {
         match data.get(name) {
             Some(value) => Ok(value),
-            None => Err(BError::ParseError(format!("Failed to get value '{}'", name))),
+            None => Err(BError::ParseError(format!(
+                "Failed to get value '{}'",
+                name
+            ))),
         }
     }
 
     fn parse(json_string: &str) -> Result<Value, BError> {
         match serde_json::from_str(json_string) {
-            Ok(data) => {
-                Ok(data)
-            },
+            Ok(data) => Ok(data),
             Err(err) => Err(BError::ParseError(format!("Failed to parse JSON: {}", err))),
         }
     }

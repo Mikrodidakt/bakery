@@ -1,9 +1,9 @@
+use crate::cli::Cli;
+use crate::configs::Context;
+use crate::data::WsCustomSubCmdData;
 use crate::error::BError;
 use crate::executers::{CustomSubCmdExecuter, TaskExecuter};
 use crate::fs::ConfigFileReader;
-use crate::configs::Context;
-use crate::data::WsCustomSubCmdData;
-use crate::cli::Cli;
 
 use serde_json::Value;
 use std::collections::HashMap;
@@ -21,9 +21,7 @@ impl WsCustomSubCmdHandler {
     pub fn new(name: &str, data: &Value) -> Result<Self, BError> {
         let taskcmd_data: WsCustomSubCmdData = WsCustomSubCmdData::from_value(name, data)?;
 
-        Ok(WsCustomSubCmdHandler {
-          data: taskcmd_data,
-        })
+        Ok(WsCustomSubCmdHandler { data: taskcmd_data })
     }
 
     pub fn expand_ctx(&mut self, ctx: &Context) -> Result<(), BError> {
@@ -31,7 +29,13 @@ impl WsCustomSubCmdHandler {
         Ok(())
     }
 
-    pub fn run<'a>(&self, cli: &'a Cli, env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool) -> Result<(), BError> {
+    pub fn run<'a>(
+        &self,
+        cli: &'a Cli,
+        env_variables: &HashMap<String, String>,
+        dry_run: bool,
+        interactive: bool,
+    ) -> Result<(), BError> {
         let executer: Box<dyn TaskExecuter> = Box::new(CustomSubCmdExecuter::new(cli, &self.data));
         executer.exec(env_variables, dry_run, interactive)
     }
@@ -45,8 +49,8 @@ impl WsCustomSubCmdHandler {
 mod tests {
     use crate::workspace::WsCustomSubCmdHandler;
 
-    use std::collections::HashMap;
     use crate::cli::*;
+    use std::collections::HashMap;
 
     #[test]
     fn test_ws_deploy_handler() {
@@ -54,15 +58,22 @@ mod tests {
         {
             "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
         }"#;
-        let handler: WsCustomSubCmdHandler = WsCustomSubCmdHandler::from_str("deploy", json_build_config).expect("Failed to parse build config");
+        let handler: WsCustomSubCmdHandler =
+            WsCustomSubCmdHandler::from_str("deploy", json_build_config)
+                .expect("Failed to parse build config");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["$#[SCRIPTS_DIR]/script.sh", "$#[ARG1]", "$#[ARG2]", "$#[ARG3]"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
+                cmd_line: vec![
+                    "$#[SCRIPTS_DIR]/script.sh",
+                    "$#[ARG1]",
+                    "$#[ARG2]",
+                    "$#[ARG3]",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
                 env: HashMap::new(),
                 shell: true,
             }))
@@ -74,6 +85,8 @@ mod tests {
             clap::Command::new("bakery"),
             Some(vec!["bakery"]),
         );
-        handler.run(&cli, &HashMap::new(), false, true).expect("Failed to run handler");
+        handler
+            .run(&cli, &HashMap::new(), false, true)
+            .expect("Failed to run handler");
     }
 }

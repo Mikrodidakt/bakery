@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use crate::commands::BCommand;
 use crate::error::BError;
+use std::collections::HashMap;
 
 use super::get_supported_cmds;
 
@@ -37,7 +37,7 @@ impl CmdHandler {
 
 #[cfg(test)]
 mod tests {
-    use crate::commands::{CmdHandler, BCommand};
+    use crate::commands::{BCommand, CmdHandler};
     use crate::error::BError;
 
     #[test]
@@ -167,7 +167,11 @@ mod tests {
 
         match cmd {
             Ok(command) => {
-                assert!(false, "Expected an error, but got an command '{}'", command.cmd_str());
+                assert!(
+                    false,
+                    "Expected an error, but got an command '{}'",
+                    command.cmd_str()
+                );
             }
             Err(err) => {
                 // TODO: we should make sure that BError is using PartialEq and Eq Traits

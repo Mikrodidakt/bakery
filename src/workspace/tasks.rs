@@ -1,28 +1,16 @@
-use crate::configs::Context;
-use crate::executers::{
-    TaskExecuter,
-    BBBuildExecuter,
-    BBCleanExecuter,
-    NonBBBuildExecuter,
-    NonBBCleanExecuter,
-};
-use crate::workspace::WsArtifactsHandler;
-use crate::error::BError;
-use crate::fs::ConfigFileReader;
 use crate::cli::Cli;
-use crate::data::{
-    TType,
-    WsBuildData,
-    WsTaskData,
+use crate::collector::{Collected, Collector, CollectorFactory};
+use crate::configs::Context;
+use crate::data::{TType, WsBuildData, WsTaskData};
+use crate::error::BError;
+use crate::executers::{
+    BBBuildExecuter, BBCleanExecuter, NonBBBuildExecuter, NonBBCleanExecuter, TaskExecuter,
 };
-use crate::collector::{
-    CollectorFactory,
-    Collector,
-    Collected,
-};
+use crate::fs::ConfigFileReader;
+use crate::workspace::WsArtifactsHandler;
 
-use std::collections::HashMap;
 use serde_json::Value;
+use std::collections::HashMap;
 
 pub struct WsTaskHandler {
     data: WsTaskData,
@@ -37,7 +25,8 @@ impl WsTaskHandler {
 
     pub fn new(data: &Value, build_data: &WsBuildData) -> Result<Self, BError> {
         let task_data: WsTaskData = WsTaskData::from_value(data, build_data)?;
-        let artifacts: Vec<WsArtifactsHandler> = build_data.get_artifacts(data, task_data.build_dir())?;
+        let artifacts: Vec<WsArtifactsHandler> =
+            build_data.get_artifacts(data, task_data.build_dir())?;
 
         Ok(WsTaskHandler {
             data: task_data,
@@ -45,8 +34,16 @@ impl WsTaskHandler {
         })
     }
 
-    pub fn build<'a>(&self, cli: &'a Cli, build_data: &WsBuildData, bb_variables: &Vec<String>,
-        env_variables: &HashMap<String, String>, dry_run: bool, interactive: bool, force: bool) -> Result<(), BError> {
+    pub fn build<'a>(
+        &self,
+        cli: &'a Cli,
+        build_data: &WsBuildData,
+        bb_variables: &Vec<String>,
+        env_variables: &HashMap<String, String>,
+        dry_run: bool,
+        interactive: bool,
+        force: bool,
+    ) -> Result<(), BError> {
         let executer: Box<dyn TaskExecuter>;
 
         if !force && self.data.disabled() {
@@ -55,14 +52,22 @@ impl WsTaskHandler {
         }
 
         if !force && !self.data.condition() {
-            cli.info(format!("Task condition for '{}' is not met, skipping", self.data.name()));
+            cli.info(format!(
+                "Task condition for '{}' is not met, skipping",
+                self.data.name()
+            ));
             return Ok(());
         }
 
         match self.data.ttype() {
             TType::Bitbake => {
-                executer = Box::new(BBBuildExecuter::new(cli, &self.data, build_data.bitbake(), bb_variables));
-            },
+                executer = Box::new(BBBuildExecuter::new(
+                    cli,
+                    &self.data,
+                    build_data.bitbake(),
+                    bb_variables,
+                ));
+            }
             TType::NonBitbake => {
                 executer = Box::new(NonBBBuildExecuter::new(cli, &self.data));
             }
@@ -77,23 +82,34 @@ impl WsTaskHandler {
         Ok(())
     }
 
-    pub fn clean<'a>(&self, cli: &'a Cli, build_data: &WsBuildData, env_variables: &HashMap<String, String>) -> Result<(), BError> {
+    pub fn clean<'a>(
+        &self,
+        cli: &'a Cli,
+        build_data: &WsBuildData,
+        env_variables: &HashMap<String, String>,
+    ) -> Result<(), BError> {
         let executer: Box<dyn TaskExecuter>;
 
         if self.data.disabled() {
-            cli.info(format!("Task '{}' is disabled in build config, execution is skipped", self.data.name()));
+            cli.info(format!(
+                "Task '{}' is disabled in build config, execution is skipped",
+                self.data.name()
+            ));
             return Ok(());
         }
 
         if !self.data.condition() {
-            cli.info(format!("Task condition for task '{}' is not met, execution is skipped", self.data.name()));
+            cli.info(format!(
+                "Task condition for task '{}' is not met, execution is skipped",
+                self.data.name()
+            ));
             return Ok(());
         }
 
         match self.data.ttype() {
             TType::Bitbake => {
                 executer = Box::new(BBCleanExecuter::new(cli, &self.data, build_data.bitbake()));
-            },
+            }
             TType::NonBitbake => {
                 executer = Box::new(NonBBCleanExecuter::new(cli, &self.data));
             }
@@ -108,22 +124,33 @@ impl WsTaskHandler {
         let mut collected: Vec<Collected> = vec![];
 
         if !self.artifacts.is_empty() {
-            cli.info(format!("Collecting artifacts for task '{}'", self.data.name()));
+            cli.info(format!(
+                "Collecting artifacts for task '{}'",
+                self.data.name()
+            ));
             for artifact in self.artifacts.iter() {
                 let collector: Box<dyn Collector> = CollectorFactory::create(artifact, Some(cli))?;
-                let mut c: Vec<Collected> = collector.collect(self.data.build_dir(), &build_data.settings().artifacts_dir())?;
+                let mut c: Vec<Collected> = collector.collect(
+                    self.data.build_dir(),
+                    &build_data.settings().artifacts_dir(),
+                )?;
                 collected.append(&mut c);
             }
 
-            cli.info(
-            format!("All artifacts for task '{}' have been collected to '{}'",
+            cli.info(format!(
+                "All artifacts for task '{}' have been collected to '{}'",
                 self.data.name(),
-                build_data.settings().artifacts_dir().to_string_lossy().to_string())
-            );
+                build_data
+                    .settings()
+                    .artifacts_dir()
+                    .to_string_lossy()
+                    .to_string()
+            ));
         } else {
-            cli.info(
-                format!("No artifacts to collect for task '{}'",
-                    self.data.name()));
+            cli.info(format!(
+                "No artifacts to collect for task '{}'",
+                self.data.name()
+            ));
         }
 
         Ok(collected)
@@ -149,24 +176,22 @@ impl WsTaskHandler {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use std::path::{Path, PathBuf};
-    use tempdir::TempDir;
     use std::fs::File;
     use std::io::Read;
+    use std::path::{Path, PathBuf};
+    use tempdir::TempDir;
 
-    use crate::cli::{BLogger, MockLogger, Cli, MockSystem, CallParams};
-    use crate::workspace::{
-        WsTaskHandler,
-        WsArtifactsHandler,
-    };
-    use crate::data::{
-        TType,
-        AType,
-        WsBuildData,
-    };
+    use crate::cli::{BLogger, CallParams, Cli, MockLogger, MockSystem};
+    use crate::data::{AType, TType, WsBuildData};
     use crate::helper::Helper;
+    use crate::workspace::{WsArtifactsHandler, WsTaskHandler};
 
-    fn helper_verify_bitbake_conf(local_conf_path: &PathBuf, local_conf_content: &str, bblayers_conf_path: &PathBuf, bblayers_conf_content: &str) {
+    fn helper_verify_bitbake_conf(
+        local_conf_path: &PathBuf,
+        local_conf_content: &str,
+        bblayers_conf_path: &PathBuf,
+        bblayers_conf_content: &str,
+    ) {
         assert!(local_conf_path.exists());
         assert!(bblayers_conf_path.exists());
         let mut file: File = File::open(local_conf_path).expect("Failed to open local.conf file!");
@@ -177,7 +202,8 @@ mod tests {
         validate_local_conf.push_str(local_conf_content);
         assert_eq!(validate_local_conf, contents);
 
-        let mut file: File = File::open(bblayers_conf_path).expect("Failed to open bblayers.conf file!");
+        let mut file: File =
+            File::open(bblayers_conf_path).expect("Failed to open bblayers.conf file!");
         let mut contents: String = String::new();
         file.read_to_string(&mut contents)
             .expect("Failed to read bblayers.conf file!");
@@ -202,8 +228,12 @@ mod tests {
             "artifacts": []
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
-        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
-        assert_eq!(task.data().build_dir(), &PathBuf::from("/workspace/task/dir"));
+        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data)
+            .expect("Failed to parse Task config");
+        assert_eq!(
+            task.data().build_dir(),
+            &PathBuf::from("/workspace/task/dir")
+        );
         assert!(task.data().condition());
         assert_eq!(task.data().name(), "task-name");
         assert_eq!(task.data().build_cmd(), "build-cmd");
@@ -225,8 +255,12 @@ mod tests {
             ]
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
-        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
-        assert_eq!(task.data().build_dir(), &PathBuf::from("/workspace/builds/NA"));
+        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data)
+            .expect("Failed to parse Task config");
+        assert_eq!(
+            task.data().build_dir(),
+            &PathBuf::from("/workspace/builds/NA")
+        );
         assert!(task.data().condition());
         assert_eq!(task.data().name(), "task-name");
         assert_eq!(task.data().ttype(), &TType::Bitbake);
@@ -247,8 +281,12 @@ mod tests {
             ]
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
-        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
-        assert_eq!(task.data().build_dir(), &PathBuf::from("/workspace/builds/NA"));
+        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data)
+            .expect("Failed to parse Task config");
+        assert_eq!(
+            task.data().build_dir(),
+            &PathBuf::from("/workspace/builds/NA")
+        );
         assert!(task.data().condition());
         assert_eq!(task.data().name(), "task-name");
         assert_eq!(task.data().ttype(), &TType::Bitbake);
@@ -296,8 +334,12 @@ mod tests {
             ]
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
-        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
-        assert_eq!(task.data().build_dir(), &PathBuf::from("/workspace/task/build/dir"));
+        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data)
+            .expect("Failed to parse Task config");
+        assert_eq!(
+            task.data().build_dir(),
+            &PathBuf::from("/workspace/task/build/dir")
+        );
         assert!(task.data().condition());
         assert_eq!(task.data().name(), "task-name");
         assert_eq!(task.data().ttype(), &TType::NonBitbake);
@@ -309,10 +351,19 @@ mod tests {
         assert_eq!(artifacts.data().name(), "test.zip");
         assert!(!artifacts.children().is_empty());
         let archive_artifacts: &Vec<WsArtifactsHandler> = artifacts.children();
-        assert_eq!(archive_artifacts.get(0).unwrap().data().atype(), &AType::File);
-        assert_eq!(archive_artifacts.get(0).unwrap().data().source(), "file3.txt");
+        assert_eq!(
+            archive_artifacts.get(0).unwrap().data().atype(),
+            &AType::File
+        );
+        assert_eq!(
+            archive_artifacts.get(0).unwrap().data().source(),
+            "file3.txt"
+        );
         assert_eq!(archive_artifacts.get(0).unwrap().data().dest(), "file4.txt");
-        assert_eq!(archive_artifacts.get(1).unwrap().data().atype(), &AType::Directory);
+        assert_eq!(
+            archive_artifacts.get(1).unwrap().data().atype(),
+            &AType::Directory
+        );
         assert_eq!(archive_artifacts.get(1).unwrap().data().name(), "dir-name");
         let dir_artifacts: &Vec<WsArtifactsHandler> = archive_artifacts.get(1).unwrap().children();
         let mut i: usize = 1;
@@ -398,10 +449,15 @@ mod tests {
                 }
             ]
         }"#;
-        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
-        let mut task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
+        let build_data: WsBuildData =
+            Helper::setup_build_data(&work_dir, Some(json_build_config), None);
+        let mut task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data)
+            .expect("Failed to parse Task config");
         task.expand_ctx(build_data.context().ctx()).unwrap();
-        assert_eq!(task.data().build_dir(), &PathBuf::from("/workspace/builds/test-name"));
+        assert_eq!(
+            task.data().build_dir(),
+            &PathBuf::from("/workspace/builds/test-name")
+        );
         assert!(task.data().condition());
         assert_eq!(task.data().name(), "task-name");
         assert_eq!(task.data().ttype(), &TType::Bitbake);
@@ -412,13 +468,30 @@ mod tests {
         assert_eq!(artifacts.data().name(), "test.zip");
         assert!(!artifacts.children().is_empty());
         let archive_artifacts: &Vec<WsArtifactsHandler> = artifacts.children();
-        assert_eq!(archive_artifacts.get(0).unwrap().data().atype(), &AType::File);
-        assert_eq!(archive_artifacts.get(0).unwrap().data().source(), "file3.txt");
+        assert_eq!(
+            archive_artifacts.get(0).unwrap().data().atype(),
+            &AType::File
+        );
+        assert_eq!(
+            archive_artifacts.get(0).unwrap().data().source(),
+            "file3.txt"
+        );
         assert_eq!(archive_artifacts.get(0).unwrap().data().dest(), "file4.txt");
-        assert_eq!(archive_artifacts.get(1).unwrap().data().name(), "test-manifest.json");
-        assert!(!archive_artifacts.get(1).unwrap().data().manifest().is_empty());
+        assert_eq!(
+            archive_artifacts.get(1).unwrap().data().name(),
+            "test-manifest.json"
+        );
+        assert!(!archive_artifacts
+            .get(1)
+            .unwrap()
+            .data()
+            .manifest()
+            .is_empty());
         assert_eq!(archive_artifacts.get(1).unwrap().data().manifest(), "{\"VAR1\":\"value1\",\"VAR2\":\"value2\",\"VAR3\":\"value3\",\"data\":{\"VAR4\":\"value4\"}}");
-        assert_eq!(archive_artifacts.get(2).unwrap().data().atype(), &AType::Directory);
+        assert_eq!(
+            archive_artifacts.get(2).unwrap().data().atype(),
+            &AType::Directory
+        );
         assert_eq!(archive_artifacts.get(2).unwrap().data().name(), "dir-name");
         let dir_artifacts: &Vec<WsArtifactsHandler> = archive_artifacts.get(2).unwrap().children();
         let mut i: usize = 1;
@@ -446,16 +519,29 @@ mod tests {
             ]
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
-        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
+        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data)
+            .expect("Failed to parse Task config");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()), "&&", "devtool", "create-workspace", "&&", "bitbake", "test-image"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
-                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
+                cmd_line: vec![
+                    "cd",
+                    &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()),
+                    "&&",
+                    "devtool",
+                    "create-workspace",
+                    "&&",
+                    "bitbake",
+                    "test-image",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+                env: HashMap::from([(
+                    String::from("BB_ENV_PASSTHROUGH_ADDITIONS"),
+                    String::from("SSTATE_DIR DL_DIR TMPDIR"),
+                )]),
                 shell: true,
             }))
             .once()
@@ -469,7 +555,16 @@ mod tests {
             clap::Command::new("bakery"),
             None,
         );
-        task.build(&cli, &build_data, &vec![], &HashMap::new(), false, false, false).expect("Failed to run task!");
+        task.build(
+            &cli,
+            &build_data,
+            &vec![],
+            &HashMap::new(),
+            false,
+            false,
+            false,
+        )
+        .expect("Failed to run task!");
     }
 
     /*
@@ -534,16 +629,29 @@ mod tests {
             ]
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
-        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
+        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data)
+            .expect("Failed to parse Task config");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()), "&&", "devtool", "create-workspace", "&&", "bitbake", "image"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
-                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
+                cmd_line: vec![
+                    "cd",
+                    &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()),
+                    "&&",
+                    "devtool",
+                    "create-workspace",
+                    "&&",
+                    "bitbake",
+                    "image",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+                env: HashMap::from([(
+                    String::from("BB_ENV_PASSTHROUGH_ADDITIONS"),
+                    String::from("SSTATE_DIR DL_DIR TMPDIR"),
+                )]),
                 shell: true,
             }))
             .once()
@@ -551,11 +659,25 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()), "&&", "devtool", "create-workspace", "&&", "bitbake", "image", "-c", "do_populate_sdk"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
-                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
+                cmd_line: vec![
+                    "cd",
+                    &format!("{}/builds/NA", work_dir.to_string_lossy().to_string()),
+                    "&&",
+                    "devtool",
+                    "create-workspace",
+                    "&&",
+                    "bitbake",
+                    "image",
+                    "-c",
+                    "do_populate_sdk",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+                env: HashMap::from([(
+                    String::from("BB_ENV_PASSTHROUGH_ADDITIONS"),
+                    String::from("SSTATE_DIR DL_DIR TMPDIR"),
+                )]),
                 shell: true,
             }))
             .once()
@@ -569,7 +691,16 @@ mod tests {
             clap::Command::new("bakery"),
             None,
         );
-        task.build(&cli, &build_data, &vec![], &HashMap::new(), false, false, false).expect("Failed to run task!");
+        task.build(
+            &cli,
+            &build_data,
+            &vec![],
+            &HashMap::new(),
+            false,
+            false,
+            false,
+        )
+        .expect("Failed to run task!");
     }
 
     #[test]
@@ -641,8 +772,10 @@ mod tests {
                 "image"
             ]
         }"#;
-        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
-        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data).expect("Failed to parse Task config");
+        let build_data: WsBuildData =
+            Helper::setup_build_data(&work_dir, Some(json_build_config), None);
+        let task: WsTaskHandler = WsTaskHandler::from_str(json_task_str, &build_data)
+            .expect("Failed to parse Task config");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_init_env_file()
@@ -654,7 +787,10 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
+                env: HashMap::from([(
+                    String::from("BB_ENV_PASSTHROUGH_ADDITIONS"),
+                    String::from("SSTATE_DIR DL_DIR TMPDIR"),
+                )]),
                 shell: true,
             }))
             .once()
@@ -662,27 +798,41 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("Autogenerate {}", local_conf_path.display())))
+            .with(mockall::predicate::eq(format!(
+                "Autogenerate {}",
+                local_conf_path.display()
+            )))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("Autogenerate {}", bblayers_conf_path.display())))
+            .with(mockall::predicate::eq(format!(
+                "Autogenerate {}",
+                bblayers_conf_path.display()
+            )))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("source init env file {}", build_data.bitbake().init_env_file().display())))
+            .with(mockall::predicate::eq(format!(
+                "source init env file {}",
+                build_data.bitbake().init_env_file().display()
+            )))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("execute bitbake build task '{}'", task.data().name())))
+            .with(mockall::predicate::eq(format!(
+                "execute bitbake build task '{}'",
+                task.data().name()
+            )))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("Dry run. Skipping build!".to_string()))
+            .with(mockall::predicate::eq(
+                "Dry run. Skipping build!".to_string(),
+            ))
             .once()
             .returning(|_x| ());
         let cli: Cli = Cli::new(
@@ -698,7 +848,9 @@ mod tests {
             &HashMap::new(),
             true, // Running dry-run should skip the execution and instead only create the bitbake confs
             false,
-            false).expect("Failed to run task!");
+            false,
+        )
+        .expect("Failed to run task!");
         let mut local_conf_content: String = String::from("");
         local_conf_content.push_str("BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"\n");
         local_conf_content.push_str("PARALLEL_MAKE ?= \"-j ${@oe.utils.cpu_count()}\"\n");
@@ -722,8 +874,14 @@ mod tests {
         local_conf_content.push_str("MACHINE ?= \"raspberrypi3\"\n");
         local_conf_content.push_str("PRODUCT_NAME ?= \"default\"\n");
         local_conf_content.push_str("DISTRO ?= \"strix\"\n");
-        local_conf_content.push_str(&format!("SSTATE_DIR ?= \"{}/.cache/test-arch/sstate-cache\"\n", work_dir.to_string_lossy().to_string()));
-        local_conf_content.push_str(&format!("DL_DIR ?= \"{}/.cache/download\"\n",work_dir.to_string_lossy().to_string()));
+        local_conf_content.push_str(&format!(
+            "SSTATE_DIR ?= \"{}/.cache/test-arch/sstate-cache\"\n",
+            work_dir.to_string_lossy().to_string()
+        ));
+        local_conf_content.push_str(&format!(
+            "DL_DIR ?= \"{}/.cache/download\"\n",
+            work_dir.to_string_lossy().to_string()
+        ));
         let mut bblayers_conf_content: String = String::from("");
         bblayers_conf_content.push_str("LCONF_VERSION=\"7\"\n");
         bblayers_conf_content.push_str("BBPATH=\"${TOPDIR}\"\n");
@@ -737,10 +895,18 @@ mod tests {
         bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/poky/meta-poky \\\n");
         bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/poky/meta-yocto-bsp \\\n");
         bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-oe \\\n");
-        bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-networking \\\n");
-        bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-filesystems \\\n");
-        bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-python \\\n");
+        bblayers_conf_content
+            .push_str("  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-networking \\\n");
+        bblayers_conf_content
+            .push_str("  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-filesystems \\\n");
+        bblayers_conf_content
+            .push_str("  ${STRIX_WORKDIR}/layers/meta-openembedded/meta-python \\\n");
         bblayers_conf_content.push_str("  ${STRIX_WORKDIR}/layers/meta-raspberrypi \"\n");
-        helper_verify_bitbake_conf(&local_conf_path, &local_conf_content, &bblayers_conf_path, &bblayers_conf_content);
+        helper_verify_bitbake_conf(
+            &local_conf_path,
+            &local_conf_content,
+            &bblayers_conf_path,
+            &bblayers_conf_content,
+        );
     }
 }

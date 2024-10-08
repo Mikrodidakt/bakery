@@ -1,18 +1,13 @@
-use std::path::PathBuf;
 use std::io::Read;
 use std::io::Write;
+use std::path::PathBuf;
 use std::result;
 
+use crate::cli::Cli;
 use crate::data::WsBitbakeData;
 use crate::error::BError;
-use crate::cli::Cli;
 
-static BBLAYERS_PATTERNS: [&str; 4] = [
-    "BBLAYERS ?=",
-    "BBLAYERS?=",
-    "BBLAYERS=",
-    "BBLAYERS =",
-];
+static BBLAYERS_PATTERNS: [&str; 4] = ["BBLAYERS ?=", "BBLAYERS?=", "BBLAYERS=", "BBLAYERS ="];
 
 pub struct BitbakeConf {
     build_conf_dir: PathBuf,
@@ -21,7 +16,7 @@ pub struct BitbakeConf {
     local_conf_content: String,
     bblayers_conf_content: String,
     force: bool,
-    bb_variables: Vec<String>
+    bb_variables: Vec<String>,
 }
 
 impl BitbakeConf {
@@ -30,7 +25,10 @@ impl BitbakeConf {
 
         for line in content.lines() {
             // Check if the line starts with any of the BBLAYERS patterns
-            if BBLAYERS_PATTERNS.iter().any(|&pattern| line.starts_with(pattern)) {
+            if BBLAYERS_PATTERNS
+                .iter()
+                .any(|&pattern| line.starts_with(pattern))
+            {
                 found_bblayers = true;
                 break;
             }
@@ -58,9 +56,9 @@ impl BitbakeConf {
          * Clean the content from newlines and tabs
          */
         let mut cleaned: String = content
-            .lines()                                // Split the string into lines
-            .map(str::trim)    // Trim leading and trailing whitespaces/tabs from each line
-            .collect::<Vec<&str>>()             // Collect the trimmed lines into a vector
+            .lines() // Split the string into lines
+            .map(str::trim) // Trim leading and trailing whitespaces/tabs from each line
+            .collect::<Vec<&str>>() // Collect the trimmed lines into a vector
             .join("\n");
 
         /*
@@ -75,7 +73,10 @@ impl BitbakeConf {
             }
 
             // Check if the line starts with any of the BBLAYERS patterns
-            if BBLAYERS_PATTERNS.iter().any(|&pattern| line.starts_with(pattern)) {
+            if BBLAYERS_PATTERNS
+                .iter()
+                .any(|&pattern| line.starts_with(pattern))
+            {
                 found_bblayers = true;
             }
         }
@@ -101,17 +102,28 @@ impl BitbakeConf {
         Ok(true)
     }
 
-    fn create_bb_conf_file(&self, cli: &Cli, conf_path: &PathBuf, content: &str, bb_variables: Option<&Vec<String>>, force: bool) -> Result<(), BError> {
+    fn create_bb_conf_file(
+        &self,
+        cli: &Cli,
+        conf_path: &PathBuf,
+        content: &str,
+        bb_variables: Option<&Vec<String>>,
+        force: bool,
+    ) -> Result<(), BError> {
         let mut conf_str: String = String::from("# AUTO GENERATED\n");
         conf_str.push_str(content);
-        let file_name: String = conf_path.file_name().unwrap_or_default().to_string_lossy().to_string();
+        let file_name: String = conf_path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
 
         match bb_variables {
             Some(variables) => {
                 for line in variables {
                     conf_str.push_str(format!("{}\n", line).as_str());
                 }
-            },
+            }
             None => {}
         }
 
@@ -138,19 +150,23 @@ impl BitbakeConf {
     }
 
     pub fn create_bblayers_conf(&self, cli: &Cli) -> Result<(), BError> {
-        self.create_bb_conf_file(cli,
+        self.create_bb_conf_file(
+            cli,
             &self.bblayers_conf_path,
             &self.bblayers_conf_content,
             None,
-            self.force)
+            self.force,
+        )
     }
 
     pub fn create_local_conf(&self, cli: &Cli) -> Result<(), BError> {
-        self.create_bb_conf_file(cli,
+        self.create_bb_conf_file(
+            cli,
             &self.local_conf_path,
             &self.local_conf_content,
             Some(&self.bb_variables),
-            self.force)
+            self.force,
+        )
     }
 
     pub fn create_bitbake_configs(&self, cli: &Cli) -> Result<(), BError> {
@@ -172,13 +188,14 @@ impl BitbakeConf {
     }
 
     pub fn construct(
-            build_conf_dir: &PathBuf,
-            local_conf_path: &PathBuf,
-            bblayers_conf_path: &PathBuf,
-            local_conf_content: String,
-            bblayers_conf_content: String,
-            force: bool,
-            bb_variables: Vec<String>) -> Self {
+        build_conf_dir: &PathBuf,
+        local_conf_path: &PathBuf,
+        bblayers_conf_path: &PathBuf,
+        local_conf_content: String,
+        bblayers_conf_content: String,
+        force: bool,
+        bb_variables: Vec<String>,
+    ) -> Self {
         BitbakeConf {
             build_conf_dir: build_conf_dir.clone(),
             local_conf_path: local_conf_path.clone(),
@@ -193,16 +210,12 @@ impl BitbakeConf {
 
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
-    use tempdir::TempDir;
     use std::fs::File;
     use std::io::Read;
+    use std::path::{Path, PathBuf};
+    use tempdir::TempDir;
 
-    use crate::cli::{
-        BSystem,
-        MockLogger,
-        Cli,
-    };
+    use crate::cli::{BSystem, Cli, MockLogger};
     use crate::fs::BitbakeConf;
 
     #[test]
@@ -223,7 +236,10 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("Autogenerate {}", local_conf_path.display())))
+            .with(mockall::predicate::eq(format!(
+                "Autogenerate {}",
+                local_conf_path.display()
+            )))
             .once()
             .returning(|_x| ());
         let cli: Cli = Cli::new(
@@ -239,9 +255,11 @@ mod tests {
             local_conf_content.clone(),
             bblayers_conf_content,
             force,
-            bb_variables);
+            bb_variables,
+        );
         std::fs::create_dir_all(&bitbake_conf_path).expect("Failed to create bitbake conf dir");
-        conf.create_local_conf(&cli).expect("Failed to create local.conf");
+        conf.create_local_conf(&cli)
+            .expect("Failed to create local.conf");
         let mut file: File = File::open(&local_conf_path).expect("Failed to open local.conf file!");
         let mut contents: String = String::new();
         file.read_to_string(&mut contents)
@@ -269,7 +287,10 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("Autogenerate {}", bblayers_conf_path.display())))
+            .with(mockall::predicate::eq(format!(
+                "Autogenerate {}",
+                bblayers_conf_path.display()
+            )))
             .once()
             .returning(|_x| ());
         let cli: Cli = Cli::new(
@@ -285,10 +306,13 @@ mod tests {
             local_conf_content,
             bblayers_conf_content.clone(),
             force,
-            bb_variables);
+            bb_variables,
+        );
         std::fs::create_dir_all(&bitbake_conf_path).expect("Failed to create bitbake conf dir");
-        conf.create_bblayers_conf(&cli).expect("Failed to create bblayers.conf");
-        let mut file: File = File::open(&bblayers_conf_path).expect("Failed to open bblayers.conf file!");
+        conf.create_bblayers_conf(&cli)
+            .expect("Failed to create bblayers.conf");
+        let mut file: File =
+            File::open(&bblayers_conf_path).expect("Failed to open bblayers.conf file!");
         let mut contents: String = String::new();
         file.read_to_string(&mut contents)
             .expect("Failed to read bblayers.conf file!");
@@ -315,12 +339,17 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("Autogenerate {}", bblayers_conf_path.display())))
+            .with(mockall::predicate::eq(format!(
+                "Autogenerate {}",
+                bblayers_conf_path.display()
+            )))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("bblayers.conf exists skipping".to_string()))
+            .with(mockall::predicate::eq(
+                "bblayers.conf exists skipping".to_string(),
+            ))
             .once()
             .returning(|_x| ());
         let cli: Cli = Cli::new(
@@ -336,11 +365,15 @@ mod tests {
             local_conf_content,
             bblayers_conf_content.clone(),
             force,
-            bb_variables);
+            bb_variables,
+        );
         std::fs::create_dir_all(&bitbake_conf_path).expect("Failed to create bitbake conf dir");
-        conf.create_bblayers_conf(&cli).expect("Failed to create bblayers.conf");
-        conf.create_bblayers_conf(&cli).expect("Failed to create bblayers.conf");
-        let mut file: File = File::open(&bblayers_conf_path).expect("Failed to open bblayers.conf file!");
+        conf.create_bblayers_conf(&cli)
+            .expect("Failed to create bblayers.conf");
+        conf.create_bblayers_conf(&cli)
+            .expect("Failed to create bblayers.conf");
+        let mut file: File =
+            File::open(&bblayers_conf_path).expect("Failed to open bblayers.conf file!");
         let mut contents: String = String::new();
         file.read_to_string(&mut contents)
             .expect("Failed to read bblayers.conf file!");
@@ -367,12 +400,17 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("Autogenerate {}", local_conf_path.display())))
+            .with(mockall::predicate::eq(format!(
+                "Autogenerate {}",
+                local_conf_path.display()
+            )))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq("local.conf exists skipping".to_string()))
+            .with(mockall::predicate::eq(
+                "local.conf exists skipping".to_string(),
+            ))
             .once()
             .returning(|_x| ());
         let cli: Cli = Cli::new(
@@ -388,10 +426,13 @@ mod tests {
             local_conf_content.clone(),
             bblayers_conf_content,
             force,
-            bb_variables);
+            bb_variables,
+        );
         std::fs::create_dir_all(&bitbake_conf_path).expect("Failed to create bitbake conf dir");
-        conf.create_local_conf(&cli).expect("Failed to create local.conf");
-        conf.create_local_conf(&cli).expect("Failed to create local.conf");
+        conf.create_local_conf(&cli)
+            .expect("Failed to create local.conf");
+        conf.create_local_conf(&cli)
+            .expect("Failed to create local.conf");
         let mut file: File = File::open(&local_conf_path).expect("Failed to open local.conf file!");
         let mut contents: String = String::new();
         file.read_to_string(&mut contents)
@@ -419,12 +460,18 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("Autogenerate {}", bblayers_conf_path.display())))
+            .with(mockall::predicate::eq(format!(
+                "Autogenerate {}",
+                bblayers_conf_path.display()
+            )))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("Autogenerate {}", bblayers_conf_path.display())))
+            .with(mockall::predicate::eq(format!(
+                "Autogenerate {}",
+                bblayers_conf_path.display()
+            )))
             .once()
             .returning(|_x| ());
         let cli: Cli = Cli::new(
@@ -440,11 +487,15 @@ mod tests {
             local_conf_content,
             bblayers_conf_content.clone(),
             force,
-            bb_variables);
+            bb_variables,
+        );
         std::fs::create_dir_all(&bitbake_conf_path).expect("Failed to create bitbake conf dir");
-        conf.create_bblayers_conf(&cli).expect("Failed to create bblayers.conf");
-        conf.create_bblayers_conf(&cli).expect("Failed to create bblayers.conf");
-        let mut file: File = File::open(&bblayers_conf_path).expect("Failed to open bblayers.conf file!");
+        conf.create_bblayers_conf(&cli)
+            .expect("Failed to create bblayers.conf");
+        conf.create_bblayers_conf(&cli)
+            .expect("Failed to create bblayers.conf");
+        let mut file: File =
+            File::open(&bblayers_conf_path).expect("Failed to open bblayers.conf file!");
         let mut contents: String = String::new();
         file.read_to_string(&mut contents)
             .expect("Failed to read bblayers.conf file!");
@@ -471,12 +522,18 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("Autogenerate {}", local_conf_path.display())))
+            .with(mockall::predicate::eq(format!(
+                "Autogenerate {}",
+                local_conf_path.display()
+            )))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("Autogenerate {}", local_conf_path.display())))
+            .with(mockall::predicate::eq(format!(
+                "Autogenerate {}",
+                local_conf_path.display()
+            )))
             .once()
             .returning(|_x| ());
         let cli: Cli = Cli::new(
@@ -492,10 +549,13 @@ mod tests {
             local_conf_content.clone(),
             bblayers_conf_content,
             force,
-            bb_variables);
+            bb_variables,
+        );
         std::fs::create_dir_all(&bitbake_conf_path).expect("Failed to create bitbake conf dir");
-        conf.create_local_conf(&cli).expect("Failed to create local.conf");
-        conf.create_local_conf(&cli).expect("Failed to create local.conf");
+        conf.create_local_conf(&cli)
+            .expect("Failed to create local.conf");
+        conf.create_local_conf(&cli)
+            .expect("Failed to create local.conf");
         let mut file: File = File::open(&local_conf_path).expect("Failed to open local.conf file!");
         let mut contents: String = String::new();
         file.read_to_string(&mut contents)
@@ -526,12 +586,18 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("Autogenerate {}", local_conf_path.display())))
+            .with(mockall::predicate::eq(format!(
+                "Autogenerate {}",
+                local_conf_path.display()
+            )))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("Autogenerate {}", bblayers_conf_path.display())))
+            .with(mockall::predicate::eq(format!(
+                "Autogenerate {}",
+                bblayers_conf_path.display()
+            )))
             .once()
             .returning(|_x| ());
         let cli: Cli = Cli::new(
@@ -547,8 +613,10 @@ mod tests {
             local_conf_content.clone(),
             bblayers_conf_content.clone(),
             force,
-            bb_variables);
-        conf.create_bitbake_configs(&cli).expect("Failed to create conf files");
+            bb_variables,
+        );
+        conf.create_bitbake_configs(&cli)
+            .expect("Failed to create conf files");
         let mut file: File = File::open(&local_conf_path).expect("Failed to open local.conf file!");
         let mut contents: String = String::new();
         file.read_to_string(&mut contents)
@@ -556,7 +624,8 @@ mod tests {
         let mut validate_local_conf: String = String::from("# AUTO GENERATED\n");
         validate_local_conf.push_str(&local_conf_content);
         assert_eq!(validate_local_conf, contents);
-        let mut file: File = File::open(&bblayers_conf_path).expect("Failed to open bblayers.conf file!");
+        let mut file: File =
+            File::open(&bblayers_conf_path).expect("Failed to open bblayers.conf file!");
         let mut contents: String = String::new();
         file.read_to_string(&mut contents)
             .expect("Failed to read bblayers.conf file!");

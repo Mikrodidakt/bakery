@@ -1,6 +1,6 @@
-use serde_json::Value;
 use crate::configs::Config;
 use crate::error::BError;
+use serde_json::Value;
 
 // Not the ideal solution we should see if it is possible to
 // read them from the Cargo.toml and then incorporate them
@@ -30,8 +30,7 @@ pub struct WsSettings {
     pub docker_top_dir: String,
 }
 
-impl Config for WsSettings {
-}
+impl Config for WsSettings {}
 
 impl WsSettings {
     pub fn from_str(json_string: &str) -> Result<Self, BError> {
@@ -55,22 +54,32 @@ impl WsSettings {
 
         match Self::get_value("workspace", &data) {
             Ok(ws_data) => {
-                configs_dir = Self::get_str_value("configsdir", ws_data, Some(String::from("configs")))?;
-                include_dir = Self::get_str_value("includedir", ws_data, Some(String::from("configs/include")))?;
-                builds_dir = Self::get_str_value("buildsdir", ws_data, Some(String::from("builds")))?;
-                artifacts_dir = Self::get_str_value("artifactsdir", ws_data, Some(String::from("artifacts")))?;
-                layers_dir = Self::get_str_value("layersdir", ws_data, Some(String::from("layers")))?;
-                scripts_dir = Self::get_str_value("scriptsdir", ws_data, Some(String::from("scripts")))?;
-                docker_dir = Self::get_str_value("dockerdir", ws_data, Some(String::from("docker")))?;
+                configs_dir =
+                    Self::get_str_value("configsdir", ws_data, Some(String::from("configs")))?;
+                include_dir = Self::get_str_value(
+                    "includedir",
+                    ws_data,
+                    Some(String::from("configs/include")),
+                )?;
+                builds_dir =
+                    Self::get_str_value("buildsdir", ws_data, Some(String::from("builds")))?;
+                artifacts_dir =
+                    Self::get_str_value("artifactsdir", ws_data, Some(String::from("artifacts")))?;
+                layers_dir =
+                    Self::get_str_value("layersdir", ws_data, Some(String::from("layers")))?;
+                scripts_dir =
+                    Self::get_str_value("scriptsdir", ws_data, Some(String::from("scripts")))?;
+                docker_dir =
+                    Self::get_str_value("dockerdir", ws_data, Some(String::from("docker")))?;
                 cache_dir = Self::get_str_value("cachedir", ws_data, Some(String::from(".cache")))?;
-            },
+            }
             Err(_err) => {}
         }
 
         match Self::get_value("builds", &data) {
             Ok(build_data) => {
                 supported = Self::get_array_value("supported", build_data, Some(vec![]))?;
-            },
+            }
             Err(_err) => {
                 supported = vec![];
             }
@@ -78,13 +87,24 @@ impl WsSettings {
 
         match Self::get_value("docker", &data) {
             Ok(docker_data) => {
-                docker_disabled = Self::get_str_value("disabled", docker_data, Some(String::from("false")))?;
-                docker_image = Self::get_str_value("image", docker_data, Some(String::from(BAKERY_DOCKER_IMAGE)))?;
-                docker_tag = Self::get_str_value("tag", docker_data, Some(String::from(BAKERY_DOCKER_TAG)))?;
-                docker_registry = Self::get_str_value("registry", docker_data, Some(String::from(BAKERY_DOCKER_REGISTRY)))?;
+                docker_disabled =
+                    Self::get_str_value("disabled", docker_data, Some(String::from("false")))?;
+                docker_image = Self::get_str_value(
+                    "image",
+                    docker_data,
+                    Some(String::from(BAKERY_DOCKER_IMAGE)),
+                )?;
+                docker_tag =
+                    Self::get_str_value("tag", docker_data, Some(String::from(BAKERY_DOCKER_TAG)))?;
+                docker_registry = Self::get_str_value(
+                    "registry",
+                    docker_data,
+                    Some(String::from(BAKERY_DOCKER_REGISTRY)),
+                )?;
                 docker_args = Self::get_array_value("args", docker_data, Some(vec![]))?;
-                docker_top_dir = Self::get_str_value("topdir", docker_data, Some(String::from("")))?;
-            },
+                docker_top_dir =
+                    Self::get_str_value("topdir", docker_data, Some(String::from("")))?;
+            }
             Err(_err) => {}
         }
 
@@ -131,14 +151,14 @@ mod tests {
             }
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.configs_dir,  "configs_test");
-        assert_eq!(&settings.include_dir,  "include_test");
-        assert_eq!(&settings.artifacts_dir,  "artifacts_test");
-        assert_eq!(&settings.layers_dir,  "layers_test");
-        assert_eq!(&settings.builds_dir,  "builds_test");
-        assert_eq!(&settings.scripts_dir,  "scripts_test");
-        assert_eq!(&settings.docker_dir,  "docker_test");
-        assert_eq!(&settings.cache_dir,  "cache_test");
+        assert_eq!(&settings.configs_dir, "configs_test");
+        assert_eq!(&settings.include_dir, "include_test");
+        assert_eq!(&settings.artifacts_dir, "artifacts_test");
+        assert_eq!(&settings.layers_dir, "layers_test");
+        assert_eq!(&settings.builds_dir, "builds_test");
+        assert_eq!(&settings.scripts_dir, "scripts_test");
+        assert_eq!(&settings.docker_dir, "docker_test");
+        assert_eq!(&settings.cache_dir, "cache_test");
     }
 
     #[test]
@@ -148,14 +168,14 @@ mod tests {
             "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.configs_dir,  "configs");
-        assert_eq!(&settings.include_dir,  "configs/include");
-        assert_eq!(&settings.artifacts_dir,  "artifacts");
-        assert_eq!(&settings.layers_dir,  "layers");
-        assert_eq!(&settings.builds_dir,  "builds");
-        assert_eq!(&settings.scripts_dir,  "scripts");
-        assert_eq!(&settings.docker_dir,  "docker");
-        assert_eq!(&settings.cache_dir,  ".cache");
+        assert_eq!(&settings.configs_dir, "configs");
+        assert_eq!(&settings.include_dir, "configs/include");
+        assert_eq!(&settings.artifacts_dir, "artifacts");
+        assert_eq!(&settings.layers_dir, "layers");
+        assert_eq!(&settings.builds_dir, "builds");
+        assert_eq!(&settings.scripts_dir, "scripts");
+        assert_eq!(&settings.docker_dir, "docker");
+        assert_eq!(&settings.cache_dir, ".cache");
     }
 
     #[test]
@@ -178,7 +198,7 @@ mod tests {
             }
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.builds_dir,  "builds");
+        assert_eq!(&settings.builds_dir, "builds");
     }
 
     #[test]
@@ -188,7 +208,7 @@ mod tests {
             "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.builds_dir,  "builds");
+        assert_eq!(&settings.builds_dir, "builds");
     }
 
     #[test]
@@ -306,7 +326,10 @@ mod tests {
             }
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.docker_image, "mikrodidakt/bakery/bakery-workspace");
+        assert_eq!(
+            &settings.docker_image,
+            "mikrodidakt/bakery/bakery-workspace"
+        );
     }
 
     #[test]
@@ -316,7 +339,10 @@ mod tests {
             "version": "5"
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.docker_image, "mikrodidakt/bakery/bakery-workspace");
+        assert_eq!(
+            &settings.docker_image,
+            "mikrodidakt/bakery/bakery-workspace"
+        );
     }
 
     #[test]
@@ -428,7 +454,14 @@ mod tests {
               }
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.docker_args, &vec![String::from("--rm=true"), String::from("-t"), String::from("--dns=8.8.8.8")]);
+        assert_eq!(
+            &settings.docker_args,
+            &vec![
+                String::from("--rm=true"),
+                String::from("-t"),
+                String::from("--dns=8.8.8.8")
+            ]
+        );
     }
 
     #[test]
@@ -454,7 +487,10 @@ mod tests {
             }
         }"#;
         let settings = Helper::setup_ws_settings(json_test_str);
-        assert_eq!(&settings.supported, &vec![String::from("machine1-test"), String::from("machine2-test")]);
+        assert_eq!(
+            &settings.supported,
+            &vec![String::from("machine1-test"), String::from("machine2-test")]
+        );
         let mut i: i32 = 1;
         for supported in &settings.supported {
             assert_eq!(supported, &format!("machine{}-test", i));
@@ -484,4 +520,3 @@ mod tests {
         assert_eq!(settings.supported.is_empty(), true);
     }
 }
-

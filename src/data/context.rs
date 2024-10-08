@@ -2,9 +2,9 @@ use indexmap::{indexmap, IndexMap};
 use serde_json::Value;
 use std::path::PathBuf;
 
+use crate::configs::Config;
 use crate::configs::Context;
 use crate::error::BError;
-use crate::configs::Config;
 
 pub struct WsContextData {
     context: Context,
@@ -44,31 +44,31 @@ impl Config for WsContextData {}
 impl WsContextData {
     fn _mutable_key(key: &str) -> bool {
         match key {
-            CTX_KEY_ARTIFACTS_DIR |
-            CTX_KEY_SCRIPTS_DIR |
-            CTX_KEY_PLATFORM_VERSION |
-            CTX_KEY_BUILD_ID |
-            CTX_KEY_PLATFORM_RELEASE |
-            CTX_KEY_BUILD_SHA |
-            CTX_KEY_BUILD_VARIANT |
-            CTX_KEY_RELEASE_BUILD |
-            CTX_KEY_ARCHIVER |
-            CTX_KEY_DEVICE |
-            CTX_KEY_IMAGE |
-            CTX_KEY_DATE |
-            CTX_KEY_TIME |
-            CTX_KEY_DEBUG_SYMBOLS => true,
-            CTX_KEY_MACHINE |
-            CTX_KEY_ARCH |
-            CTX_KEY_DISTRO |
-            CTX_KEY_BB_BUILD_DIR |
-            CTX_KEY_BB_DEPLOY_DIR |
-            CTX_KEY_PRODUCT_NAME |
-            CTX_KEY_PROJECT_NAME |
-            CTX_KEY_NAME |
-            CTX_KEY_WORK_DIR |
-            CTX_KEY_LAYERS_DIR |
-            CTX_KEY_BUILDS_DIR => false,
+            CTX_KEY_ARTIFACTS_DIR
+            | CTX_KEY_SCRIPTS_DIR
+            | CTX_KEY_PLATFORM_VERSION
+            | CTX_KEY_BUILD_ID
+            | CTX_KEY_PLATFORM_RELEASE
+            | CTX_KEY_BUILD_SHA
+            | CTX_KEY_BUILD_VARIANT
+            | CTX_KEY_RELEASE_BUILD
+            | CTX_KEY_ARCHIVER
+            | CTX_KEY_DEVICE
+            | CTX_KEY_IMAGE
+            | CTX_KEY_DATE
+            | CTX_KEY_TIME
+            | CTX_KEY_DEBUG_SYMBOLS => true,
+            CTX_KEY_MACHINE
+            | CTX_KEY_ARCH
+            | CTX_KEY_DISTRO
+            | CTX_KEY_BB_BUILD_DIR
+            | CTX_KEY_BB_DEPLOY_DIR
+            | CTX_KEY_PRODUCT_NAME
+            | CTX_KEY_PROJECT_NAME
+            | CTX_KEY_NAME
+            | CTX_KEY_WORK_DIR
+            | CTX_KEY_LAYERS_DIR
+            | CTX_KEY_BUILDS_DIR => false,
             _ => false,
         }
     }
@@ -125,9 +125,7 @@ impl WsContextData {
         };
         let mut ctx: Context = Context::new(&ctx_default_variables);
         ctx.update(&variables);
-        Ok(WsContextData {
-            context: ctx,
-        })
+        Ok(WsContextData { context: ctx })
     }
 
     pub fn _is_mutable(&self, key: &str) -> bool {
@@ -172,34 +170,15 @@ mod tests {
     use std::path::PathBuf;
 
     use crate::data::context::{
-        CTX_KEY_MACHINE,
-        CTX_KEY_ARCH,
-        CTX_KEY_DISTRO,
-        CTX_KEY_BUILD_VARIANT,
-        CTX_KEY_PRODUCT_NAME,
-        CTX_KEY_PROJECT_NAME,
-        CTX_KEY_NAME,
-        CTX_KEY_BB_BUILD_DIR,
-        CTX_KEY_BB_DEPLOY_DIR,
-        CTX_KEY_ARTIFACTS_DIR,
-        CTX_KEY_LAYERS_DIR,
-        CTX_KEY_SCRIPTS_DIR,
-        CTX_KEY_BUILDS_DIR,
-        CTX_KEY_WORK_DIR,
-        CTX_KEY_PLATFORM_VERSION,
-        CTX_KEY_BUILD_ID,
-        CTX_KEY_BUILD_SHA,
-        CTX_KEY_RELEASE_BUILD,
-        CTX_KEY_ARCHIVER,
-        CTX_KEY_DEBUG_SYMBOLS,
-        CTX_KEY_PLATFORM_RELEASE,
-        CTX_KEY_DEVICE,
-        CTX_KEY_IMAGE,
-        CTX_KEY_DATE,
-        CTX_KEY_TIME,
+        CTX_KEY_ARCH, CTX_KEY_ARCHIVER, CTX_KEY_ARTIFACTS_DIR, CTX_KEY_BB_BUILD_DIR,
+        CTX_KEY_BB_DEPLOY_DIR, CTX_KEY_BUILDS_DIR, CTX_KEY_BUILD_ID, CTX_KEY_BUILD_SHA,
+        CTX_KEY_BUILD_VARIANT, CTX_KEY_DATE, CTX_KEY_DEBUG_SYMBOLS, CTX_KEY_DEVICE, CTX_KEY_DISTRO,
+        CTX_KEY_IMAGE, CTX_KEY_LAYERS_DIR, CTX_KEY_MACHINE, CTX_KEY_NAME, CTX_KEY_PLATFORM_RELEASE,
+        CTX_KEY_PLATFORM_VERSION, CTX_KEY_PRODUCT_NAME, CTX_KEY_PROJECT_NAME,
+        CTX_KEY_RELEASE_BUILD, CTX_KEY_SCRIPTS_DIR, CTX_KEY_TIME, CTX_KEY_WORK_DIR,
     };
-    use crate::workspace::WsSettingsHandler;
     use crate::data::WsContextData;
+    use crate::workspace::WsSettingsHandler;
 
     #[test]
     fn test_ws_context_data_default() {
@@ -207,7 +186,8 @@ mod tests {
         {
             "version": "5"
         }"#;
-        let data: WsContextData = WsContextData::from_str(json_default_build_config).expect("Failed to parse context data");
+        let data: WsContextData = WsContextData::from_str(json_default_build_config)
+            .expect("Failed to parse context data");
         assert!(data.get_ctx_value(CTX_KEY_MACHINE).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_ARCH).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_DISTRO).is_empty());
@@ -216,54 +196,24 @@ mod tests {
         assert!(data.get_ctx_value(CTX_KEY_NAME).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_DEVICE).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_IMAGE).is_empty());
-        assert_eq!(
-            data.get_ctx_path(CTX_KEY_BB_BUILD_DIR),
-            PathBuf::from("")
-        );
-        assert_eq!(
-            data.get_ctx_path(CTX_KEY_BB_DEPLOY_DIR),
-            PathBuf::from("")
-        );
-        assert_eq!(
-            data.get_ctx_path(CTX_KEY_ARTIFACTS_DIR),
-            PathBuf::from("")
-        );
-        assert_eq!(
-            data.get_ctx_path(CTX_KEY_LAYERS_DIR),
-            PathBuf::from("")
-        );
-        assert_eq!(
-            data.get_ctx_path(CTX_KEY_SCRIPTS_DIR),
-            PathBuf::from("")
-        );
-        assert_eq!(
-            data.get_ctx_path(CTX_KEY_BUILDS_DIR),
-            PathBuf::from("")
-        );
+        assert_eq!(data.get_ctx_path(CTX_KEY_BB_BUILD_DIR), PathBuf::from(""));
+        assert_eq!(data.get_ctx_path(CTX_KEY_BB_DEPLOY_DIR), PathBuf::from(""));
+        assert_eq!(data.get_ctx_path(CTX_KEY_ARTIFACTS_DIR), PathBuf::from(""));
+        assert_eq!(data.get_ctx_path(CTX_KEY_LAYERS_DIR), PathBuf::from(""));
+        assert_eq!(data.get_ctx_path(CTX_KEY_SCRIPTS_DIR), PathBuf::from(""));
+        assert_eq!(data.get_ctx_path(CTX_KEY_BUILDS_DIR), PathBuf::from(""));
         assert_eq!(
             data.get_ctx_value(CTX_KEY_PLATFORM_VERSION),
             String::from("0.0.0")
         );
-        assert_eq!(
-            data.get_ctx_value(CTX_KEY_BUILD_ID),
-            String::from("0")
-        );
-        assert_eq!(
-            data.get_ctx_path(CTX_KEY_WORK_DIR),
-            PathBuf::from("")
-        );
+        assert_eq!(data.get_ctx_value(CTX_KEY_BUILD_ID), String::from("0"));
+        assert_eq!(data.get_ctx_path(CTX_KEY_WORK_DIR), PathBuf::from(""));
         assert_eq!(
             data.get_ctx_value(CTX_KEY_BUILD_VARIANT),
             String::from("dev")
         );
-        assert_eq!(
-            data.get_ctx_value(CTX_KEY_DATE),
-            String::from("")
-        );
-        assert_eq!(
-            data.get_ctx_value(CTX_KEY_TIME),
-            String::from("")
-        );
+        assert_eq!(data.get_ctx_value(CTX_KEY_DATE), String::from(""));
+        assert_eq!(data.get_ctx_value(CTX_KEY_TIME), String::from(""));
         assert!(data.get_ctx_value(CTX_KEY_PLATFORM_RELEASE).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_BUILD_SHA).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_RELEASE_BUILD).is_empty());
@@ -287,8 +237,10 @@ mod tests {
             ]
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
-        let mut data: WsContextData = WsContextData::from_str(json_build_config).expect("Failed to parse context data");
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings)
+            .expect("Failed to parse settings");
+        let mut data: WsContextData =
+            WsContextData::from_str(json_build_config).expect("Failed to parse context data");
         let ctx_built_in_variables: IndexMap<String, String> = indexmap! {
             CTX_KEY_MACHINE.to_string() => "test-machine".to_string(),
             CTX_KEY_ARCH.to_string() => "test-arch".to_string(),
@@ -319,7 +271,8 @@ mod tests {
                 "DEVICE=device"
             ]
         }"#;
-        let data: WsContextData = WsContextData::from_str(json_build_config).expect("Failed to parse context data");
+        let data: WsContextData =
+            WsContextData::from_str(json_build_config).expect("Failed to parse context data");
         assert_eq!(data.get_ctx_value(CTX_KEY_IMAGE), "image");
         assert_eq!(data.get_ctx_value(CTX_KEY_DEVICE), "device");
     }

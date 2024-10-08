@@ -1,13 +1,10 @@
 use crate::configs::Context;
+use crate::data::{WsArtifactData, WsBuildData};
 use crate::error::BError;
 use crate::fs::ConfigFileReader;
-use crate::data::{
-    WsArtifactData,
-    WsBuildData,
-};
 
-use std::path::PathBuf;
 use serde_json::Value;
+use std::path::PathBuf;
 
 pub struct WsArtifactsHandler {
     data: WsArtifactData,
@@ -15,12 +12,20 @@ pub struct WsArtifactsHandler {
 }
 
 impl WsArtifactsHandler {
-    pub fn from_str(json_config: &str, task_build_dir: &PathBuf, build_data: &WsBuildData) -> Result<Self, BError> {
+    pub fn from_str(
+        json_config: &str,
+        task_build_dir: &PathBuf,
+        build_data: &WsBuildData,
+    ) -> Result<Self, BError> {
         let data: Value = ConfigFileReader::parse(json_config)?;
         Self::new(&data, task_build_dir, build_data)
     }
 
-    pub fn new(data: &Value, task_build_dir: &PathBuf, build_data: &WsBuildData) -> Result<Self, BError> {
+    pub fn new(
+        data: &Value,
+        task_build_dir: &PathBuf,
+        build_data: &WsBuildData,
+    ) -> Result<Self, BError> {
         let artifact_data: WsArtifactData = WsArtifactData::from_value(data)?;
         let children: Vec<WsArtifactsHandler> = build_data.get_artifacts(data, task_build_dir)?;
         Ok(WsArtifactsHandler {
@@ -48,11 +53,11 @@ impl WsArtifactsHandler {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-    use crate::workspace::WsArtifactsHandler;
+    use crate::data::AType;
     use crate::data::WsBuildData;
     use crate::helper::Helper;
-    use crate::data::AType;
+    use crate::workspace::WsArtifactsHandler;
+    use std::path::PathBuf;
 
     #[test]
     fn test_ws_artifacts_file_source() {
@@ -63,11 +68,9 @@ mod tests {
             "source": "test/file0-1.txt"
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
-        let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
-            json_artifacts_config,
-            &task_build_dir,
-            &build_data
-        ).expect("Failed to parse config");
+        let artifacts: WsArtifactsHandler =
+            WsArtifactsHandler::from_str(json_artifacts_config, &task_build_dir, &build_data)
+                .expect("Failed to parse config");
         assert_eq!(artifacts.data().atype(), &AType::File);
         assert_eq!(artifacts.data().source(), "test/file0-1.txt");
         assert!(artifacts.children().is_empty());
@@ -83,11 +86,9 @@ mod tests {
             "dest": "test/renamed-file0-1.txt"
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
-        let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
-            json_artifacts_config,
-            &task_build_dir,
-            &build_data
-        ).expect("Failed to parse config");
+        let artifacts: WsArtifactsHandler =
+            WsArtifactsHandler::from_str(json_artifacts_config, &task_build_dir, &build_data)
+                .expect("Failed to parse config");
         assert_eq!(artifacts.data().atype(), &AType::File);
         assert_eq!(artifacts.data().source(), "test/file0-1.txt");
         assert_eq!(artifacts.data().dest(), "test/renamed-file0-1.txt");
@@ -110,11 +111,9 @@ mod tests {
         }
         "#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
-        let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
-            json_artifacts_config,
-            &task_build_dir,
-            &build_data
-        ).expect("Failed to parse config");
+        let artifacts: WsArtifactsHandler =
+            WsArtifactsHandler::from_str(json_artifacts_config, &task_build_dir, &build_data)
+                .expect("Failed to parse config");
         assert_eq!(artifacts.data().atype(), &AType::Directory);
         assert_eq!(artifacts.data().name(), "dir");
         assert!(!artifacts.children().is_empty());
@@ -140,12 +139,10 @@ mod tests {
             ]
         }
         "#;
-        let build_data: WsBuildData = Helper::setup_build_data(&work_dir,None, None);
-        let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
-            json_artifacts_config,
-            &task_build_dir,
-            &build_data
-        ).expect("Failed to parse config");
+        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
+        let artifacts: WsArtifactsHandler =
+            WsArtifactsHandler::from_str(json_artifacts_config, &task_build_dir, &build_data)
+                .expect("Failed to parse config");
         assert_eq!(artifacts.data().atype(), &AType::Archive);
         assert_eq!(artifacts.data().name(), "test.zip");
         assert!(!artifacts.children().is_empty());
@@ -174,11 +171,9 @@ mod tests {
         }
         "#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
-        let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
-            json_artifacts_config,
-            &task_build_dir,
-            &build_data
-        ).expect("Failed to parse config");
+        let artifacts: WsArtifactsHandler =
+            WsArtifactsHandler::from_str(json_artifacts_config, &task_build_dir, &build_data)
+                .expect("Failed to parse config");
         assert_eq!(artifacts.data().name(), "test-manifest.json");
         assert!(!artifacts.data().manifest().is_empty());
         assert_eq!(artifacts.data().manifest(), "{\"VAR1\":\"value1\",\"VAR2\":\"value2\",\"VAR3\":\"value3\",\"data\":{\"VAR4\":\"value4\"}}");
@@ -216,19 +211,26 @@ mod tests {
         }
         "#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
-        let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
-            json_artifacts_config,
-            &task_build_dir,
-            &build_data
-        ).expect("Failed to parse config");
+        let artifacts: WsArtifactsHandler =
+            WsArtifactsHandler::from_str(json_artifacts_config, &task_build_dir, &build_data)
+                .expect("Failed to parse config");
         assert_eq!(artifacts.data().atype(), &AType::Archive);
         assert_eq!(artifacts.data().name(), "test.zip");
         assert!(!artifacts.children().is_empty());
         let archive_artifacts: &Vec<WsArtifactsHandler> = artifacts.children();
-        assert_eq!(archive_artifacts.get(0).unwrap().data().atype(), &AType::File);
-        assert_eq!(archive_artifacts.get(0).unwrap().data().source(), "file3.txt");
+        assert_eq!(
+            archive_artifacts.get(0).unwrap().data().atype(),
+            &AType::File
+        );
+        assert_eq!(
+            archive_artifacts.get(0).unwrap().data().source(),
+            "file3.txt"
+        );
         assert_eq!(archive_artifacts.get(0).unwrap().data().dest(), "file4.txt");
-        assert_eq!(archive_artifacts.get(1).unwrap().data().atype(), &AType::Directory);
+        assert_eq!(
+            archive_artifacts.get(1).unwrap().data().atype(),
+            &AType::Directory
+        );
         assert_eq!(archive_artifacts.get(1).unwrap().data().name(), "dir-name");
         let dir_artifacts: &Vec<WsArtifactsHandler> = archive_artifacts.get(1).unwrap().children();
         let mut i: usize = 1;
@@ -304,24 +306,40 @@ mod tests {
                 }
             ]
         }"#;
-        let build_data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
-        let mut artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
-            json_artifacts_config,
-            &task_build_dir,
-            &build_data
-        ).expect("Failed to parse config");
+        let build_data: WsBuildData =
+            Helper::setup_build_data(&work_dir, Some(json_build_config), None);
+        let mut artifacts: WsArtifactsHandler =
+            WsArtifactsHandler::from_str(json_artifacts_config, &task_build_dir, &build_data)
+                .expect("Failed to parse config");
         artifacts.expand_ctx(build_data.context().ctx()).unwrap();
         assert_eq!(artifacts.data().atype(), &AType::Archive);
         assert_eq!(artifacts.data().name(), "test.zip");
         assert!(!artifacts.children().is_empty());
         let archive_artifacts: &Vec<WsArtifactsHandler> = artifacts.children();
-        assert_eq!(archive_artifacts.get(0).unwrap().data().atype(), &AType::File);
-        assert_eq!(archive_artifacts.get(0).unwrap().data().source(), "file3.txt");
+        assert_eq!(
+            archive_artifacts.get(0).unwrap().data().atype(),
+            &AType::File
+        );
+        assert_eq!(
+            archive_artifacts.get(0).unwrap().data().source(),
+            "file3.txt"
+        );
         assert_eq!(archive_artifacts.get(0).unwrap().data().dest(), "file4.txt");
-        assert_eq!(archive_artifacts.get(1).unwrap().data().name(), "test-manifest.json");
-        assert!(!archive_artifacts.get(1).unwrap().data().manifest().is_empty());
+        assert_eq!(
+            archive_artifacts.get(1).unwrap().data().name(),
+            "test-manifest.json"
+        );
+        assert!(!archive_artifacts
+            .get(1)
+            .unwrap()
+            .data()
+            .manifest()
+            .is_empty());
         assert_eq!(archive_artifacts.get(1).unwrap().data().manifest(), "{\"VAR1\":\"value1\",\"VAR2\":\"value2\",\"VAR3\":\"value3\",\"data\":{\"VAR4\":\"value4\"}}");
-        assert_eq!(archive_artifacts.get(2).unwrap().data().atype(), &AType::Directory);
+        assert_eq!(
+            archive_artifacts.get(2).unwrap().data().atype(),
+            &AType::Directory
+        );
         assert_eq!(archive_artifacts.get(2).unwrap().data().name(), "dir-name");
         let dir_artifacts: &Vec<WsArtifactsHandler> = archive_artifacts.get(2).unwrap().children();
         let mut i: usize = 1;
@@ -344,11 +362,9 @@ mod tests {
             "source": "test/file0-1.txt"
         }"#;
         let build_data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
-        let artifacts: WsArtifactsHandler = WsArtifactsHandler::from_str(
-            json_artifacts_config,
-            &task_build_dir,
-            &build_data
-        ).expect("Failed to parse config");
+        let artifacts: WsArtifactsHandler =
+            WsArtifactsHandler::from_str(json_artifacts_config, &task_build_dir, &build_data)
+                .expect("Failed to parse config");
         assert_eq!(artifacts.data().atype(), &AType::Link);
         assert_eq!(artifacts.data().name(), "link.txt");
         assert_eq!(artifacts.data().source(), "test/file0-1.txt");

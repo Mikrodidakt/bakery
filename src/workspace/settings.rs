@@ -1,13 +1,13 @@
-use crate::{configs::WsSettings, executers::DockerImage};
 use crate::error::BError;
+use crate::{configs::WsSettings, executers::DockerImage};
 
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 #[derive(Clone)]
 pub struct WsSettingsHandler {
     work_dir: PathBuf,
     ws_settings: WsSettings,
-    docker: DockerImage
+    docker: DockerImage,
 }
 
 impl WsSettingsHandler {
@@ -15,12 +15,8 @@ impl WsSettingsHandler {
         let work_dir: PathBuf = work_dir.clone();
         let result: Result<WsSettings, BError> = WsSettings::from_str(json_settings);
         match result {
-            Ok(rsettings) => {
-               Ok(Self::new(work_dir, rsettings))
-            }
-            Err(e) => {
-                Err(e)
-            }
+            Ok(rsettings) => Ok(Self::new(work_dir, rsettings)),
+            Err(e) => Err(e),
         }
     }
 
@@ -33,13 +29,16 @@ impl WsSettingsHandler {
         WsSettingsHandler {
             work_dir,
             ws_settings: settings,
-            docker
+            docker,
         }
     }
 
     pub fn verify_ws_dir(&self, dir: &Path) -> Result<(), BError> {
         if !dir.is_dir() || !dir.exists() {
-            return Err(BError::WsError(format!("Workspace directory '{}' dosen't exists", dir.display())));
+            return Err(BError::WsError(format!(
+                "Workspace directory '{}' dosen't exists",
+                dir.display()
+            )));
         }
         return Ok(());
     }
@@ -107,7 +106,9 @@ impl WsSettingsHandler {
 
     pub fn docker_top_dir(&self) -> PathBuf {
         if !self.ws_settings.docker_top_dir.is_empty() {
-            return self.work_dir().join(self.ws_settings.docker_top_dir.clone());
+            return self
+                .work_dir()
+                .join(self.ws_settings.docker_top_dir.clone());
         }
         return self.work_dir();
     }
@@ -124,10 +125,10 @@ impl WsSettingsHandler {
         match self.ws_settings.docker_disabled.as_str() {
             "true" => {
                 return true;
-            },
+            }
             "false" => {
                 return false;
-            },
+            }
             _ => {
                 return false;
             }
@@ -144,8 +145,8 @@ mod tests {
     use std::path::PathBuf;
 
     use crate::executers::DockerImage;
-    use crate::workspace::WsSettingsHandler;
     use crate::helper::Helper;
+    use crate::workspace::WsSettingsHandler;
 
     #[test]
     fn test_settings_default_ws_dirs() {
@@ -154,18 +155,22 @@ mod tests {
             "version": "4"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::new(
-            work_dir,
-            Helper::setup_ws_settings(json_test_str),
-        );
+        let settings: WsSettingsHandler =
+            WsSettingsHandler::new(work_dir, Helper::setup_ws_settings(json_test_str));
         assert_eq!(settings.builds_dir(), PathBuf::from("/workspace/builds"));
         assert_eq!(settings.cache_dir(), PathBuf::from("/workspace/.cache"));
-        assert_eq!(settings.artifacts_dir(), PathBuf::from("/workspace/artifacts"));
+        assert_eq!(
+            settings.artifacts_dir(),
+            PathBuf::from("/workspace/artifacts")
+        );
         assert_eq!(settings.layers_dir(), PathBuf::from("/workspace/layers"));
         assert_eq!(settings.scripts_dir(), PathBuf::from("/workspace/scripts"));
         assert_eq!(settings.docker_dir(), PathBuf::from("/workspace/docker"));
         assert_eq!(settings.configs_dir(), PathBuf::from("/workspace/configs"));
-        assert_eq!(settings.include_dir(), PathBuf::from("/workspace/configs/include"));
+        assert_eq!(
+            settings.include_dir(),
+            PathBuf::from("/workspace/configs/include")
+        );
     }
 
     #[test]
@@ -186,18 +191,37 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::new(
-            work_dir,
-            Helper::setup_ws_settings(json_test_str),
+        let settings: WsSettingsHandler =
+            WsSettingsHandler::new(work_dir, Helper::setup_ws_settings(json_test_str));
+        assert_eq!(
+            settings.builds_dir(),
+            PathBuf::from("/workspace/builds_test")
         );
-        assert_eq!(settings.builds_dir(), PathBuf::from("/workspace/builds_test"));
         assert_eq!(settings.cache_dir(), PathBuf::from("/workspace/cache_test"));
-        assert_eq!(settings.artifacts_dir(), PathBuf::from("/workspace/artifacts_test"));
-        assert_eq!(settings.layers_dir(), PathBuf::from("/workspace/layers_test"));
-        assert_eq!(settings.scripts_dir(), PathBuf::from("/workspace/scripts_test"));
-        assert_eq!(settings.docker_dir(), PathBuf::from("/workspace/docker_test"));
-        assert_eq!(settings.configs_dir(), PathBuf::from("/workspace/configs_test"));
-        assert_eq!(settings.include_dir(), PathBuf::from("/workspace/include_test"));
+        assert_eq!(
+            settings.artifacts_dir(),
+            PathBuf::from("/workspace/artifacts_test")
+        );
+        assert_eq!(
+            settings.layers_dir(),
+            PathBuf::from("/workspace/layers_test")
+        );
+        assert_eq!(
+            settings.scripts_dir(),
+            PathBuf::from("/workspace/scripts_test")
+        );
+        assert_eq!(
+            settings.docker_dir(),
+            PathBuf::from("/workspace/docker_test")
+        );
+        assert_eq!(
+            settings.configs_dir(),
+            PathBuf::from("/workspace/configs_test")
+        );
+        assert_eq!(
+            settings.include_dir(),
+            PathBuf::from("/workspace/include_test")
+        );
     }
 
     #[test]
@@ -210,13 +234,17 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::new(
-            work_dir,
-            Helper::setup_ws_settings(json_test_str),
-        );
+        let settings: WsSettingsHandler =
+            WsSettingsHandler::new(work_dir, Helper::setup_ws_settings(json_test_str));
         /* Making sure the expanded path doesn't end with '/' */
-        assert_eq!(settings.layers_dir().to_string_lossy(), String::from("/workspace"));
-        assert_eq!(settings.work_dir().to_string_lossy(), String::from("/workspace"));
+        assert_eq!(
+            settings.layers_dir().to_string_lossy(),
+            String::from("/workspace")
+        );
+        assert_eq!(
+            settings.work_dir().to_string_lossy(),
+            String::from("/workspace")
+        );
     }
 
     #[test]
@@ -226,12 +254,16 @@ mod tests {
             "version": "4"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::new(
-            work_dir,
-            Helper::setup_ws_settings(json_test_str),
-        );
+        let settings: WsSettingsHandler =
+            WsSettingsHandler::new(work_dir, Helper::setup_ws_settings(json_test_str));
         let docker_image: DockerImage = settings.docker_image();
-        assert_eq!(format!("{}", docker_image), format!("ghcr.io/mikrodidakt/bakery/bakery-workspace:{}", env!("CARGO_PKG_VERSION")));
+        assert_eq!(
+            format!("{}", docker_image),
+            format!(
+                "ghcr.io/mikrodidakt/bakery/bakery-workspace:{}",
+                env!("CARGO_PKG_VERSION")
+            )
+        );
     }
 
     #[test]
@@ -246,10 +278,8 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::new(
-            work_dir,
-            Helper::setup_ws_settings(json_test_str),
-        );
+        let settings: WsSettingsHandler =
+            WsSettingsHandler::new(work_dir, Helper::setup_ws_settings(json_test_str));
         let docker_image: DockerImage = settings.docker_image();
         assert_eq!(format!("{}", docker_image), "test-registry/test-image:0.1");
     }
@@ -266,10 +296,8 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::new(
-            work_dir,
-            Helper::setup_ws_settings(json_test_str),
-        );
+        let settings: WsSettingsHandler =
+            WsSettingsHandler::new(work_dir, Helper::setup_ws_settings(json_test_str));
         assert!(settings.docker_args().is_empty());
     }
 
@@ -290,11 +318,12 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::new(
-            work_dir,
-            Helper::setup_ws_settings(json_test_str),
+        let settings: WsSettingsHandler =
+            WsSettingsHandler::new(work_dir, Helper::setup_ws_settings(json_test_str));
+        assert_eq!(
+            settings.docker_args(),
+            &vec!["arg1".to_string(), "arg2".to_string(), "arg3".to_string()]
         );
-        assert_eq!(settings.docker_args(), &vec!["arg1".to_string(), "arg2".to_string(), "arg3".to_string()]);
     }
 
     #[test]
@@ -304,10 +333,8 @@ mod tests {
             "version": "4"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::new(
-            work_dir,
-            Helper::setup_ws_settings(json_test_str),
-        );
+        let settings: WsSettingsHandler =
+            WsSettingsHandler::new(work_dir, Helper::setup_ws_settings(json_test_str));
         assert!(settings.supported_builds().is_empty());
     }
 
@@ -324,10 +351,11 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::new(
-            work_dir,
-            Helper::setup_ws_settings(json_test_str),
+        let settings: WsSettingsHandler =
+            WsSettingsHandler::new(work_dir, Helper::setup_ws_settings(json_test_str));
+        assert_eq!(
+            settings.supported_builds(),
+            &vec!["build1".to_string(), "build2".to_string()]
         );
-        assert_eq!(settings.supported_builds(), &vec!["build1".to_string(), "build2".to_string()]);
     }
 }

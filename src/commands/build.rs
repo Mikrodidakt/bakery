@@ -1,15 +1,16 @@
-use indexmap::{IndexMap, indexmap};
+use indexmap::{indexmap, IndexMap};
 use std::collections::HashMap;
 
-use crate::commands::{BCommand, BBaseCommand};
-use crate::data::WsContextData;
-use crate::workspace::{Workspace, WsTaskHandler};
 use crate::cli::Cli;
+use crate::commands::{BBaseCommand, BCommand};
+use crate::data::WsContextData;
 use crate::error::BError;
 use crate::executers::Docker;
+use crate::workspace::{Workspace, WsTaskHandler};
 
 static BCOMMAND: &str = "build";
-static BCOMMAND_ABOUT: &str = "Execute a build, either a full build or a task of one of the builds.";
+static BCOMMAND_ABOUT: &str =
+    "Execute a build, either a full build or a task of one of the builds.";
 
 pub struct BuildCommand {
     cmd: BBaseCommand,
@@ -66,7 +67,10 @@ impl BCommand for BuildCommand {
         }
 
         if !workspace.valid_config(config.as_str()) {
-            return Err(BError::CliError(format!("Unsupported build config '{}'", config)));
+            return Err(BError::CliError(format!(
+                "Unsupported build config '{}'",
+                config
+            )));
         }
 
         /*
@@ -75,7 +79,10 @@ impl BCommand for BuildCommand {
          * be run inside of docker and if we are already inside docker we should not try and bootstrap into a
          * second docker container.
          */
-        if !workspace.settings().docker_disabled() && self.is_docker_required() && !Docker::inside_docker() {
+        if !workspace.settings().docker_disabled()
+            && self.is_docker_required()
+            && !Docker::inside_docker()
+        {
             return self.bootstrap(&cli.get_cmd_line(), cli, workspace, &volumes, interactive);
         }
 
@@ -125,7 +132,7 @@ impl BCommand for BuildCommand {
              * the BUILD_VARIANT to the context we can expose this to
              * the build commands. We are keeping RELEASE_BUILD for
              * backwards compatibility but should be replaced with BUILD_VARIANT
-            */
+             */
             extra_ctx.insert("BUILD_VARIANT".to_string(), "release".to_string());
             extra_ctx.insert("RELEASE_BUILD".to_string(), "1".to_string());
         }
@@ -154,8 +161,15 @@ impl BCommand for BuildCommand {
             // More then one task was specified on the command line
             for t_name in tasks {
                 let task: &WsTaskHandler = workspace.config().task(&t_name)?;
-                task.build(cli, &workspace.config().build_data(), &bb_variables,
-                    &env_variables, dry_run, interactive, true)?;
+                task.build(
+                    cli,
+                    &workspace.config().build_data(),
+                    &bb_variables,
+                    &env_variables,
+                    dry_run,
+                    interactive,
+                    true,
+                )?;
             }
         } else {
             // One task was specified on the command line or default was used
@@ -163,14 +177,28 @@ impl BCommand for BuildCommand {
             if task == "all" {
                 // The alias "all" was specified on the command line or it none was specified and "all" was used
                 for (_t_name, task) in workspace.config().tasks() {
-                    task.build(cli, &workspace.config().build_data(), &bb_variables,
-                        &env_variables, dry_run, interactive, false)?;
+                    task.build(
+                        cli,
+                        &workspace.config().build_data(),
+                        &bb_variables,
+                        &env_variables,
+                        dry_run,
+                        interactive,
+                        false,
+                    )?;
                 }
             } else {
                 // One task was specified on the command line
                 let task: &WsTaskHandler = workspace.config().task(tasks.get(0).unwrap())?;
-                task.build(cli, &workspace.config().build_data(), &bb_variables,
-                    &env_variables, dry_run, interactive, true)?;
+                task.build(
+                    cli,
+                    &workspace.config().build_data(),
+                    &bb_variables,
+                    &env_variables,
+                    dry_run,
+                    interactive,
+                    true,
+                )?;
             }
         }
         Ok(())
@@ -179,10 +207,13 @@ impl BCommand for BuildCommand {
 
 impl BuildCommand {
     fn setup_env(&self, env: Vec<String>) -> HashMap<String, String> {
-        let variables: HashMap<String, String> = env.iter().map(|e|{
-            let v: Vec<&str> = e.split('=').collect();
-            (v[0].to_string(), v[1].to_string())
-        }).collect();
+        let variables: HashMap<String, String> = env
+            .iter()
+            .map(|e| {
+                let v: Vec<&str> = e.split('=').collect();
+                (v[0].to_string(), v[1].to_string())
+            })
+            .collect();
         variables
     }
 
@@ -313,49 +344,55 @@ impl BuildCommand {
         // Initialize and return a new BuildCommand instance
         BuildCommand {
             // Initialize fields if any
-            cmd : BBaseCommand {
+            cmd: BBaseCommand {
                 cmd_str: String::from(BCOMMAND),
                 sub_cmd: subcmd,
                 interactive: true,
                 require_docker: true,
-            }
+            },
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-    use tempdir::TempDir;
     use std::collections::HashMap;
     use std::fs::File;
     use std::io::Read;
+    use std::path::PathBuf;
+    use tempdir::TempDir;
 
     use crate::cli::*;
     use crate::commands::{BCommand, BuildCommand};
     use crate::error::BError;
-    use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
-    use crate::helper::Helper;
     use crate::executers::DockerImage;
+    use crate::helper::Helper;
+    use crate::workspace::{Workspace, WsBuildConfigHandler, WsSettingsHandler};
 
-    fn helper_test_build_subcommand(json_ws_settings: &str, json_build_config: &str,
-            work_dir: &PathBuf, logger: Box<dyn Logger>, system: Box<dyn System>, cmd_line: Vec<&str>) -> Result<(), BError> {
+    fn helper_test_build_subcommand(
+        json_ws_settings: &str,
+        json_build_config: &str,
+        work_dir: &PathBuf,
+        logger: Box<dyn Logger>,
+        system: Box<dyn System>,
+        cmd_line: Vec<&str>,
+    ) -> Result<(), BError> {
         let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings)?;
         let config: WsBuildConfigHandler =
             WsBuildConfigHandler::from_str(json_build_config, &settings)?;
         let mut workspace: Workspace =
             Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config))?;
-        let cli: Cli = Cli::new(
-            logger,
-            system,
-            clap::Command::new("bakery"),
-            Some(cmd_line),
-        );
+        let cli: Cli = Cli::new(logger, system, clap::Command::new("bakery"), Some(cmd_line));
         let cmd: BuildCommand = BuildCommand::new();
         cmd.execute(&cli, &mut workspace)
     }
 
-    fn helper_verify_bitbake_conf(local_conf_path: &PathBuf, local_conf_content: &str, bblayers_conf_path: &PathBuf, bblayers_conf_content: &str) {
+    fn helper_verify_bitbake_conf(
+        local_conf_path: &PathBuf,
+        local_conf_content: &str,
+        bblayers_conf_path: &PathBuf,
+        bblayers_conf_content: &str,
+    ) {
         assert!(local_conf_path.exists());
         assert!(bblayers_conf_path.exists());
         let mut file: File = File::open(local_conf_path).expect("Failed to open local.conf file!");
@@ -366,7 +403,8 @@ mod tests {
         validate_local_conf.push_str(local_conf_content);
         assert_eq!(validate_local_conf, contents);
 
-        let mut file: File = File::open(bblayers_conf_path).expect("Failed to open bblayers.conf file!");
+        let mut file: File =
+            File::open(bblayers_conf_path).expect("Failed to open bblayers.conf file!");
         let mut contents: String = String::new();
         file.read_to_string(&mut contents)
             .expect("Failed to read bblayers.conf file!");
@@ -375,8 +413,20 @@ mod tests {
         assert_eq!(validate_bblayers_conf, contents);
     }
 
-    fn helper_test_local_conf_args(args: &mut Vec<&str>, lines: Option<&str>, bb_variables: Option<&str>) {
-        let mut cmd_line: Vec<&str> = vec!["bakery", "build", "--config", "default", "--tasks", "image", "--dry-run"];
+    fn helper_test_local_conf_args(
+        args: &mut Vec<&str>,
+        lines: Option<&str>,
+        bb_variables: Option<&str>,
+    ) {
+        let mut cmd_line: Vec<&str> = vec![
+            "bakery",
+            "build",
+            "--config",
+            "default",
+            "--tasks",
+            "image",
+            "--dry-run",
+        ];
         cmd_line.append(args);
         let json_ws_settings: &str = r#"
         {
@@ -420,16 +470,20 @@ mod tests {
             }
         }
         "#;
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let build_dir: PathBuf = work_dir.join("builds/default");
         let local_conf_path: PathBuf = build_dir.clone().join("conf/local.conf");
         let bblayers_conf_path: PathBuf = build_dir.clone().join("conf/bblayers.conf");
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_ws_settings).expect("Failed to setup settings handler");
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_ws_settings)
+            .expect("Failed to setup settings handler");
         let config: WsBuildConfigHandler =
-            WsBuildConfigHandler::from_str(json_build_config, &settings).expect("Failed to setup build config handler");
+            WsBuildConfigHandler::from_str(json_build_config, &settings)
+                .expect("Failed to setup build config handler");
         let mut workspace: Workspace =
-            Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config)).expect("Failed to setup workspace handler");
+            Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config))
+                .expect("Failed to setup workspace handler");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_init_env_file()
@@ -441,7 +495,10 @@ mod tests {
                     .iter()
                     .map(|s| s.to_string())
                     .collect(),
-                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
+                env: HashMap::from([(
+                    String::from("BB_ENV_PASSTHROUGH_ADDITIONS"),
+                    String::from("SSTATE_DIR DL_DIR TMPDIR"),
+                )]),
                 shell: true,
             }))
             .once()
@@ -449,28 +506,47 @@ mod tests {
         let mut mocked_logger: MockLogger = MockLogger::new();
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("Autogenerate {}", local_conf_path.display())))
+            .with(mockall::predicate::eq(format!(
+                "Autogenerate {}",
+                local_conf_path.display()
+            )))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("Autogenerate {}", bblayers_conf_path.display())))
+            .with(mockall::predicate::eq(format!(
+                "Autogenerate {}",
+                bblayers_conf_path.display()
+            )))
             .once()
             .returning(|_x| ());
         mocked_logger
             .expect_info()
-            .with(mockall::predicate::eq(format!("source init env file {}", workspace.config().build_data().bitbake().init_env_file().display())))
+            .with(mockall::predicate::eq(format!(
+                "source init env file {}",
+                workspace
+                    .config()
+                    .build_data()
+                    .bitbake()
+                    .init_env_file()
+                    .display()
+            )))
             .once()
             .returning(|_x| ());
         for (name, _task) in workspace.config().tasks() {
             mocked_logger
                 .expect_info()
-                .with(mockall::predicate::eq(format!("execute bitbake build task '{}'", name)))
+                .with(mockall::predicate::eq(format!(
+                    "execute bitbake build task '{}'",
+                    name
+                )))
                 .once()
                 .returning(|_x| ());
             mocked_logger
                 .expect_info()
-                .with(mockall::predicate::eq("Dry run. Skipping build!".to_string()))
+                .with(mockall::predicate::eq(
+                    "Dry run. Skipping build!".to_string(),
+                ))
                 .once()
                 .returning(|_x| ());
         }
@@ -491,8 +567,14 @@ mod tests {
         local_conf_content.push_str("MACHINE ?= \"raspberrypi3\"\n");
         local_conf_content.push_str("PRODUCT_NAME ?= \"default\"\n");
         local_conf_content.push_str("DISTRO ?= \"strix\"\n");
-        local_conf_content.push_str(&format!("SSTATE_DIR ?= \"{}/.cache/test-arch/sstate-cache\"\n", work_dir.to_string_lossy().to_string()));
-        local_conf_content.push_str(&format!("DL_DIR ?= \"{}/.cache/download\"\n",work_dir.to_string_lossy().to_string()));
+        local_conf_content.push_str(&format!(
+            "SSTATE_DIR ?= \"{}/.cache/test-arch/sstate-cache\"\n",
+            work_dir.to_string_lossy().to_string()
+        ));
+        local_conf_content.push_str(&format!(
+            "DL_DIR ?= \"{}/.cache/download\"\n",
+            work_dir.to_string_lossy().to_string()
+        ));
         local_conf_content.push_str(lines.unwrap_or(""));
         let mut default_bb_variables: String = String::from("");
         default_bb_variables.push_str("PLATFORM_VERSION ?= \"0.0.0\"\n");
@@ -502,7 +584,12 @@ mod tests {
         default_bb_variables.push_str("BUILD_VARIANT ?= \"dev\"\n");
         default_bb_variables.push_str("PLATFORM_RELEASE ?= \"0.0.0-0\"\n");
         local_conf_content.push_str(bb_variables.unwrap_or(&default_bb_variables));
-        helper_verify_bitbake_conf(&local_conf_path, &local_conf_content, &bblayers_conf_path, &bblayers_conf_content);
+        helper_verify_bitbake_conf(
+            &local_conf_path,
+            &local_conf_content,
+            &bblayers_conf_path,
+            &bblayers_conf_content,
+        );
     }
 
     #[test]
@@ -537,18 +624,31 @@ mod tests {
             }
         }
         "#;
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let build_dir: PathBuf = work_dir.join("builds/default");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "devtool", "create-workspace", "&&", "bitbake", "test-image"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
-                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
+                cmd_line: vec![
+                    "cd",
+                    &build_dir.to_string_lossy().to_string(),
+                    "&&",
+                    "devtool",
+                    "create-workspace",
+                    "&&",
+                    "bitbake",
+                    "test-image",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+                env: HashMap::from([(
+                    String::from("BB_ENV_PASSTHROUGH_ADDITIONS"),
+                    String::from("SSTATE_DIR DL_DIR TMPDIR"),
+                )]),
                 shell: true,
             }))
             .once()
@@ -599,17 +699,23 @@ mod tests {
             }
         }
         "#;
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let build_dir: PathBuf = work_dir.join("test-dir");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "test.sh"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
+                cmd_line: vec![
+                    "cd",
+                    &build_dir.to_string_lossy().to_string(),
+                    "&&",
+                    "test.sh",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
                 env: HashMap::new(),
                 shell: true,
             }))
@@ -618,9 +724,7 @@ mod tests {
         mocked_system
             .expect_init_env_file()
             .returning(|_x, _y| Ok(HashMap::new()));
-        mocked_system
-            .expect_env()
-            .returning(||HashMap::new());
+        mocked_system.expect_env().returning(|| HashMap::new());
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,
@@ -660,22 +764,32 @@ mod tests {
             }
         }
         "#;
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let mut mocked_system: MockSystem = MockSystem::new();
-        let docker_image: DockerImage = DockerImage::new(&format!("ghcr.io/mikrodidakt/bakery/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))).expect("Invalid docker image format");
+        let docker_image: DockerImage = DockerImage::new(&format!(
+            "ghcr.io/mikrodidakt/bakery/bakery-workspace:{}",
+            env!("CARGO_PKG_VERSION")
+        ))
+        .expect("Invalid docker image format");
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
                 cmd_line: Helper::docker_bootstrap_string(
-                        true,
-                        &vec![],
-                        &vec![],
-                        &work_dir.clone(),
-                        &work_dir,
-                        &docker_image,
-                        &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default")]
-                    ),
+                    true,
+                    &vec![],
+                    &vec![],
+                    &work_dir.clone(),
+                    &work_dir,
+                    &docker_image,
+                    &vec![
+                        String::from("bakery"),
+                        String::from("build"),
+                        String::from("--config"),
+                        String::from("default"),
+                    ],
+                ),
                 env: HashMap::new(),
                 shell: true,
             }))
@@ -684,9 +798,7 @@ mod tests {
         mocked_system
             .expect_init_env_file()
             .returning(|_x, _y| Ok(HashMap::new()));
-        mocked_system
-            .expect_env()
-            .returning(||HashMap::new());
+        mocked_system.expect_env().returning(|| HashMap::new());
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,
@@ -726,22 +838,34 @@ mod tests {
             }
         }
         "#;
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
-        let docker_image: DockerImage = DockerImage::new(&format!("ghcr.io/mikrodidakt/bakery/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))).expect("Invalid docker image format");
+        let docker_image: DockerImage = DockerImage::new(&format!(
+            "ghcr.io/mikrodidakt/bakery/bakery-workspace:{}",
+            env!("CARGO_PKG_VERSION")
+        ))
+        .expect("Invalid docker image format");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
                 cmd_line: Helper::docker_bootstrap_string(
-                        true,
-                        &vec![],
-                        &vec![String::from("/test/testdir:/test/testdir")],
-                        &work_dir.clone(),
-                        &work_dir,
-                        &docker_image,
-                        &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default"), String::from("-v"), String::from("/test/testdir:/test/testdir")]
-                    ),
+                    true,
+                    &vec![],
+                    &vec![String::from("/test/testdir:/test/testdir")],
+                    &work_dir.clone(),
+                    &work_dir,
+                    &docker_image,
+                    &vec![
+                        String::from("bakery"),
+                        String::from("build"),
+                        String::from("--config"),
+                        String::from("default"),
+                        String::from("-v"),
+                        String::from("/test/testdir:/test/testdir"),
+                    ],
+                ),
                 env: HashMap::new(),
                 shell: true,
             }))
@@ -750,16 +874,21 @@ mod tests {
         mocked_system
             .expect_init_env_file()
             .returning(|_x, _y| Ok(HashMap::new()));
-        mocked_system
-            .expect_env()
-            .returning(||HashMap::new());
+        mocked_system.expect_env().returning(|| HashMap::new());
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,
             &work_dir,
             Box::new(BLogger::new()),
             Box::new(mocked_system),
-            vec!["bakery", "build", "--config", "default", "-v", "/test/testdir:/test/testdir"],
+            vec![
+                "bakery",
+                "build",
+                "--config",
+                "default",
+                "-v",
+                "/test/testdir:/test/testdir",
+            ],
         );
     }
 
@@ -792,22 +921,33 @@ mod tests {
             }
         }
         "#;
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
-        let docker_image: DockerImage = DockerImage::new(&format!("ghcr.io/mikrodidakt/bakery/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))).expect("Invalid docker image format");
+        let docker_image: DockerImage = DockerImage::new(&format!(
+            "ghcr.io/mikrodidakt/bakery/bakery-workspace:{}",
+            env!("CARGO_PKG_VERSION")
+        ))
+        .expect("Invalid docker image format");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
                 cmd_line: Helper::docker_bootstrap_string(
-                        false,
-                        &vec![],
-                        &vec![],
-                        &work_dir.clone(),
-                        &work_dir,
-                        &docker_image,
-                        &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default"), String::from("--interactive=false")]
-                    ),
+                    false,
+                    &vec![],
+                    &vec![],
+                    &work_dir.clone(),
+                    &work_dir,
+                    &docker_image,
+                    &vec![
+                        String::from("bakery"),
+                        String::from("build"),
+                        String::from("--config"),
+                        String::from("default"),
+                        String::from("--interactive=false"),
+                    ],
+                ),
                 env: HashMap::new(),
                 shell: true,
             }))
@@ -816,16 +956,20 @@ mod tests {
         mocked_system
             .expect_init_env_file()
             .returning(|_x, _y| Ok(HashMap::new()));
-        mocked_system
-            .expect_env()
-            .returning(||HashMap::new());
+        mocked_system.expect_env().returning(|| HashMap::new());
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,
             &work_dir,
             Box::new(BLogger::new()),
             Box::new(mocked_system),
-            vec!["bakery", "build", "--config", "default", "--interactive=false"],
+            vec![
+                "bakery",
+                "build",
+                "--config",
+                "default",
+                "--interactive=false",
+            ],
         );
     }
 
@@ -863,22 +1007,32 @@ mod tests {
             }
         }
         "#;
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
-        let docker_image: DockerImage = DockerImage::new(&format!("ghcr.io/mikrodidakt/bakery/bakery-workspace:{}", env!("CARGO_PKG_VERSION"))).expect("Invalid docker image format");
+        let docker_image: DockerImage = DockerImage::new(&format!(
+            "ghcr.io/mikrodidakt/bakery/bakery-workspace:{}",
+            env!("CARGO_PKG_VERSION")
+        ))
+        .expect("Invalid docker image format");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
                 cmd_line: Helper::docker_bootstrap_string(
-                        true,
-                        &vec![String::from("--test=test")],
-                        &vec![],
-                        &work_dir.clone(),
-                        &work_dir,
-                        &docker_image,
-                        &vec![String::from("bakery"), String::from("build"), String::from("--config"), String::from("default")]
-                    ),
+                    true,
+                    &vec![String::from("--test=test")],
+                    &vec![],
+                    &work_dir.clone(),
+                    &work_dir,
+                    &docker_image,
+                    &vec![
+                        String::from("bakery"),
+                        String::from("build"),
+                        String::from("--config"),
+                        String::from("default"),
+                    ],
+                ),
                 env: HashMap::new(),
                 shell: true,
             }))
@@ -887,9 +1041,7 @@ mod tests {
         mocked_system
             .expect_init_env_file()
             .returning(|_x, _y| Ok(HashMap::new()));
-        mocked_system
-            .expect_env()
-            .returning(||HashMap::new());
+        mocked_system.expect_env().returning(|| HashMap::new());
         let _result: Result<(), BError> = helper_test_build_subcommand(
             json_ws_settings,
             json_build_config,
@@ -933,18 +1085,31 @@ mod tests {
             }
         }
         "#;
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let build_dir: PathBuf = work_dir.join("builds/default");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "devtool", "create-workspace", "&&", "bitbake", "test-image"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
-                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
+                cmd_line: vec![
+                    "cd",
+                    &build_dir.to_string_lossy().to_string(),
+                    "&&",
+                    "devtool",
+                    "create-workspace",
+                    "&&",
+                    "bitbake",
+                    "test-image",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+                env: HashMap::from([(
+                    String::from("BB_ENV_PASSTHROUGH_ADDITIONS"),
+                    String::from("SSTATE_DIR DL_DIR TMPDIR"),
+                )]),
                 shell: true,
             }))
             .once()
@@ -958,7 +1123,14 @@ mod tests {
             &work_dir,
             Box::new(BLogger::new()),
             Box::new(mocked_system),
-            vec!["bakery", "build", "--config", "default", "--tasks", "task-name"],
+            vec![
+                "bakery",
+                "build",
+                "--config",
+                "default",
+                "--tasks",
+                "task-name",
+            ],
         );
     }
 
@@ -1008,18 +1180,31 @@ mod tests {
             }
         }
         "#;
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let build_dir: PathBuf = work_dir.join("builds/default");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "devtool", "create-workspace", "&&", "bitbake", "image"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
-                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
+                cmd_line: vec![
+                    "cd",
+                    &build_dir.to_string_lossy().to_string(),
+                    "&&",
+                    "devtool",
+                    "create-workspace",
+                    "&&",
+                    "bitbake",
+                    "image",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+                env: HashMap::from([(
+                    String::from("BB_ENV_PASSTHROUGH_ADDITIONS"),
+                    String::from("SSTATE_DIR DL_DIR TMPDIR"),
+                )]),
                 shell: true,
             }))
             .once()
@@ -1027,11 +1212,25 @@ mod tests {
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "devtool", "create-workspace", "&&", "bitbake", "image", "-c", "do_populate_sdk"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
-                env: HashMap::from([(String::from("BB_ENV_PASSTHROUGH_ADDITIONS"), String::from("SSTATE_DIR DL_DIR TMPDIR"))]),
+                cmd_line: vec![
+                    "cd",
+                    &build_dir.to_string_lossy().to_string(),
+                    "&&",
+                    "devtool",
+                    "create-workspace",
+                    "&&",
+                    "bitbake",
+                    "image",
+                    "-c",
+                    "do_populate_sdk",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+                env: HashMap::from([(
+                    String::from("BB_ENV_PASSTHROUGH_ADDITIONS"),
+                    String::from("SSTATE_DIR DL_DIR TMPDIR"),
+                )]),
                 shell: true,
             }))
             .once()
@@ -1045,7 +1244,14 @@ mod tests {
             &work_dir,
             Box::new(BLogger::new()),
             Box::new(mocked_system),
-            vec!["bakery", "build", "--config", "default", "--tasks", "image,sdk"],
+            vec![
+                "bakery",
+                "build",
+                "--config",
+                "default",
+                "--tasks",
+                "image,sdk",
+            ],
         );
     }
 
@@ -1090,9 +1296,15 @@ mod tests {
         bb_variables.push_str("BUILD_VARIANT ?= \"release\"\n");
         bb_variables.push_str("PLATFORM_RELEASE ?= \"1.2.3-4\"\n");
         helper_test_local_conf_args(
-            &mut vec!["--platform-version=1.2.3", "--build-id=4", "--build-sha=abcdefgh", "--variant=release"],
+            &mut vec![
+                "--platform-version=1.2.3",
+                "--build-id=4",
+                "--build-sha=abcdefgh",
+                "--variant=release",
+            ],
             None,
-            Some(&bb_variables));
+            Some(&bb_variables),
+        );
     }
 
     #[test]
@@ -1104,10 +1316,7 @@ mod tests {
         bb_variables.push_str("RELEASE_BUILD ?= \"0\"\n");
         bb_variables.push_str("BUILD_VARIANT ?= \"test\"\n");
         bb_variables.push_str("PLATFORM_RELEASE ?= \"0.0.0-0\"\n");
-        helper_test_local_conf_args(
-            &mut vec!["--variant=test"],
-            None,
-            Some(&bb_variables));
+        helper_test_local_conf_args(&mut vec!["--variant=test"], None, Some(&bb_variables));
     }
 
     #[test]
@@ -1146,17 +1355,25 @@ mod tests {
                 }
             }
         }"#;
-        let temp_dir: TempDir = TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let build_dir: PathBuf = work_dir.join("build/dir3/dir2");
         let mut mocked_system: MockSystem = MockSystem::new();
         mocked_system
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
-                cmd_line: vec!["cd", &build_dir.to_string_lossy().to_string(), "&&", "test.sh", "build", "test"]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
+                cmd_line: vec![
+                    "cd",
+                    &build_dir.to_string_lossy().to_string(),
+                    "&&",
+                    "test.sh",
+                    "build",
+                    "test",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
                 env: HashMap::new(),
                 shell: true,
             }))
@@ -1171,7 +1388,18 @@ mod tests {
             &work_dir,
             Box::new(BLogger::new()),
             Box::new(mocked_system),
-            vec!["bakery", "build", "--config", "default", "--tasks", "task-name", "--context", "DIR1=dir3", "--context", "PROJECT=test"],
+            vec![
+                "bakery",
+                "build",
+                "--config",
+                "default",
+                "--tasks",
+                "task-name",
+                "--context",
+                "DIR1=dir3",
+                "--context",
+                "PROJECT=test",
+            ],
         );
     }
 

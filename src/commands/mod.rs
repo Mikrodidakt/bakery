@@ -1,30 +1,33 @@
 pub mod build;
 pub mod clean;
-pub mod list;
-pub mod handler;
-pub mod shell;
 pub mod deploy;
-pub mod upload;
+pub mod handler;
+pub mod list;
 pub mod setup;
+pub mod shell;
 pub mod sync;
+pub mod upload;
 
-use std::collections::HashMap;
 use indexmap::IndexMap;
+use std::collections::HashMap;
 use std::path::PathBuf;
 
-use crate::error::BError;
 use crate::cli::Cli;
+use crate::error::BError;
+use crate::executers::docker::Docker;
 use crate::executers::DockerImage;
 use crate::workspace::Workspace;
-use crate::executers::docker::Docker;
 
 // Bakery SubCommand
 pub trait BCommand {
     fn setup_context(&self, ctx: Vec<String>) -> IndexMap<String, String> {
-        let context: IndexMap<String, String> = ctx.iter().map(|c|{
-            let v: Vec<&str> = c.split('=').collect();
-            (v[0].to_string(), v[1].to_string())
-        }).collect();
+        let context: IndexMap<String, String> = ctx
+            .iter()
+            .map(|c| {
+                let v: Vec<&str> = c.split('=').collect();
+                (v[0].to_string(), v[1].to_string())
+            })
+            .collect();
         context
     }
 
@@ -42,8 +45,14 @@ pub trait BCommand {
         return docker.pull(cli);
     }
 
-    fn bootstrap(&self, cmd_line: &Vec<String>, cli: &Cli, workspace: &Workspace,
-            volumes: &Vec<String>, interactive: bool) -> Result<(), BError> {
+    fn bootstrap(
+        &self,
+        cmd_line: &Vec<String>,
+        cli: &Cli,
+        workspace: &Workspace,
+        volumes: &Vec<String>,
+        interactive: bool,
+    ) -> Result<(), BError> {
         let docker: Docker = Docker::new(workspace.settings().docker_image(), interactive);
 
         /*
@@ -70,8 +79,15 @@ pub trait BCommand {
          */
         // docker.pull(cli)?;
 
-        return docker.bootstrap_bakery(cmd_line, cli, &workspace.settings().docker_top_dir(),
-            &workspace.settings().work_dir(), workspace.settings().docker_args(), volumes, &env);
+        return docker.bootstrap_bakery(
+            cmd_line,
+            cli,
+            &workspace.settings().docker_top_dir(),
+            &workspace.settings().work_dir(),
+            workspace.settings().docker_args(),
+            volumes,
+            &env,
+        );
     }
 
     fn get_config_name(&self, _cli: &Cli) -> String {
@@ -99,10 +115,21 @@ pub trait BCommand {
         return Err(BError::CliError(format!("Failed to read arg {}", id)));
     }
 
-    fn get_arg_many<'a>(&'a self, cli: &'a Cli, id: &str, cmd: &str) -> Result<Vec<String>, BError> {
+    fn get_arg_many<'a>(
+        &'a self,
+        cli: &'a Cli,
+        id: &str,
+        cmd: &str,
+    ) -> Result<Vec<String>, BError> {
         if let Some(sub_matches) = cli.get_args().subcommand_matches(cmd) {
             if sub_matches.contains_id(id) {
-                let many: Vec<String> = sub_matches.get_many::<String>(id).unwrap_or_default().collect::<Vec<_>>().iter().map(|s| s.to_string()).collect();
+                let many: Vec<String> = sub_matches
+                    .get_many::<String>(id)
+                    .unwrap_or_default()
+                    .collect::<Vec<_>>()
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect();
                 return Ok(many);
             }
             return Ok(Vec::new());
@@ -145,10 +172,10 @@ pub fn get_supported_cmds() -> HashMap<&'static str, Box<dyn BCommand>> {
 
 pub use build::BuildCommand;
 pub use clean::CleanCommand;
-pub use list::ListCommand;
-pub use shell::ShellCommand;
-pub use handler::CmdHandler;
 pub use deploy::DeployCommand;
-pub use upload::UploadCommand;
+pub use handler::CmdHandler;
+pub use list::ListCommand;
 pub use setup::SetupCommand;
+pub use shell::ShellCommand;
 pub use sync::SyncCommand;
+pub use upload::UploadCommand;

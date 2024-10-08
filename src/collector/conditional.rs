@@ -1,9 +1,5 @@
-use crate::collector::{
-    Collector,
-    CollectorFactory,
-    Collected,
-};
 use crate::cli::Cli;
+use crate::collector::{Collected, Collector, CollectorFactory};
 use crate::error::BError;
 use crate::workspace::WsArtifactsHandler;
 
@@ -34,7 +30,9 @@ impl<'a> Collector for ConditionalCollector<'a> {
 
     fn verify_attributes(&self) -> Result<(), BError> {
         if self.artifact.children().is_empty() {
-                return Err(BError::ValueError(String::from("Conditional node requires list of artifacts!")));
+            return Err(BError::ValueError(String::from(
+                "Conditional node requires list of artifacts!",
+            )));
         }
 
         Ok(())
@@ -43,28 +41,21 @@ impl<'a> Collector for ConditionalCollector<'a> {
 
 impl<'a> ConditionalCollector<'a> {
     pub fn new(artifact: &'a WsArtifactsHandler, cli: Option<&'a Cli>) -> Self {
-        ConditionalCollector {
-            artifact,
-            cli,
-        }
+        ConditionalCollector { artifact, cli }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::workspace::WsArtifactsHandler;
+    use crate::collector::{Collected, Collector, ConditionalCollector};
+    use crate::configs::Context;
     use crate::data::WsBuildData;
     use crate::helper::Helper;
-    use crate::collector::{
-        ConditionalCollector,
-        Collector,
-        Collected
-    };
-    use crate::configs::Context;
+    use crate::workspace::WsArtifactsHandler;
 
-    use tempdir::TempDir;
-    use std::path::PathBuf;
     use indexmap::{indexmap, IndexMap};
+    use std::path::PathBuf;
+    use tempdir::TempDir;
 
     #[test]
     fn test_conditional_collector_true() {
@@ -72,9 +63,7 @@ mod tests {
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = PathBuf::from(temp_dir.path());
         let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
-        let files: Vec<PathBuf> = vec![
-            task_build_dir.clone().join("file1.txt"),
-        ];
+        let files: Vec<PathBuf> = vec![task_build_dir.clone().join("file1.txt")];
         let json_artifacts_config: &str = r#"
         {
             "type": "conditional",
@@ -91,14 +80,21 @@ mod tests {
             &task_build_dir,
             &files,
             &build_data,
-            json_artifacts_config);
+            json_artifacts_config,
+        );
         let collector: ConditionalCollector = ConditionalCollector::new(&artifacts, None);
         assert!(collector.verify_attributes().is_ok());
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
-        let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
-        assert_eq!(&collected, &vec![
-            Collected { src: task_build_dir.clone().join("file1.txt"), dest: artifacts_dir.clone().join("file1.txt") },
-        ]);
+        let collected: Vec<Collected> = collector
+            .collect(&task_build_dir, &artifacts_dir)
+            .expect("Failed to collect artifacts");
+        assert_eq!(
+            &collected,
+            &vec![Collected {
+                src: task_build_dir.clone().join("file1.txt"),
+                dest: artifacts_dir.clone().join("file1.txt")
+            },]
+        );
         for c in collected.iter() {
             assert!(c.dest.exists());
         }
@@ -110,9 +106,7 @@ mod tests {
             TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = PathBuf::from(temp_dir.path());
         let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
-        let files: Vec<PathBuf> = vec![
-            task_build_dir.clone().join("file1.txt"),
-        ];
+        let files: Vec<PathBuf> = vec![task_build_dir.clone().join("file1.txt")];
         let json_artifacts_config: &str = r#"
         {
             "type": "conditional",
@@ -129,11 +123,14 @@ mod tests {
             &task_build_dir,
             &files,
             &build_data,
-            json_artifacts_config);
+            json_artifacts_config,
+        );
         let collector: ConditionalCollector = ConditionalCollector::new(&artifacts, None);
         assert!(collector.verify_attributes().is_ok());
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
-        let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
+        let collected: Vec<Collected> = collector
+            .collect(&task_build_dir, &artifacts_dir)
+            .expect("Failed to collect artifacts");
         assert!(collected.is_empty());
     }
 
@@ -183,7 +180,8 @@ mod tests {
             &task_build_dir,
             &files,
             &build_data,
-            json_artifacts_config);
+            json_artifacts_config,
+        );
         let variables: IndexMap<String, String> = indexmap! {
             "CONDITION".to_string() => "true".to_string(),
             "DIR1".to_string() => "dir1".to_string(),
@@ -196,12 +194,26 @@ mod tests {
         let collector: ConditionalCollector = ConditionalCollector::new(&artifacts, None);
         assert!(collector.verify_attributes().is_ok());
         let artifacts_dir: PathBuf = build_data.settings().artifacts_dir();
-        let collected: Vec<Collected> = collector.collect(&task_build_dir, &artifacts_dir).expect("Failed to collect artifacts");
-        assert_eq!(&collected, &vec![
-            Collected { src: task_build_dir.clone().join("file1.txt"), dest: artifacts_dir.clone().join("dir1/file1.txt") },
-            Collected { src: task_build_dir.clone().join("file2.txt"), dest: artifacts_dir.clone().join("dir1/dest/dest-file.txt") },
-            Collected { src: task_build_dir.clone().join("src-file.txt"), dest: artifacts_dir.clone().join("dir1/dir2/src-file.txt") },
-        ]);
+        let collected: Vec<Collected> = collector
+            .collect(&task_build_dir, &artifacts_dir)
+            .expect("Failed to collect artifacts");
+        assert_eq!(
+            &collected,
+            &vec![
+                Collected {
+                    src: task_build_dir.clone().join("file1.txt"),
+                    dest: artifacts_dir.clone().join("dir1/file1.txt")
+                },
+                Collected {
+                    src: task_build_dir.clone().join("file2.txt"),
+                    dest: artifacts_dir.clone().join("dir1/dest/dest-file.txt")
+                },
+                Collected {
+                    src: task_build_dir.clone().join("src-file.txt"),
+                    dest: artifacts_dir.clone().join("dir1/dir2/src-file.txt")
+                },
+            ]
+        );
         for c in collected.iter() {
             assert!(c.dest.exists());
         }

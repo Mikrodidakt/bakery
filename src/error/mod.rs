@@ -5,38 +5,38 @@ use zip::result::ZipError;
 
 #[derive(Error, Debug)]
 pub enum BError {
-  #[error("{0}")]
-  ParseError(String),
-  #[error("Invalid 'artifact' node in build config. {0}")]
-  ParseArtifactsError(String),
-  #[error("Invalid 'task' node in build config. {0}")]
-  ParseTasksError(String),
-  #[error("Invalid 'manifest' node in build config. {0}")]
-  ParseManifestError(String),
-  #[error("Failed to parse JSON. '{0}'")]
-  JsonParseError(String),
-  #[error("The build config version '{0}' is not compatible with current bakery version. Update config to match the format of version '5'")]
-  InvalidBuildConfigError(String),
-  #[error("{0}")]
-  IOError(String),
-  #[error("{0}")]
-  ValueError(String),
-  #[error("{0}")]
-  WsError(String),
-  #[error("{0}")]
-  CliError(String),
-  #[error("{0}")]
-  ArchiverError(String),
-  #[error("{0}")]
-  CmdError(String),
-  #[error("{0}")]
-  CtxKeyError(String),
-  #[error("{0}")]
-  CollectorError(String),
-  #[error("Docker is enabled for the workspace but cannot locate /usr/bin/docker")]
-  DockerError(),
-  #[error("{0}")]
-  DockerImageError(String),
+    #[error("{0}")]
+    ParseError(String),
+    #[error("Invalid 'artifact' node in build config. {0}")]
+    ParseArtifactsError(String),
+    #[error("Invalid 'task' node in build config. {0}")]
+    ParseTasksError(String),
+    #[error("Invalid 'manifest' node in build config. {0}")]
+    ParseManifestError(String),
+    #[error("Failed to parse JSON. '{0}'")]
+    JsonParseError(String),
+    #[error("The build config version '{0}' is not compatible with current bakery version. Update config to match the format of version '5'")]
+    InvalidBuildConfigError(String),
+    #[error("{0}")]
+    IOError(String),
+    #[error("{0}")]
+    ValueError(String),
+    #[error("{0}")]
+    WsError(String),
+    #[error("{0}")]
+    CliError(String),
+    #[error("{0}")]
+    ArchiverError(String),
+    #[error("{0}")]
+    CmdError(String),
+    #[error("{0}")]
+    CtxKeyError(String),
+    #[error("{0}")]
+    CollectorError(String),
+    #[error("Docker is enabled for the workspace but cannot locate /usr/bin/docker")]
+    DockerError(),
+    #[error("{0}")]
+    DockerImageError(String),
 }
 
 impl std::convert::From<serde_json::Error> for BError {

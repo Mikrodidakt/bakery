@@ -2,10 +2,9 @@ use crate::error::BError;
 
 use mockall::*;
 use std::collections::HashMap;
+use std::fmt;
 use std::path::PathBuf;
 use std::str;
-use std::fmt;
-
 
 /*
 Tried using "withf" and closure when mocking the check_call for testing
@@ -27,7 +26,7 @@ pub struct CallParams {
 impl fmt::Display for CallParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut cmd: String = String::new();
-        self.cmd_line.iter().for_each(|c|{
+        self.cmd_line.iter().for_each(|c| {
             cmd.push_str(c);
             cmd.push(' ');
         });
@@ -38,10 +37,13 @@ impl fmt::Display for CallParams {
 #[automock]
 pub trait System {
     fn check_call(&self, params: &CallParams) -> Result<(), BError>;
-    fn init_env_file(&self, init_file: &PathBuf, build_dir: &PathBuf) -> Result<HashMap<String, String>, BError>;
+    fn init_env_file(
+        &self,
+        init_file: &PathBuf,
+        build_dir: &PathBuf,
+    ) -> Result<HashMap<String, String>, BError>;
     fn rmdir_all(&self, path: &PathBuf) -> Result<(), BError>;
     fn env(&self) -> HashMap<String, String>;
-
 }
 
 pub struct BSystem {}
@@ -55,7 +57,7 @@ impl BSystem {
 impl System for BSystem {
     fn check_call(&self, params: &CallParams) -> Result<(), BError> {
         let mut cmd: String = String::new();
-        params.cmd_line.iter().for_each(|c|{
+        params.cmd_line.iter().for_each(|c| {
             cmd.push_str(c);
             cmd.push(' ');
         });
@@ -96,16 +98,25 @@ impl System for BSystem {
         Ok(())
     }
 
-    fn init_env_file(&self, init_file: &PathBuf, build_dir: &PathBuf) -> Result<HashMap<String, String>, BError> {
+    fn init_env_file(
+        &self,
+        init_file: &PathBuf,
+        build_dir: &PathBuf,
+    ) -> Result<HashMap<String, String>, BError> {
         std::fs::create_dir_all(build_dir)?;
 
         if !init_file.exists() {
-            return Err(BError::CliError(format!("Init env file {} dose not exists", init_file.to_string_lossy().to_string())));
+            return Err(BError::CliError(format!(
+                "Init env file {} dose not exists",
+                init_file.to_string_lossy().to_string()
+            )));
         }
 
-        let command: &str = &format!(". {} {} > /dev/null; env",
+        let command: &str = &format!(
+            ". {} {} > /dev/null; env",
             init_file.to_string_lossy().to_string(),
-            build_dir.to_string_lossy().to_string());
+            build_dir.to_string_lossy().to_string()
+        );
 
         // Execute the command
         // TODO: we should consider how to handle different shells
@@ -155,13 +166,12 @@ impl System for BSystem {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+    use std::path::PathBuf;
     use std::{fs::File, io::Write};
     use tempdir::TempDir;
-    use std::path::PathBuf;
-    use std::collections::HashMap;
 
     use crate::cli::{BSystem, System};
     use crate::error::BError;
@@ -175,22 +185,36 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from(temp_dir.path());
         let build_dir: PathBuf = work_dir.clone().join("build");
         let test_file_path: PathBuf = work_dir.clone().join("init_env");
-        let mut test_file: File = File::create(&test_file_path).expect("Failed to create init env test file");
+        let mut test_file: File =
+            File::create(&test_file_path).expect("Failed to create init env test file");
         let env: &str = r#"#!/bin/sh
         export ENV1=value1
         export ENV2=value2
         export ENV3=/test/path/test"#;
-        test_file.write_all(env.as_bytes()).expect("Failed to write init env test file");
+        test_file
+            .write_all(env.as_bytes())
+            .expect("Failed to write init env test file");
         let system: BSystem = BSystem::new();
-        let envs: HashMap<String, String> = system.init_env_file(&test_file_path, &build_dir).expect("Failed to process init env test file");
+        let envs: HashMap<String, String> = system
+            .init_env_file(&test_file_path, &build_dir)
+            .expect("Failed to process init env test file");
         assert!(!envs.is_empty());
         let mut verify: HashMap<String, String> = HashMap::new();
         verify.insert("ENV1".to_string(), "value1".to_string());
         verify.insert("ENV2".to_string(), "value2".to_string());
         verify.insert("ENV3".to_string(), "/test/path/test".to_string());
-        assert_eq!(&envs.get("ENV1").unwrap_or(&"error".to_string()), &verify.get("ENV1").unwrap());
-        assert_eq!(&envs.get("ENV2").unwrap_or(&"error".to_string()), &verify.get("ENV2").unwrap());
-        assert_eq!(&envs.get("ENV3").unwrap_or(&"error".to_string()), &verify.get("ENV3").unwrap());
+        assert_eq!(
+            &envs.get("ENV1").unwrap_or(&"error".to_string()),
+            &verify.get("ENV1").unwrap()
+        );
+        assert_eq!(
+            &envs.get("ENV2").unwrap_or(&"error".to_string()),
+            &verify.get("ENV2").unwrap()
+        );
+        assert_eq!(
+            &envs.get("ENV3").unwrap_or(&"error".to_string()),
+            &verify.get("ENV3").unwrap()
+        );
     }
 
     /*
@@ -227,13 +251,20 @@ mod tests {
         let build_dir: PathBuf = work_dir.clone().join("build");
         let test_file_path: PathBuf = work_dir.clone().join("init_env");
         let system: BSystem = BSystem::new();
-        let result: Result<HashMap<String, String>, BError> = system.init_env_file(&test_file_path, &build_dir);
+        let result: Result<HashMap<String, String>, BError> =
+            system.init_env_file(&test_file_path, &build_dir);
         match result {
             Ok(_env) => {
                 panic!("Was expecting an error!");
-            },
+            }
             Err(e) => {
-                assert_eq!(e.to_string(), format!("Init env file {} dose not exists", test_file_path.to_string_lossy().to_string()));
+                assert_eq!(
+                    e.to_string(),
+                    format!(
+                        "Init env file {} dose not exists",
+                        test_file_path.to_string_lossy().to_string()
+                    )
+                );
             }
         }
     }
@@ -242,9 +273,7 @@ mod tests {
     fn test_system_check_call_error() {
         let system: BSystem = BSystem::new();
         let params: CallParams = CallParams {
-            cmd_line: vec![
-                "exit 1".to_string(),
-            ],
+            cmd_line: vec!["exit 1".to_string()],
             env: HashMap::new(),
             shell: true,
         };
@@ -252,7 +281,7 @@ mod tests {
         match result {
             Ok(()) => {
                 panic!("Expected an error!");
-            },
+            }
             Err(e) => {
                 assert_eq!(e.to_string(), "exit status: 1");
             }
@@ -266,13 +295,23 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from(temp_dir.path());
         let system: BSystem = BSystem::new();
         let mut env: HashMap<String, String> = HashMap::new();
-        env.insert("TEST_FILE1".to_string(), work_dir.clone().join("test1").to_string_lossy().to_string());
-        env.insert("TEST_FILE2".to_string(), work_dir.clone().join("test2").to_string_lossy().to_string());
-        env.insert("TEST_FILE3".to_string(), work_dir.clone().join("test3").to_string_lossy().to_string());
+        env.insert(
+            "TEST_FILE1".to_string(),
+            work_dir.clone().join("test1").to_string_lossy().to_string(),
+        );
+        env.insert(
+            "TEST_FILE2".to_string(),
+            work_dir.clone().join("test2").to_string_lossy().to_string(),
+        );
+        env.insert(
+            "TEST_FILE3".to_string(),
+            work_dir.clone().join("test3").to_string_lossy().to_string(),
+        );
         let params: CallParams = CallParams {
-            cmd_line: vec![
-                format!("cd {}; touch $TEST_FILE1; touch $TEST_FILE2; touch $TEST_FILE3; ls -la .", work_dir.to_string_lossy().to_string()),
-            ],
+            cmd_line: vec![format!(
+                "cd {}; touch $TEST_FILE1; touch $TEST_FILE2; touch $TEST_FILE3; ls -la .",
+                work_dir.to_string_lossy().to_string()
+            )],
             env,
             shell: true,
         };

@@ -1,10 +1,10 @@
+use clap::ArgMatches;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use clap::ArgMatches;
 
-use crate::commands::{CmdHandler, BCommand};
+use crate::cli::{CallParams, Logger, System};
+use crate::commands::{BCommand, CmdHandler};
 use crate::error::BError;
-use crate::cli::{Logger, System, CallParams};
 
 pub struct Cli {
     cmd_line: Vec<String>,
@@ -16,7 +16,12 @@ pub struct Cli {
 }
 
 impl Cli {
-    pub fn new(logger: Box<dyn Logger>, system: Box<dyn System>, cmd: clap::Command, cmd_line: Option<Vec<&str>>) -> Self {
+    pub fn new(
+        logger: Box<dyn Logger>,
+        system: Box<dyn System>,
+        cmd: clap::Command,
+        cmd_line: Option<Vec<&str>>,
+    ) -> Self {
         let cmd_handler: CmdHandler = CmdHandler::new();
         let args: ArgMatches;
         let c: Vec<String>;
@@ -25,15 +30,11 @@ impl Cli {
         match cmd_line {
             Some(cline) => {
                 args = cmd_handler.build_cli(cmd).get_matches_from(cline.clone());
-                c = cline.iter().map(|s|{
-                    s.to_string()
-                }).collect();
-            },
+                c = cline.iter().map(|s| s.to_string()).collect();
+            }
             None => {
                 args = cmd_handler.build_cli(cmd).get_matches();
-                c = std::env::args().into_iter().map(|s|{
-                    s
-                }).collect();
+                c = std::env::args().into_iter().map(|s| s).collect();
             }
         }
 
@@ -45,7 +46,7 @@ impl Cli {
                             verbose = sub_matches.get_flag("verbose");
                         }
                     }
-                    Err(_e) => {},
+                    Err(_e) => {}
                 }
             }
         }
@@ -60,14 +61,23 @@ impl Cli {
         }
     }
 
-    pub fn check_call(&self, cmd_line: &Vec<String>, env: &HashMap<String, String>, shell: bool) -> Result<(), BError> {
+    pub fn check_call(
+        &self,
+        cmd_line: &Vec<String>,
+        env: &HashMap<String, String>,
+        shell: bool,
+    ) -> Result<(), BError> {
         let mut cmd: String = String::new();
-        cmd_line.iter().for_each(|c|{
+        cmd_line.iter().for_each(|c| {
             cmd.push_str(c);
             cmd.push(' ');
         });
         self.debug(format!("{}", cmd.as_str().trim_end()));
-        self.system.check_call(&CallParams{ cmd_line: cmd_line.to_owned(), env: env.to_owned(), shell })?;
+        self.system.check_call(&CallParams {
+            cmd_line: cmd_line.to_owned(),
+            env: env.to_owned(),
+            shell,
+        })?;
         //self.system.test(String::from(cmd.as_str().trim_end()))?;
         Ok(())
     }
@@ -81,7 +91,11 @@ impl Cli {
         self.system.env()
     }
 
-    pub fn source_init_env(&self, init_file: &PathBuf, build_dir: &PathBuf) -> Result<HashMap<String, String>, BError> {
+    pub fn source_init_env(
+        &self,
+        init_file: &PathBuf,
+        build_dir: &PathBuf,
+    ) -> Result<HashMap<String, String>, BError> {
         self.system.init_env_file(init_file, build_dir)
     }
 
@@ -100,8 +114,12 @@ impl Cli {
     pub fn get_home_dir(&self) -> PathBuf {
         match std::env::var_os("HOME") {
             Some(var) => {
-                return PathBuf::from(var.into_string().or::<String>(Ok(String::from(""))).unwrap());
-            },
+                return PathBuf::from(
+                    var.into_string()
+                        .or::<String>(Ok(String::from("")))
+                        .unwrap(),
+                );
+            }
             None => {
                 return PathBuf::from("");
             }
@@ -112,7 +130,7 @@ impl Cli {
         match std::env::current_dir() {
             Ok(path) => {
                 return path;
-            },
+            }
             Err(_e) => {
                 return PathBuf::from("");
             }

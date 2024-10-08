@@ -1,21 +1,21 @@
+pub mod archive;
+pub mod conditional;
+pub mod directory;
 pub mod factory;
 pub mod file;
-pub mod directory;
-pub mod manifest;
-pub mod archive;
 pub mod link;
-pub mod conditional;
+pub mod manifest;
 
+pub use archive::ArchiveCollector;
+pub use conditional::ConditionalCollector;
+pub use directory::DirectoryCollector;
 pub use factory::CollectorFactory;
 pub use file::FileCollector;
-pub use directory::DirectoryCollector;
-pub use manifest::ManifestCollector;
-pub use archive::ArchiveCollector;
 pub use link::LinkCollector;
-pub use conditional::ConditionalCollector;
+pub use manifest::ManifestCollector;
 
-use crate::error::BError;
 use crate::cli::Cli;
+use crate::error::BError;
 
 use std::path::PathBuf;
 
@@ -38,7 +38,7 @@ pub trait Collector {
         match cli {
             Some(c) => {
                 c.info(message);
-            },
+            }
             None => {
                 println!("{}", message);
             }

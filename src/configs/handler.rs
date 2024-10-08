@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
-use crate::main;
-use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler};
-use crate::fs::ConfigFileReader;
 use crate::error::BError;
+use crate::fs::ConfigFileReader;
+use crate::main;
+use crate::workspace::{WsBuildConfigHandler, WsSettingsHandler};
 
 use super::Config;
 
@@ -51,7 +51,7 @@ impl WsConfigFileHandler {
          * Return default settings the only thing required is the version the rest
          * be defined by the settings handler if it is not defined in the json
          */
-        let default_settings: &str  = r#"
+        let default_settings: &str = r#"
         {
             "version": "5"
         }"#;
@@ -65,9 +65,14 @@ impl WsConfigFileHandler {
         cfg_header_json.clone()
     }
 
-    pub fn setup_build_config(&self, path: &PathBuf, settings: &WsSettingsHandler) -> Result<WsBuildConfigHandler, BError> {
+    pub fn setup_build_config(
+        &self,
+        path: &PathBuf,
+        settings: &WsSettingsHandler,
+    ) -> Result<WsBuildConfigHandler, BError> {
         let build_config_json: String = ConfigFileReader::new(&path).read_json()?;
-        let mut main_config: WsBuildConfigHandler = WsBuildConfigHandler::from_str(&build_config_json, settings)?;
+        let mut main_config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(&build_config_json, settings)?;
         let cfg_header_json: String = self.config_header(&main_config);
 
         /*
@@ -82,15 +87,28 @@ impl WsConfigFileHandler {
              * each task is handling it's own build dir which is setup by the bb segment we need to inject the bb to the WsBuildConfigHandler
              * string.
              */
-            let cfg_json: String = format!("{{{},{}}}", cfg_header_json, cfg_include_json.trim_start().trim_start_matches('{').trim_end().trim_end_matches('}'));
-            let mut cfg: WsBuildConfigHandler = WsBuildConfigHandler::from_str(&cfg_json, settings)?;
+            let cfg_json: String = format!(
+                "{{{},{}}}",
+                cfg_header_json,
+                cfg_include_json
+                    .trim_start()
+                    .trim_start_matches('{')
+                    .trim_end()
+                    .trim_end_matches('}')
+            );
+            let mut cfg: WsBuildConfigHandler =
+                WsBuildConfigHandler::from_str(&cfg_json, settings)?;
             main_config.merge(&mut cfg);
         }
 
         return Ok(main_config);
     }
 
-    pub fn build_config(&self, name: &str, settings: &WsSettingsHandler) -> Result<WsBuildConfigHandler, BError> {
+    pub fn build_config(
+        &self,
+        name: &str,
+        settings: &WsSettingsHandler,
+    ) -> Result<WsBuildConfigHandler, BError> {
         let mut build_config: PathBuf = PathBuf::from(name);
         build_config.set_extension("json");
         let mut path: PathBuf = settings.work_dir().join(build_config.clone());
@@ -121,21 +139,26 @@ impl WsConfigFileHandler {
             return WsBuildConfigHandler::from_str(&dummy_config_json, settings);
         }
 
-        return Err(BError::ValueError(format!("Build config '{}' missing!", build_config.clone().display())));
+        return Err(BError::ValueError(format!(
+            "Build config '{}' missing!",
+            build_config.clone().display()
+        )));
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use tempdir::TempDir;
-    use std::path::PathBuf;
     use std::fs::File;
     use std::io::Write;
+    use std::path::PathBuf;
+    use tempdir::TempDir;
 
-    use crate::helper::Helper;
     use crate::configs::WsConfigFileHandler;
-    use crate::workspace::{WsSettingsHandler, WsBuildConfigHandler, WsTaskHandler, WsCustomSubCmdHandler};
     use crate::error::BError;
+    use crate::helper::Helper;
+    use crate::workspace::{
+        WsBuildConfigHandler, WsCustomSubCmdHandler, WsSettingsHandler, WsTaskHandler,
+    };
 
     fn write_json_conf(path: &PathBuf, json_str: &str) {
         if let Some(parent_dir) = path.parent() {
@@ -145,7 +168,8 @@ mod tests {
         let mut file: File = File::create(&path).expect("Failed to create file");
 
         // Write the JSON string to the file.
-        file.write_all(json_str.as_bytes()).expect("Failed to write json to file");
+        file.write_all(json_str.as_bytes())
+            .expect("Failed to write json to file");
     }
 
     /*
@@ -160,14 +184,19 @@ mod tests {
         let home_dir: PathBuf = PathBuf::from(temp_dir.path()).join("home");
         Helper::setup_test_ws_default_dirs(&work_dir);
         let cfg_handler: WsConfigFileHandler = WsConfigFileHandler::new(&work_dir, &home_dir);
-        let settings: WsSettingsHandler = cfg_handler.ws_settings().expect("Failed parse workspace settings");
+        let settings: WsSettingsHandler = cfg_handler
+            .ws_settings()
+            .expect("Failed parse workspace settings");
         assert_eq!(settings.builds_dir(), work_dir.clone().join("builds"));
         assert_eq!(settings.cache_dir(), work_dir.clone().join(".cache"));
         assert_eq!(settings.artifacts_dir(), work_dir.clone().join("artifacts"));
         assert_eq!(settings.scripts_dir(), work_dir.clone().join("scripts"));
         assert_eq!(settings.docker_dir(), work_dir.clone().join("docker"));
         assert_eq!(settings.configs_dir(), work_dir.clone().join("configs"));
-        assert_eq!(settings.include_dir(), work_dir.clone().join("configs/include"));
+        assert_eq!(
+            settings.include_dir(),
+            work_dir.clone().join("configs/include")
+        );
     }
 
     /*
@@ -196,9 +225,14 @@ mod tests {
                 "configsdir": "home_dir"
             }
         }"#;
-        write_json_conf(&home_dir.clone().join(".bakery/workspace.json"), ws_settings_2);
+        write_json_conf(
+            &home_dir.clone().join(".bakery/workspace.json"),
+            ws_settings_2,
+        );
         let cfg_handler: WsConfigFileHandler = WsConfigFileHandler::new(&work_dir, &home_dir);
-        let settings: WsSettingsHandler = cfg_handler.ws_settings().expect("Failed parse workspace settings");
+        let settings: WsSettingsHandler = cfg_handler
+            .ws_settings()
+            .expect("Failed parse workspace settings");
         assert_eq!(settings.configs_dir(), work_dir.clone().join("home_dir"));
     }
 
@@ -221,7 +255,9 @@ mod tests {
         }"#;
         write_json_conf(&work_dir.clone().join("workspace.json"), ws_settings);
         let cfg_handler: WsConfigFileHandler = WsConfigFileHandler::new(&work_dir, &home_dir);
-        let settings: WsSettingsHandler = cfg_handler.ws_settings().expect("Failed parse workspace settings");
+        let settings: WsSettingsHandler = cfg_handler
+            .ws_settings()
+            .expect("Failed parse workspace settings");
         assert_eq!(settings.configs_dir(), work_dir.join("work_dir"));
     }
 
@@ -236,14 +272,20 @@ mod tests {
         let home_dir: PathBuf = PathBuf::from(temp_dir.path()).join("home");
         Helper::setup_test_ws_default_dirs(&work_dir);
         let cfg_handler: WsConfigFileHandler = WsConfigFileHandler::new(&work_dir, &home_dir);
-        let settings: WsSettingsHandler = cfg_handler.ws_settings().expect("Failed parse workspace settings");
-        let result: Result<WsBuildConfigHandler, BError> = cfg_handler.build_config("invalid", &settings);
+        let settings: WsSettingsHandler = cfg_handler
+            .ws_settings()
+            .expect("Failed parse workspace settings");
+        let result: Result<WsBuildConfigHandler, BError> =
+            cfg_handler.build_config("invalid", &settings);
         match result {
             Ok(_build_cfg) => {
                 panic!("Was expecting an error!");
-            },
+            }
             Err(e) => {
-                assert_eq!(e.to_string(), String::from("Build config 'invalid.json' missing!"));
+                assert_eq!(
+                    e.to_string(),
+                    String::from("Build config 'invalid.json' missing!")
+                );
             }
         }
     }
@@ -258,7 +300,9 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from(temp_dir.path()).join("workspace");
         let home_dir: PathBuf = PathBuf::from(temp_dir.path()).join("home");
         let cfg_handler: WsConfigFileHandler = WsConfigFileHandler::new(&work_dir, &home_dir);
-        let settings: WsSettingsHandler = cfg_handler.ws_settings().expect("Failed parse workspace settings");
+        let settings: WsSettingsHandler = cfg_handler
+            .ws_settings()
+            .expect("Failed parse workspace settings");
         Helper::setup_test_ws_default_dirs(&work_dir);
         let build_conf_ws_root_dir = r#"
         {
@@ -267,7 +311,10 @@ mod tests {
             "description": "Test Description",
             "arch": "test-arch"
         }"#;
-        write_json_conf(&settings.work_dir().join("test.json"),  build_conf_ws_root_dir);
+        write_json_conf(
+            &settings.work_dir().join("test.json"),
+            build_conf_ws_root_dir,
+        );
         let build_conf_configs_dir = r#"
         {
             "version": "5",
@@ -275,8 +322,13 @@ mod tests {
             "description": "Test Description",
             "arch": "test-arch"
         }"#;
-        write_json_conf(&settings.configs_dir().join("test.json"),  build_conf_configs_dir);
-        let config: WsBuildConfigHandler = cfg_handler.build_config("test", &settings).expect("Failed parse build config");
+        write_json_conf(
+            &settings.configs_dir().join("test.json"),
+            build_conf_configs_dir,
+        );
+        let config: WsBuildConfigHandler = cfg_handler
+            .build_config("test", &settings)
+            .expect("Failed parse build config");
         assert_eq!(config.build_data().name(), "ws-root-build-config");
     }
 
@@ -290,7 +342,9 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from(temp_dir.path()).join("workspace");
         let home_dir: PathBuf = PathBuf::from(temp_dir.path()).join("home");
         let cfg_handler: WsConfigFileHandler = WsConfigFileHandler::new(&work_dir, &home_dir);
-        let settings: WsSettingsHandler = cfg_handler.ws_settings().expect("Failed parse workspace settings");
+        let settings: WsSettingsHandler = cfg_handler
+            .ws_settings()
+            .expect("Failed parse workspace settings");
         Helper::setup_test_ws_default_dirs(&work_dir);
         let build_conf_configs_dir = r#"
         {
@@ -299,8 +353,13 @@ mod tests {
             "description": "Test Description",
             "arch": "test-arch"
         }"#;
-        write_json_conf(&settings.configs_dir().join("test.json"),  build_conf_configs_dir);
-        let config: WsBuildConfigHandler = cfg_handler.build_config("test", &settings).expect("Failed parse build config");
+        write_json_conf(
+            &settings.configs_dir().join("test.json"),
+            build_conf_configs_dir,
+        );
+        let config: WsBuildConfigHandler = cfg_handler
+            .build_config("test", &settings)
+            .expect("Failed parse build config");
         assert_eq!(config.build_data().name(), "ws-configs-build-config");
     }
 
@@ -311,7 +370,9 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from(temp_dir.path()).join("workspace");
         let home_dir: PathBuf = PathBuf::from(temp_dir.path()).join("home");
         let cfg_handler: WsConfigFileHandler = WsConfigFileHandler::new(&work_dir, &home_dir);
-        let settings: WsSettingsHandler = cfg_handler.ws_settings().expect("Failed parse workspace settings");
+        let settings: WsSettingsHandler = cfg_handler
+            .ws_settings()
+            .expect("Failed parse workspace settings");
         Helper::setup_test_ws_default_dirs(&work_dir);
         let main_build_config = r#"
         {
@@ -359,7 +420,7 @@ mod tests {
                 "cmd": "main"
             }
         }"#;
-        write_json_conf(&settings.work_dir().join("main.json"),  main_build_config);
+        write_json_conf(&settings.work_dir().join("main.json"), main_build_config);
         let build_config1 = r#"
         {
             "version": "5",
@@ -397,7 +458,7 @@ mod tests {
                 "cmd": "config1"
             }
         }"#;
-        write_json_conf(&settings.include_dir().join("config1.json"),  build_config1);
+        write_json_conf(&settings.include_dir().join("config1.json"), build_config1);
         let build_config2 = r#"
         {
             "version": "5",
@@ -420,18 +481,29 @@ mod tests {
                 "cmd": "config2"
             }
         }"#;
-        write_json_conf(&settings.include_dir().join("config2.json"),  build_config2);
-        let config: WsBuildConfigHandler = cfg_handler.build_config("main", &settings).expect("Failed parse build config");
+        write_json_conf(&settings.include_dir().join("config2.json"), build_config2);
+        let config: WsBuildConfigHandler = cfg_handler
+            .build_config("main", &settings)
+            .expect("Failed parse build config");
         assert_eq!(config.build_data().name(), "test-product");
         let t0: &WsTaskHandler = config.tasks().get("task0").unwrap();
         assert_eq!(t0.data().build_cmd(), "main");
-        assert_eq!(t0.data().build_dir(), &settings.work_dir().join("test/main"));
+        assert_eq!(
+            t0.data().build_dir(),
+            &settings.work_dir().join("test/main")
+        );
         let t1: &WsTaskHandler = config.tasks().get("task1").unwrap();
         assert_eq!(t1.data().recipes(), &vec!["test"]);
-        assert_eq!(t1.data().build_dir(), &settings.work_dir().join("builds/test-product"));
+        assert_eq!(
+            t1.data().build_dir(),
+            &settings.work_dir().join("builds/test-product")
+        );
         let t2: &WsTaskHandler = config.tasks().get("task2").unwrap();
         assert_eq!(t2.data().build_cmd(), "config2");
-        assert_eq!(t2.data().build_dir(), &settings.work_dir().join("test/config2"));
+        assert_eq!(
+            t2.data().build_dir(),
+            &settings.work_dir().join("test/config2")
+        );
         let setup: &WsCustomSubCmdHandler = config.subcmds().get("setup").unwrap();
         assert_eq!(setup.data().cmd(), "main");
         let sync: &WsCustomSubCmdHandler = config.subcmds().get("sync").unwrap();

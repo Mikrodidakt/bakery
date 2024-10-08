@@ -1,10 +1,10 @@
 use serde_json::Value;
 use std::path::PathBuf;
 
+use crate::configs::Config;
 use crate::configs::Context;
 use crate::error::BError;
 use crate::workspace::WsSettingsHandler;
-use crate::configs::Config;
 
 pub struct WsBitbakeData {
     data: Value,
@@ -20,8 +20,7 @@ pub struct WsBitbakeData {
     settings: WsSettingsHandler,
 }
 
-impl Config for WsBitbakeData {
-}
+impl Config for WsBitbakeData {}
 
 impl WsBitbakeData {
     pub fn from_str(json_string: &str, settings: &WsSettingsHandler) -> Result<Self, BError> {
@@ -46,10 +45,19 @@ impl WsBitbakeData {
         let machine: String = Self::get_str_value("machine", bb_data, Some(String::from("NA")))?;
         let distro: String = Self::get_str_value("distro", bb_data, Some(String::from("NA")))?;
         let docker: String = Self::get_str_value("docker", bb_data, Some(String::from("NA")))?;
-        let deploy_dir: String = Self::get_str_value("deploydir", bb_data, Some(String::from("tmp/deploy/images")))?;
-        let bblayers_conf: Vec<String> = Self::get_array_value("bblayersconf", bb_data, Some(vec![]))?;
+        let deploy_dir: String = Self::get_str_value(
+            "deploydir",
+            bb_data,
+            Some(String::from("tmp/deploy/images")),
+        )?;
+        let bblayers_conf: Vec<String> =
+            Self::get_array_value("bblayersconf", bb_data, Some(vec![]))?;
         let local_conf: Vec<String> = Self::get_array_value("localconf", bb_data, Some(vec![]))?;
-        let init_env: String = Self::get_str_value("initenv", bb_data, Some(String::from("layers/poky/oe-init-build-env")))?;
+        let init_env: String = Self::get_str_value(
+            "initenv",
+            bb_data,
+            Some(String::from("layers/poky/oe-init-build-env")),
+        )?;
 
         Ok(WsBitbakeData {
             data: bb_data.clone(),
@@ -104,8 +112,14 @@ impl WsBitbakeData {
         // TODO: we should define a method product_name() call that instead
         conf_str.push_str(&format!("PRODUCT_NAME ?= \"{}\"\n", self.product));
         conf_str.push_str(&format!("DISTRO ?= \"{}\"\n", self.distro));
-        conf_str.push_str(&format!("SSTATE_DIR ?= \"{}\"\n", self.sstate_dir().to_str().unwrap()));
-        conf_str.push_str(&format!("DL_DIR ?= \"{}\"\n", self.dl_dir().to_str().unwrap()));
+        conf_str.push_str(&format!(
+            "SSTATE_DIR ?= \"{}\"\n",
+            self.sstate_dir().to_str().unwrap()
+        ));
+        conf_str.push_str(&format!(
+            "DL_DIR ?= \"{}\"\n",
+            self.dl_dir().to_str().unwrap()
+        ));
         conf_str
     }
 
@@ -123,7 +137,10 @@ impl WsBitbakeData {
     }
 
     pub fn build_dir(&self) -> PathBuf {
-        self.settings.builds_dir().clone().join(PathBuf::from(self.product.clone()))
+        self.settings
+            .builds_dir()
+            .clone()
+            .join(PathBuf::from(self.product.clone()))
     }
 
     pub fn docker_image(&self) -> &str {
@@ -143,15 +160,23 @@ impl WsBitbakeData {
     }
 
     pub fn deploy_dir(&self) -> PathBuf {
-        self.build_dir().join(PathBuf::from(self.deploy_dir.clone()))
+        self.build_dir()
+            .join(PathBuf::from(self.deploy_dir.clone()))
     }
 
     pub fn sstate_dir(&self) -> PathBuf {
-        self.settings.cache_dir().clone().join(&self.arch).join("sstate-cache".to_string())
+        self.settings
+            .cache_dir()
+            .clone()
+            .join(&self.arch)
+            .join("sstate-cache".to_string())
     }
 
     pub fn dl_dir(&self) -> PathBuf {
-        self.settings.cache_dir().clone().join("download".to_string())
+        self.settings
+            .cache_dir()
+            .clone()
+            .join("download".to_string())
     }
 
     pub fn init_env_file(&self) -> PathBuf {
@@ -163,12 +188,12 @@ impl WsBitbakeData {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
     use indexmap::{indexmap, IndexMap};
+    use std::path::PathBuf;
 
-    use crate::workspace::WsSettingsHandler;
-    use crate::data::WsBitbakeData;
     use crate::configs::Context;
+    use crate::data::WsBitbakeData;
+    use crate::workspace::WsSettingsHandler;
 
     #[test]
     fn test_ws_bitbake_data_default() {
@@ -181,21 +206,47 @@ mod tests {
             "version": "5"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
-        let data: WsBitbakeData = WsBitbakeData::from_str(json_build_config, &settings).expect("Failed to parse product data");
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings)
+            .expect("Failed to parse settings");
+        let data: WsBitbakeData = WsBitbakeData::from_str(json_build_config, &settings)
+            .expect("Failed to parse product data");
         assert_eq!(data.machine(), "NA");
         assert_eq!(data.distro(), "NA");
         assert_eq!(data.docker_image(), "NA");
-        assert_eq!(data.build_dir(), PathBuf::from(String::from("/workspace/builds/NA")));
-        assert_eq!(data.build_config_dir(), PathBuf::from(String::from("/workspace/builds/NA/conf")));
-        assert_eq!(data.deploy_dir(), PathBuf::from(String::from("/workspace/builds/NA/tmp/deploy/images")));
-        assert_eq!(data.bblayers_conf_path(), PathBuf::from(String::from("/workspace/builds/NA/conf/bblayers.conf")));
-        assert_eq!(data.local_conf_path(), PathBuf::from(String::from("/workspace/builds/NA/conf/local.conf")));
+        assert_eq!(
+            data.build_dir(),
+            PathBuf::from(String::from("/workspace/builds/NA"))
+        );
+        assert_eq!(
+            data.build_config_dir(),
+            PathBuf::from(String::from("/workspace/builds/NA/conf"))
+        );
+        assert_eq!(
+            data.deploy_dir(),
+            PathBuf::from(String::from("/workspace/builds/NA/tmp/deploy/images"))
+        );
+        assert_eq!(
+            data.bblayers_conf_path(),
+            PathBuf::from(String::from("/workspace/builds/NA/conf/bblayers.conf"))
+        );
+        assert_eq!(
+            data.local_conf_path(),
+            PathBuf::from(String::from("/workspace/builds/NA/conf/local.conf"))
+        );
         assert!(data.bblayers_conf().is_empty());
         assert!(!data.local_conf().is_empty());
-        assert_eq!(data.sstate_dir(), PathBuf::from(String::from("/workspace/.cache/NA/sstate-cache")));
-        assert_eq!(data.dl_dir(), PathBuf::from(String::from("/workspace/.cache/download")));
-        assert_eq!(data.init_env_file(), PathBuf::from(String::from("/workspace/layers/poky/oe-init-build-env")));
+        assert_eq!(
+            data.sstate_dir(),
+            PathBuf::from(String::from("/workspace/.cache/NA/sstate-cache"))
+        );
+        assert_eq!(
+            data.dl_dir(),
+            PathBuf::from(String::from("/workspace/.cache/download"))
+        );
+        assert_eq!(
+            data.init_env_file(),
+            PathBuf::from(String::from("/workspace/layers/poky/oe-init-build-env"))
+        );
     }
 
     #[test]
@@ -228,16 +279,35 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
-        let data: WsBitbakeData = WsBitbakeData::from_str(json_build_config, &settings).expect("Failed to parse product data");
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings)
+            .expect("Failed to parse settings");
+        let data: WsBitbakeData = WsBitbakeData::from_str(json_build_config, &settings)
+            .expect("Failed to parse product data");
         assert_eq!(data.machine(), "test-machine");
         assert_eq!(data.distro(), "test-distro");
         assert_eq!(data.docker_image(), "test-registry/test-image:0.1");
-        assert_eq!(data.build_dir(), PathBuf::from(String::from("/workspace/builds/test-name")));
-        assert_eq!(data.build_config_dir(), PathBuf::from(String::from("/workspace/builds/test-name/conf")));
-        assert_eq!(data.deploy_dir(), PathBuf::from(String::from("/workspace/builds/test-name/tmp/test/deploy")));
-        assert_eq!(data.bblayers_conf_path(), PathBuf::from(String::from("/workspace/builds/test-name/conf/bblayers.conf")));
-        assert_eq!(data.local_conf_path(), PathBuf::from(String::from("/workspace/builds/test-name/conf/local.conf")));
+        assert_eq!(
+            data.build_dir(),
+            PathBuf::from(String::from("/workspace/builds/test-name"))
+        );
+        assert_eq!(
+            data.build_config_dir(),
+            PathBuf::from(String::from("/workspace/builds/test-name/conf"))
+        );
+        assert_eq!(
+            data.deploy_dir(),
+            PathBuf::from(String::from("/workspace/builds/test-name/tmp/test/deploy"))
+        );
+        assert_eq!(
+            data.bblayers_conf_path(),
+            PathBuf::from(String::from(
+                "/workspace/builds/test-name/conf/bblayers.conf"
+            ))
+        );
+        assert_eq!(
+            data.local_conf_path(),
+            PathBuf::from(String::from("/workspace/builds/test-name/conf/local.conf"))
+        );
         assert!(!data.bblayers_conf().is_empty());
         let mut conf_str: String = String::new();
         conf_str.push_str("BB_LAYERS_CONF_TEST_LINE_1\n");
@@ -255,9 +325,18 @@ mod tests {
         conf_str.push_str("SSTATE_DIR ?= \"/workspace/.cache/test-arch/sstate-cache\"\n");
         conf_str.push_str("DL_DIR ?= \"/workspace/.cache/download\"\n");
         assert_eq!(data.local_conf(), conf_str);
-        assert_eq!(data.sstate_dir(), PathBuf::from(String::from("/workspace/.cache/test-arch/sstate-cache")));
-        assert_eq!(data.dl_dir(), PathBuf::from(String::from("/workspace/.cache/download")));
-        assert_eq!(data.init_env_file(), PathBuf::from(String::from("/workspace/layers/test/oe-my-init-env")));
+        assert_eq!(
+            data.sstate_dir(),
+            PathBuf::from(String::from("/workspace/.cache/test-arch/sstate-cache"))
+        );
+        assert_eq!(
+            data.dl_dir(),
+            PathBuf::from(String::from("/workspace/.cache/download"))
+        );
+        assert_eq!(
+            data.init_env_file(),
+            PathBuf::from(String::from("/workspace/layers/test/oe-my-init-env"))
+        );
     }
 
     #[test]
@@ -296,8 +375,10 @@ mod tests {
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/bakery-ws");
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
-        let mut data: WsBitbakeData = WsBitbakeData::from_str(json_build_config, &settings).expect("Failed to parse product data");
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings)
+            .expect("Failed to parse settings");
+        let mut data: WsBitbakeData = WsBitbakeData::from_str(json_build_config, &settings)
+            .expect("Failed to parse product data");
         let variables: IndexMap<String, String> = indexmap! {
             "BUILDS_DIR".to_string() => settings.builds_dir().to_string_lossy().to_string(),
             "LAYERS_DIR".to_string() => settings.layers_dir().to_string_lossy().to_string()
@@ -333,8 +414,10 @@ mod tests {
         }"#;
         let json_bb = r#""bb": {"bblayersconf":[],"deploydir":"tmp/test/deploy","distro":"test-distro","docker":"test-registry/test-image:0.1","initenv":"layers/test/oe-my-init-env","localconf":[],"machine":"test-machine"}"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings).expect("Failed to parse settings");
-        let data: WsBitbakeData = WsBitbakeData::from_str(json_build_config, &settings).expect("Failed to parse product data");
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings)
+            .expect("Failed to parse settings");
+        let data: WsBitbakeData = WsBitbakeData::from_str(json_build_config, &settings)
+            .expect("Failed to parse product data");
         assert_eq!(data.to_string(), json_bb);
     }
 }

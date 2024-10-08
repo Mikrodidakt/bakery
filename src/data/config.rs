@@ -1,7 +1,7 @@
 use serde_json::Value;
 
-use crate::error::BError;
 use crate::configs::Config;
+use crate::error::BError;
 
 pub struct WsConfigData {
     version: String,
@@ -22,10 +22,7 @@ impl WsConfigData {
         // for now leave it but should potentially move it
         let name: String = Self::get_str_value("name", &data, Some(String::from("NA")))?;
 
-        Ok(WsConfigData {
-            version,
-            name,
-        })
+        Ok(WsConfigData { version, name })
     }
 
     pub fn name(&self) -> &str {
@@ -47,7 +44,8 @@ mod tests {
         {
             "version": "5"
         }"#;
-        let data: WsConfigData = WsConfigData::from_str(json_build_config).expect("Failed to parse config data");
+        let data: WsConfigData =
+            WsConfigData::from_str(json_build_config).expect("Failed to parse config data");
         assert_eq!(data.version(), "5");
         assert_eq!(data.name(), "NA");
     }
@@ -59,7 +57,8 @@ mod tests {
             "version": "5",
             "name": "test-name"
         }"#;
-        let data: WsConfigData = WsConfigData::from_str(json_build_config).expect("Failed to parse config data");
+        let data: WsConfigData =
+            WsConfigData::from_str(json_build_config).expect("Failed to parse config data");
         assert_eq!(data.version(), "5");
         assert_eq!(data.name(), "test-name");
     }
