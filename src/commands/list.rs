@@ -91,10 +91,7 @@ impl BCommand for ListCommand {
                             }
                         ));
                     });
-                    cli.stdout("".to_string());
-                    cli.stdout("NOTE: a enabled task will be executed as part of the build command while a".to_string());
-                    cli.stdout("disabled task will only be executed if explicitly selected by the build command".to_string());
-                }
+               }
             } else {
                 return Err(BError::CliError(format!(
                     "Unsupported build config '{}'",
