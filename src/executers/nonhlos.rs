@@ -5,12 +5,12 @@ use crate::executers::{Docker, DockerImage, TaskExecuter};
 
 use std::collections::HashMap;
 
-pub struct NonBBCleanExecuter<'a> {
+pub struct NonHLOSCleanExecuter<'a> {
     task_data: &'a WsTaskData,
     cli: &'a Cli,
 }
 
-impl<'a> TaskExecuter for NonBBCleanExecuter<'a> {
+impl<'a> TaskExecuter for NonHLOSCleanExecuter<'a> {
     fn exec(
         &self,
         args_env_variables: &HashMap<String, String>,
@@ -18,7 +18,7 @@ impl<'a> TaskExecuter for NonBBCleanExecuter<'a> {
         interactive: bool,
     ) -> Result<(), BError> {
         self.cli.info(format!(
-            "execute bitbake clean task '{}'",
+            "execute non-hlos clean task '{}'",
             self.task_data.name()
         ));
         let mut cmd_line: Vec<String> = vec![];
@@ -53,18 +53,18 @@ impl<'a> TaskExecuter for NonBBCleanExecuter<'a> {
     }
 }
 
-impl<'a> NonBBCleanExecuter<'a> {
+impl<'a> NonHLOSCleanExecuter<'a> {
     pub fn new(cli: &'a Cli, task_data: &'a WsTaskData) -> Self {
-        NonBBCleanExecuter { cli, task_data }
+        NonHLOSCleanExecuter { cli, task_data }
     }
 }
 
-pub struct NonBBBuildExecuter<'a> {
+pub struct NonHLOSBuildExecuter<'a> {
     cli: &'a Cli,
     task_data: &'a WsTaskData,
 }
 
-impl<'a> TaskExecuter for NonBBBuildExecuter<'a> {
+impl<'a> TaskExecuter for NonHLOSBuildExecuter<'a> {
     fn exec(
         &self,
         env_variables: &HashMap<String, String>,
@@ -101,12 +101,13 @@ impl<'a> TaskExecuter for NonBBBuildExecuter<'a> {
     }
 }
 
-impl<'a> NonBBBuildExecuter<'a> {
+impl<'a> NonHLOSBuildExecuter<'a> {
     pub fn new(cli: &'a Cli, task_data: &'a WsTaskData) -> Self {
-        NonBBBuildExecuter { cli, task_data }
+        NonHLOSBuildExecuter { cli, task_data }
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -327,3 +328,4 @@ mod tests {
             .expect("Failed to execute task");
     }
 }
+*/

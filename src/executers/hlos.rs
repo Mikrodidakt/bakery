@@ -1,85 +1,47 @@
 use crate::cli::Cli;
-use crate::data::{WsBitbakeData, WsTaskData};
+use crate::data::{WsTaskData};
 use crate::error::BError;
-use crate::executers::{Docker, DockerImage, Recipe, TaskExecuter};
-use crate::fs::BitbakeConf;
+use crate::executers::{Docker, DockerImage, TaskExecuter};
 
 use indexmap::IndexMap;
 use std::collections::HashMap;
 
-pub struct BBCleanExecuter<'a> {
-    bb_data: &'a WsBitbakeData,
+pub struct HLOSCleanExecuter<'a> {
     task_data: &'a WsTaskData,
     cli: &'a Cli,
 }
 
-impl<'a> TaskExecuter for BBCleanExecuter<'a> {
+impl<'a> TaskExecuter for HLOSCleanExecuter<'a> {
     fn exec(
         &self,
         _args_env_variables: &HashMap<String, String>,
         _dry_run: bool,
         _interactive: bool,
     ) -> Result<(), BError> {
-        let mut note: String = String::from("Please note that the sstate cache is not cleaned!\n");
-        note.push_str(&format!(
-            "The sstate cache is located at '{}'\n",
-            self.bb_data.sstate_dir().display()
-        ));
-        note.push_str("The sstate cache might be used by multiple builds\n");
-        note.push_str("removing the sstate cache will require a full build\n");
-        note.push_str("and can potentially take hours\n");
-
         self.cli.info(format!(
-            "execute bitbake clean task '{}'",
+            "execute hlos clean task '{}'",
             self.task_data.name()
         ));
-
-        /*
-         * We are only allowed to remove the bitbake build dir. We make sure that is
-         * the case by checking that it is a subdir of the task build directory which
-         * should be set to the work directory when it is a bitbake task
-         */
-        if self
-            .bb_data
-            .build_dir()
-            .starts_with(self.task_data.build_dir())
-        {
-            self.cli.info(format!(
-                "Removing bitbake build dir '{}'",
-                self.bb_data.build_dir().display()
-            ));
-            self.cli.rmdir_all(&self.bb_data.build_dir())?;
-            self.cli.stdout(note);
-        } else {
-            self.cli.info(format!(
-                "Bitbake build dir '{}' is outside of the task build dir '{}'",
-                self.bb_data.build_dir().display(),
-                self.task_data.build_dir().display()
-            ))
-        }
-
         Ok(())
     }
 }
 
-impl<'a> BBCleanExecuter<'a> {
-    pub fn new(cli: &'a Cli, task_data: &'a WsTaskData, bb_data: &'a WsBitbakeData) -> Self {
-        BBCleanExecuter {
+impl<'a> HLOSCleanExecuter<'a> {
+    pub fn new(cli: &'a Cli, task_data: &'a WsTaskData) -> Self {
+        HLOSCleanExecuter {
             cli,
-            bb_data,
             task_data,
         }
     }
 }
 
-pub struct BBBuildExecuter<'a> {
-    bb_data: &'a WsBitbakeData,
+pub struct HLOSBuildExecuter<'a> {
     task_data: &'a WsTaskData,
     bb_variables: &'a Vec<String>,
     cli: &'a Cli,
 }
 
-impl<'a> TaskExecuter for BBBuildExecuter<'a> {
+impl<'a> TaskExecuter for HLOSBuildExecuter<'a> {
     fn exec(
         &self,
         args_env_variables: &HashMap<String, String>,
@@ -87,82 +49,29 @@ impl<'a> TaskExecuter for BBBuildExecuter<'a> {
         interactive: bool,
     ) -> Result<(), BError> {
         self.cli.info(format!(
-            "execute bitbake build task '{}'",
+            "execute hlos build task '{}'",
             self.task_data.name()
         ));
         let force: bool = dry_run;
-        let env: HashMap<String, String> = self.bb_build_env(args_env_variables)?;
-        let exec_dir: std::path::PathBuf = self.bb_data.build_dir();
         let mut docker_str: &str = "";
-        // if we are running a dry run we should always create the bb configs.
-        // When not a dry run it will be determined if it is needed or not to
-        // regenerate the bb configs based on the content of the existing configs
-        // comparted to the new content
-        let conf: BitbakeConf = BitbakeConf::new(self.bb_data, self.bb_variables, force);
-        conf.create_bitbake_configs(self.cli)?;
 
         if dry_run {
-            let mut cmd_line: Vec<String> = vec![];
-            cmd_line.append(&mut vec![
-                "devtool".to_string(),
-                "create-workspace".to_string(),
-            ]);
+            /*
             if !docker_str.is_empty() {
                 let image: DockerImage = DockerImage::new(docker_str)?;
                 let docker: Docker = Docker::new(image, interactive);
                 docker.run_cmd(&mut cmd_line, &env, &exec_dir, &self.cli)?;
-            } else {
-                self.cli.check_call(&cmd_line, &env, true)?;
-            }
+            }*/
             self.cli.info("Dry run. Skipping build!".to_string());
             return Ok(());
         }
 
-        for r in self.task_data.recipes() {
-            let mut cmd_line: Vec<String> = vec![];
-            let recipe: Recipe = Recipe::new(r);
-            let mut cmd: Vec<String> = recipe.bitbake_cmd();
-
-            cmd_line.append(&mut vec![
-                "cd".to_string(),
-                exec_dir.to_string_lossy().to_string(),
-                "&&".to_string(),
-                "devtool".to_string(),
-                "create-workspace".to_string(),
-                "&&".to_string(),
-            ]);
-            cmd_line.append(&mut cmd);
-
-            if !self.task_data.docker_image().is_empty() && self.task_data.docker_image() != "NA" {
-                docker_str = self.task_data.docker_image();
-            }
-
-            /*
-            Not sure that this is a real usecase for now we will just remove this but if we for some
-            reason need to be able to use the docker image defined in the bb conf node of the build
-            config for executing a task inside docker this can be enabled
-            else if !self.bb_data.docker_image().is_empty() && self.bb_data.docker_image() != "NA" {
-                // If docker image is set specifically for the task we use that if not we check and
-                // see if there is a docker image set in the bb node for the build config which will
-                // then be used for all the bitbake tasks. If that is not set then we skip execute
-                // docker
-                docker_str = self.bb_data.docker_image();
-            }
-            */
-
-            if !docker_str.is_empty() {
-                let image: DockerImage = DockerImage::new(docker_str)?;
-                let docker: Docker = Docker::new(image, interactive);
-                docker.run_cmd(&mut cmd_line, &env, &exec_dir, &self.cli)?;
-            } else {
-                self.cli.check_call(&cmd_line, &env, true)?;
-            }
-        }
         Ok(())
     }
 }
 
-impl<'a> BBBuildExecuter<'a> {
+impl<'a> HLOSBuildExecuter<'a> {
+    /*
     fn bb_build_env(
         &self,
         args_env_variables: &HashMap<String, String>,
@@ -217,22 +126,22 @@ impl<'a> BBBuildExecuter<'a> {
 
         Ok(env)
     }
+    */
 
     pub fn new(
         cli: &'a Cli,
         task_data: &'a WsTaskData,
-        bb_data: &'a WsBitbakeData,
         bb_variables: &'a Vec<String>,
     ) -> Self {
-        BBBuildExecuter {
+        HLOSBuildExecuter {
             cli,
-            bb_data,
             task_data,
             bb_variables,
         }
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -1099,3 +1008,4 @@ mod tests {
             .expect("Failed to execute task");
     }
 }
+*/

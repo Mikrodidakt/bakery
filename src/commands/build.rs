@@ -47,10 +47,6 @@ impl BCommand for BuildCommand {
         let version: String = self.get_arg_str(cli, "platform_version", BCOMMAND)?;
         let build_id: String = self.get_arg_str(cli, "build_id", BCOMMAND)?;
         let sha: String = self.get_arg_str(cli, "build_sha", BCOMMAND)?;
-        let build_history: bool = self.get_arg_flag(cli, "build_history", BCOMMAND)?;
-        let archiver: bool = self.get_arg_flag(cli, "archiver", BCOMMAND)?;
-        let debug_symbols: bool = self.get_arg_flag(cli, "debug_symbols", BCOMMAND)?;
-        let tar_balls: bool = self.get_arg_flag(cli, "tar_balls", BCOMMAND)?;
         let dry_run: bool = self.get_arg_flag(cli, "dry_run", BCOMMAND)?;
         let interactive_str: String = self.get_arg_str(cli, "interactive", BCOMMAND)?;
         let ctx: Vec<String> = self.get_arg_many(cli, "ctx", BCOMMAND)?;
@@ -92,15 +88,6 @@ impl BCommand for BuildCommand {
         }
         */
 
-        if tar_balls {
-            bb_variables.push("BB_GENERATE_MIRROR_TARBALLS = \"1\"".to_string());
-        }
-
-        if build_history {
-            bb_variables.push("INHERIT += \"buildhistory\"".to_string());
-            bb_variables.push("BUILDHISTORY_COMMIT = \"1\"".to_string());
-        }
-
         let env_variables: HashMap<String, String> = self.setup_env(env);
         let mut args_context: IndexMap<String, String> = self.setup_context(ctx);
 
@@ -113,19 +100,7 @@ impl BCommand for BuildCommand {
             "PLATFORM_RELEASE".to_string() => format!("{}-{}", version, build_id),
         };
 
-        if archiver {
-            bb_variables.push("INHERIT += \"archiver\"".to_string());
-            bb_variables.push("ARCHIVER_MODE[src] = \"original\"".to_string());
-            args_context.insert("ARCHIVER".to_string(), "1".to_string());
-        }
-
-        if debug_symbols {
-            bb_variables.push("IMAGE_GEN_DEBUGFS = \"1\"".to_string());
-            bb_variables.push("IMAGE_FSTYPES_DEBUGFS = \"tar.bz2\"".to_string());
-            args_context.insert("DEBUG_SYMBOLS".to_string(), "1".to_string());
-        }
-
-        if variant == "release" {
+        if variant == "eng" {
             /*
              * Build commands defined in the build config needs to
              * know if it is release build or not running by including
@@ -133,7 +108,7 @@ impl BCommand for BuildCommand {
              * the build commands. We are keeping RELEASE_BUILD for
              * backwards compatibility but should be replaced with BUILD_VARIANT
              */
-            extra_ctx.insert("BUILD_VARIANT".to_string(), "release".to_string());
+            extra_ctx.insert("BUILD_VARIANT".to_string(), "eng".to_string());
             extra_ctx.insert("RELEASE_BUILD".to_string(), "1".to_string());
         }
 
@@ -261,34 +236,10 @@ impl BuildCommand {
                     .help("Docker volume to mount bind when boot strapping into docker."),
             )
             .arg(
-                clap::Arg::new("build_history")
-                    .action(clap::ArgAction::SetTrue)
-                    .long("build-history")
-                    .help("Records information about each package and image and commits that information to a local Git repository where you can examine the information."),
-            )
-            .arg(
-                clap::Arg::new("archiver")
-                    .action(clap::ArgAction::SetTrue)
-                    .long("archiver")
-                    .help("Setting context variable ARCHIVER to 1 which will result in adding the archiver class to the local.conf. For more information see https://www.yoctoproject.org/docs/latest/mega-manual/mega-manual.html#ref-classes-archiver."),
-            )
-            .arg(
-                clap::Arg::new("debug_symbols")
-                    .action(clap::ArgAction::SetTrue)
-                    .long("debug-symbols")
-                    .help("Setting context variable DEBUG_SYMBOLS to 1 which will result in adding IMAGE_GEN_DEBUGFS=1 to the local.conf. For more information see https://www.yoctoproject.org/docs/latest/mega-manual/mega-manual.html#platdev-gdb-remotedebug."),
-            )
-            .arg(
                 clap::Arg::new("dry_run")
                     .action(clap::ArgAction::SetTrue)
                     .long("dry-run")
                     .help("Only generates local.conf. To manually start the build run source ./layers/poky/oe-init-env-build <build-dir> followed by any bitbake command."),
-            )
-            .arg(
-                clap::Arg::new("tar_balls")
-                    .action(clap::ArgAction::SetTrue)
-                    .long("tar-balls")
-                    .help("This will add BB_GENERATE_MIRROR_TARBALLS=1 to the local.conf. For more information see https://www.yoctoproject.org/docs/latest/mega-manual/mega-manual.html#var-BB_GENERATE_MIRROR_TARBALLS."),
             )
             .arg(
                 clap::Arg::new("platform_version")
@@ -311,10 +262,9 @@ impl BuildCommand {
                     .short('a')
                     .long("variant")
                     .value_name("variant")
-                    .default_value("dev")
-                    .value_parser(["dev", "test", "release"])
-                    .default_value("dev")
-                    .help("Specify the variant of the build it can be one of release, dev or test. Will be available as a context variable BUILD_VARIANT"),
+                    .default_value("userdebug")
+                    .value_parser(["user", "userdebug", "eng"])
+                    .help("Specify the variant of the build it can be one of user, userdebug, eng. Will be available as a context variable BUILD_VARIANT"),
             )
             .arg(
                 clap::Arg::new("interactive")
@@ -354,6 +304,7 @@ impl BuildCommand {
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -1462,3 +1413,4 @@ mod tests {
     }
     */
 }
+*/

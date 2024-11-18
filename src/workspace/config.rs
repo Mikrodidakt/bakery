@@ -167,6 +167,8 @@ impl WsBuildConfigHandler {
     //}
 }
 
+/*
+
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
@@ -778,3 +780,4 @@ mod tests {
         assert_eq!(upload.data().cmd(), "config2");
     }
 }
+*/

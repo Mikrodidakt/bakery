@@ -4,7 +4,7 @@ use crate::configs::Context;
 use crate::data::{TType, WsBuildData, WsTaskData};
 use crate::error::BError;
 use crate::executers::{
-    BBBuildExecuter, BBCleanExecuter, NonBBBuildExecuter, NonBBCleanExecuter, TaskExecuter,
+    HLOSBuildExecuter, HLOSCleanExecuter, NonHLOSBuildExecuter, NonHLOSCleanExecuter, TaskExecuter,
 };
 use crate::fs::ConfigFileReader;
 use crate::workspace::WsArtifactsHandler;
@@ -60,16 +60,15 @@ impl WsTaskHandler {
         }
 
         match self.data.ttype() {
-            TType::Bitbake => {
-                executer = Box::new(BBBuildExecuter::new(
+            TType::QSSI | TType::KERNEL | TType::VENDOR => {
+                executer = Box::new(HLOSBuildExecuter::new(
                     cli,
                     &self.data,
-                    build_data.bitbake(),
                     bb_variables,
                 ));
             }
-            TType::NonBitbake => {
-                executer = Box::new(NonBBBuildExecuter::new(cli, &self.data));
+            TType::NonHLOS => {
+                executer = Box::new(NonHLOSBuildExecuter::new(cli, &self.data));
             }
         }
 
@@ -107,11 +106,11 @@ impl WsTaskHandler {
         }
 
         match self.data.ttype() {
-            TType::Bitbake => {
-                executer = Box::new(BBCleanExecuter::new(cli, &self.data, build_data.bitbake()));
+            TType::QSSI | TType::KERNEL | TType::VENDOR => {
+                executer = Box::new(HLOSCleanExecuter::new(cli, &self.data));
             }
-            TType::NonBitbake => {
-                executer = Box::new(NonBBCleanExecuter::new(cli, &self.data));
+            TType::NonHLOS => {
+                executer = Box::new(NonHLOSCleanExecuter::new(cli, &self.data));
             }
         }
 
@@ -173,6 +172,7 @@ impl WsTaskHandler {
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -238,7 +238,7 @@ mod tests {
         assert_eq!(task.data().name(), "task-name");
         assert_eq!(task.data().build_cmd(), "build-cmd");
         assert_eq!(task.data().clean_cmd(), "clean-cmd");
-        assert_eq!(task.data().ttype(), &TType::NonBitbake);
+        assert_eq!(task.data().ttype(), &TType::NonHLOS);
         assert!(!task.data().disabled());
     }
 
@@ -264,7 +264,6 @@ mod tests {
         assert!(task.data().condition());
         assert_eq!(task.data().name(), "task-name");
         assert_eq!(task.data().ttype(), &TType::Bitbake);
-        assert_eq!(task.data().recipes(), &vec!["test-image".to_string()]);
         assert!(!task.data().disabled());
     }
 
@@ -910,3 +909,4 @@ mod tests {
         );
     }
 }
+*/

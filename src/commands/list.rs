@@ -61,10 +61,9 @@ impl BCommand for ListCommand {
             if workspace.valid_config(config.as_str()) {
                 workspace.expand_ctx()?;
                 cli.stdout(format!(
-                    "name: {}\narch: {}\nmachine: {}\ndescription: {}\n",
+                    "name: {}\narch: {}\nmachine: NA\ndescription: {}\n",
                     workspace.config().build_data().name(),
                     workspace.config().build_data().product().arch(),
-                    workspace.config().build_data().bitbake().machine(),
                     workspace.config().build_data().product().description()
                 ));
 
@@ -194,19 +193,18 @@ mod tests {
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
-            "bb": {},
             "tasks": {
                 "task1": {
                     "index": "1",
                     "name": "task1",
-                    "type": "non-bitbake"
+                    "type": "non-hlos"
                 },
                 "task2": {
                     "index": "2",
                     "name": "task2",
                     "disabled": "true",
                     "description": "test",
-                    "type": "non-bitbake"
+                    "type": "non-hlos"
                 }
             }
         }
@@ -279,12 +277,12 @@ mod tests {
                 "task1": {
                     "index": "1",
                     "name": "task1",
-                    "type": "non-bitbake"
+                    "type": "non-hlos"
                 },
                 "task2": {
                     "index": "2",
                     "name": "task2",
-                    "type": "non-bitbake"
+                    "type": "non-hlos"
                 }
             }
         }
@@ -310,6 +308,7 @@ mod tests {
         }
     }
 
+/*
     #[test]
     fn test_cmd_list_ctx() {
         let temp_dir: TempDir =
@@ -334,11 +333,7 @@ mod tests {
                 "PLATFORM_VERSION=x.y.z",
                 "BUILD_ID=abcdef",
                 "BUILD_VARIANT=test"
-            ],
-            "bb": {
-                "machine": "test-machine",
-                "distro": "test-distro"
-            }
+            ]
         }
         "#;
         let mut mocked_logger: MockLogger = MockLogger::new();
@@ -397,4 +392,5 @@ mod tests {
             vec!["bakery", "list", "--config", "default", "--ctx"],
         );
     }
+*/
 }

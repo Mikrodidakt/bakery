@@ -111,7 +111,7 @@ impl BCommand for ShellCommand {
         workspace.expand_ctx()?;
 
         if cmd.is_empty() {
-            return self.run_bitbake_shell(cli, workspace, &self.setup_env(env), &docker);
+            return self.run_hlos_shell(cli, workspace, &self.setup_env(env), &docker);
         }
 
         self.run_cmd(&cmd, cli, workspace, &self.setup_env(env), &docker)
@@ -197,13 +197,13 @@ impl ShellCommand {
         variables
     }
 
-    fn bb_build_env(
+    fn hlos_build_env(
         &self,
         cli: &Cli,
         workspace: &Workspace,
         args_env_variables: &HashMap<String, String>,
     ) -> Result<HashMap<String, String>, BError> {
-        let init_env: PathBuf = workspace.config().build_data().bitbake().init_env_file();
+        let init_env: PathBuf = PathBuf::from(""); //= workspace.config().build_data().bitbake().init_env_file();
 
         /*
          * Env variables priority are
@@ -213,16 +213,17 @@ impl ShellCommand {
 
         /* Sourcing the init env file and returning all the env variables available including from the shell */
         cli.info(format!("source init env file {}", init_env.display()));
-        let mut env: HashMap<String, String> = cli.source_init_env(
+        let mut env: HashMap<String, String> = HashMap::new(); /* = cli.source_init_env(
             &init_env,
             &workspace.config().build_data().bitbake().build_dir(),
-        )?;
+        )?;*/
         /*
          * Any variable that should be able to passthrough into bitbake needs to be defined as part of the bb passthrough variable
          * we define some defaults that should always be possible to passthrough
          */
         let mut bb_env_passthrough_additions: String = String::from("SSTATE_DIR DL_DIR TMPDIR");
 
+        /*
         /* Process the env variables from the cli */
         args_env_variables.iter().for_each(|(key, value)| {
             env.insert(key.clone(), value.clone());
@@ -232,6 +233,7 @@ impl ShellCommand {
              * of the task build config env
              */
         });
+        */
 
         if env.contains_key("BB_ENV_PASSTHROUGH_ADDITIONS") {
             bb_env_passthrough_additions.push_str(
@@ -247,7 +249,7 @@ impl ShellCommand {
         Ok(env)
     }
 
-    pub fn run_bitbake_shell(
+    pub fn run_hlos_shell(
         &self,
         cli: &Cli,
         workspace: &Workspace,
@@ -257,7 +259,7 @@ impl ShellCommand {
         let cmd_line: Vec<String> = vec![String::from("/bin/bash"), String::from("-i")];
 
         let mut env: HashMap<String, String> =
-            self.bb_build_env(cli, workspace, args_env_variables)?;
+            self.hlos_build_env(cli, workspace, args_env_variables)?;
         /*
          * Set the BAKERY_CURRENT_BUILD_CONFIG and BAKERY_WORKSPACE env variable used by the aliases in
          * /etc/bakery/bakery.bashrc which is sourced by /etc/bash.bashrc when running an interactive
@@ -306,7 +308,7 @@ impl ShellCommand {
         /*
          * The command don't have to be a bitbake command but we will setup the bb env anyway
          */
-        let env: HashMap<String, String> = self.bb_build_env(cli, workspace, args_env_variables)?;
+        let env: HashMap<String, String> = self.hlos_build_env(cli, workspace, args_env_variables)?;
         cli.info(format!("Running command '{}'", cmd));
         if !docker.is_empty() {
             let image: DockerImage = DockerImage::new(&docker)?;

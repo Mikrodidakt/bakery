@@ -1,5 +1,4 @@
 pub mod artifact;
-pub mod bitbake;
 pub mod config;
 pub mod context;
 pub mod customsubcmd;
@@ -9,7 +8,6 @@ pub mod product;
 pub mod task;
 
 pub use artifact::{AType, WsArtifactData};
-pub use bitbake::WsBitbakeData;
 pub use config::WsConfigData;
 pub use context::{WsContextData, CTX_KEY_DEVICE, CTX_KEY_IMAGE};
 pub use customsubcmd::WsCustomSubCmdData;

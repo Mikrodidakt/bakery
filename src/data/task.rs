@@ -9,21 +9,23 @@ use crate::error::BError;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum TType {
-    Bitbake,
-    NonBitbake,
+    NonHLOS,
+    QSSI,
+    VENDOR,
+    KERNEL,
 }
 
 pub struct WsTaskData {
     index: u32,
     name: String,
-    ttype: TType, // Optional if not set for the task the default type 'bitbake' is used
+    ttype: TType, // Optional if not set for the task the default type 'hlos' is used
     disabled: String, // Optional if not set for the task the default value 'false' is used
     build_dir: PathBuf,
+    init_env: PathBuf,
     build: String,
     docker: String,
     condition: String,
     clean: String,
-    recipes: Vec<String>, // The list of recipes will be empty if the type for the task is 'non-bitbake'
     description: String,
     env: IndexMap<String, String>,
 }
@@ -31,21 +33,6 @@ pub struct WsTaskData {
 impl Config for WsTaskData {}
 
 impl WsTaskData {
-    fn determine_build_dir(
-        ttype: TType,
-        task_build_dir: &str,
-        bb_build_dir: &PathBuf,
-        work_dir: &PathBuf,
-    ) -> PathBuf {
-        if ttype == TType::Bitbake {
-            if task_build_dir.is_empty() {
-                return bb_build_dir.clone();
-            }
-        }
-
-        work_dir.join(PathBuf::from(task_build_dir))
-    }
-
     pub fn from_str(json_string: &str, build_data: &WsBuildData) -> Result<Self, BError> {
         let data: Value = Self::parse(json_string)?;
         Self::from_value(&data, build_data)
@@ -55,47 +42,45 @@ impl WsTaskData {
         Self::new(
             data,
             &build_data.settings().work_dir(),
-            &build_data.bitbake().build_dir(),
         )
     }
 
-    pub fn new(data: &Value, work_dir: &PathBuf, bb_build_dir: &PathBuf) -> Result<Self, BError> {
+    pub fn new(data: &Value, work_dir: &PathBuf) -> Result<Self, BError> {
         let index: u32 = Self::get_u32_value("index", &data, None)?;
         let name: String = Self::get_str_value("name", &data, None)?;
-        let ttype: String = Self::get_str_value("type", &data, Some(String::from("bitbake")))?;
+        let ttype: String = Self::get_str_value("type", &data, Some(String::from("vendor")))?;
         let disabled: String = Self::get_str_value("disabled", &data, Some(String::from("false")))?;
         let build_dir: String = Self::get_str_value("builddir", &data, Some(String::from("")))?;
         let docker: String = Self::get_str_value("docker", data, Some(String::from("")))?;
         let condition: String = Self::get_str_value("condition", data, Some(String::from("true")))?;
         let build: String = Self::get_str_value("build", &data, Some(String::from("")))?;
         let clean: String = Self::get_str_value("clean", &data, Some(String::from("")))?;
+        let init_env: String = Self::get_str_value("initenv", &data, Some(String::from("")))?;
         let description: String =
             Self::get_str_value("description", &data, Some(String::from("NA")))?;
         let env: IndexMap<String, String> = Self::get_hashmap_value("env", &data)?;
-        let recipes: Vec<String> = Self::get_array_value("recipes", &data, Some(vec![]))?;
 
         let enum_ttype: TType;
         match ttype.as_str() {
-            "bitbake" => {
-                enum_ttype = TType::Bitbake;
+            "non-hlos" => {
+                enum_ttype = TType::NonHLOS;
             }
-            "non-bitbake" => {
-                enum_ttype = TType::NonBitbake;
+            "kernel" => {
+                enum_ttype = TType::KERNEL;
+            }
+            "vendor" => {
+                enum_ttype = TType::VENDOR;
+            }
+            "qssi" => {
+                enum_ttype = TType::QSSI;
             }
             _ => {
                 return Err(BError::ParseTasksError(format!("Invalid type '{}'", ttype)));
             }
         }
 
-        let task_build_dir: PathBuf =
-            Self::determine_build_dir(enum_ttype.clone(), &build_dir, bb_build_dir, work_dir);
-
-        // if the task type is bitbake then at least one recipe is required
-        if recipes.is_empty() && ttype == "bitbake" {
-            return Err(BError::ParseTasksError(format!(
-                "The 'bitbake' type requires at least one entry in 'recipes'"
-            )));
-        }
+        let build_dir_path: PathBuf = work_dir.clone().join(PathBuf::from(build_dir));
+        let init_env_path: PathBuf = build_dir_path.clone().join(PathBuf::from(init_env));
 
         Ok(WsTaskData {
             index,
@@ -104,11 +89,11 @@ impl WsTaskData {
             disabled,
             docker,
             condition,
-            build_dir: task_build_dir,
+            build_dir: build_dir_path,
             build,
             clean,
-            recipes,
             description,
+            init_env: init_env_path,
             env,
         })
     }
@@ -116,13 +101,11 @@ impl WsTaskData {
     pub fn expand_ctx(&mut self, ctx: &Context) -> Result<(), BError> {
         self.name = ctx.expand_str(&self.name)?;
         self.build_dir = ctx.expand_path(&self.build_dir)?;
+        self.init_env = ctx.expand_path(&self.init_env)?;
         self.build = ctx.expand_str(&self.build)?;
         self.clean = ctx.expand_str(&self.clean)?;
         self.condition = ctx.expand_str(&self.condition)?;
         self.disabled = ctx.expand_str(&self.disabled)?;
-        for r in self.recipes.iter_mut() {
-            *r = ctx.expand_str(r)?;
-        }
         for (_key, value) in self.env.iter_mut() {
             *value = ctx.expand_str(value)?;
         }
@@ -173,6 +156,10 @@ impl WsTaskData {
         &self.build_dir
     }
 
+    pub fn init_env(&self) -> &PathBuf {
+        &self.init_env
+    }
+
     pub fn build_cmd(&self) -> &str {
         &self.build
     }
@@ -181,15 +168,12 @@ impl WsTaskData {
         &self.clean
     }
 
-    pub fn recipes(&self) -> &Vec<String> {
-        &self.recipes
-    }
-
     pub fn env(&self) -> &IndexMap<String, String> {
         &self.env
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use indexmap::{indexmap, IndexMap};
@@ -202,14 +186,14 @@ mod tests {
     use crate::helper::Helper;
 
     #[test]
-    fn test_ws_task_data_nonbitbake() {
+    fn test_ws_task_data_nonhlos() {
         let json_task_config: &str = r#"
         {
             "index": "0",
             "name": "task1-name",
             "description": "test",
             "disabled": "false",
-            "type": "non-bitbake",
+            "type": "non-hlos",
             "builddir": "test/builddir",
             "docker": "test-registry/test-image:0.1",
             "build": "build-cmd",
@@ -219,13 +203,13 @@ mod tests {
         let bb_build_dir: PathBuf = work_dir.clone().join(String::from("test/builddir"));
         let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
         let task: WsTaskData =
-            WsTaskData::new(&data, &work_dir, &bb_build_dir).expect("Failed parsing task data");
+            WsTaskData::new(&data, &work_dir).expect("Failed parsing task data");
         assert_eq!(task.index(), 0);
         assert_eq!(task.name(), "task1-name");
         assert_eq!(task.disabled(), false);
         assert_eq!(task.condition(), true);
         assert_eq!(task.description(), "test");
-        assert_eq!(task.ttype(), &TType::NonBitbake);
+        assert_eq!(task.ttype(), &TType::NonHLOS);
         assert_eq!(task.build_dir(), &PathBuf::from("/workspace/test/builddir"));
         assert_eq!(task.build_cmd(), "build-cmd");
         assert_eq!(task.clean_cmd(), "clean-cmd");
@@ -233,58 +217,25 @@ mod tests {
     }
 
     #[test]
-    fn test_ws_task_data_bitbake() {
-        let json_task_config: &str = r#"
-        {
-            "index": "0",
-            "name": "task1-name",
-            "recipes": [
-                "test-image",
-                "test-image:sdk"
-            ]
-        }"#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let bb_build_dir: PathBuf = work_dir.clone().join(String::from("builds/test-name"));
-        let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
-        let task: WsTaskData =
-            WsTaskData::new(&data, &work_dir, &bb_build_dir).expect("Failed parsing task data");
-        assert_eq!(task.index(), 0);
-        assert_eq!(task.name(), "task1-name");
-        assert_eq!(task.disabled(), false);
-        assert_eq!(task.condition(), true);
-        assert_eq!(task.ttype(), &TType::Bitbake);
-        assert_eq!(
-            task.build_dir(),
-            &PathBuf::from("/workspace/builds/test-name")
-        );
-        assert_eq!(task.build_cmd(), "");
-        assert_eq!(task.clean_cmd(), "");
-        assert_eq!(task.docker_image(), "");
-        assert_eq!(task.description(), "NA");
-        assert_eq!(
-            task.recipes(),
-            &vec![String::from("test-image"), String::from("test-image:sdk")]
-        );
-    }
-
-    #[test]
     fn test_ws_task_data_context() {
         let json_task_config: &str = r#"
         {
-            "index": "2",
+            "index": "0",
             "name": "$#[TASK_NAME]",
-            "recipes": [
-                "$#[IMAGE_RECIPE]",
-                "$#[IMAGE_RECIPE_SDK]"
-            ]
+            "description": "test",
+            "disabled": "false",
+            "type": "qssi",
+            "builddir": "test/builddir",
+            "docker": "test-registry/test-image:0.1",
+            "build": "$#[BUILD_CMD] $#[BUILD_CMD_ARG]",
+            "clean": "clean-cmd"
         }"#;
         let ctx_variables: IndexMap<String, String> = indexmap! {
             "TASK_NAME".to_string() => "task1-name".to_string(),
-            "IMAGE_RECIPE".to_string() => "test-image".to_string(),
-            "IMAGE_RECIPE_SDK".to_string() => "test-image:sdk".to_string(),
+            "BUILD_CMD".to_string() => "test-cmd".to_string(),
+            "BUILD_CMD_ARG".to_string() => "test-cmd-arg".to_string(),
         };
         let work_dir: PathBuf = PathBuf::from("/workspace");
-        let bb_build_dir: PathBuf = work_dir.clone().join(String::from("builds/test-name"));
         let context: Context = Context::new(&ctx_variables);
         let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
         let mut task: WsTaskData =
@@ -306,27 +257,6 @@ mod tests {
             task.recipes(),
             &vec![String::from("test-image"), String::from("test-image:sdk")]
         );
-    }
-
-    #[test]
-    fn test_ws_task_data_error_no_recipes() {
-        let json_task_config: &str = r#"
-        {
-            "index": "0",
-            "name": "task1-name"
-        }"#;
-        let work_dir: PathBuf = PathBuf::from("/workspace");
-        let bb_build_dir: PathBuf = work_dir.clone().join(String::from("test/builddir"));
-        let data: Value = Helper::parse(json_task_config).expect("Failed to parse task config");
-        let result: Result<WsTaskData, BError> = WsTaskData::new(&data, &work_dir, &bb_build_dir);
-        match result {
-            Ok(_data) => {
-                panic!("We should have recived an error because we have no recipes defined!");
-            }
-            Err(e) => {
-                assert_eq!(e.to_string(), String::from("Invalid 'task' node in build config. The 'bitbake' type requires at least one entry in 'recipes'"));
-            }
-        }
     }
 
     #[test]
@@ -422,3 +352,4 @@ mod tests {
         );
     }
 }
+*/

@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::configs::Context;
 use crate::data::context;
-use crate::data::{WsBitbakeData, WsConfigData, WsContextData, WsIncludeData, WsProductData};
+use crate::data::{WsConfigData, WsContextData, WsIncludeData, WsProductData};
 use crate::error::BError;
 use crate::fs::ConfigFileReader;
 use crate::workspace::{
@@ -16,7 +16,6 @@ pub struct WsBuildData {
     data: Value,
     config: WsConfigData,
     product: WsProductData,
-    bitbake: WsBitbakeData,
     include: WsIncludeData,
     context: WsContextData,
     settings: WsSettingsHandler,
@@ -50,10 +49,6 @@ impl WsBuildData {
         // The product segments contains product specific data such as
         // product name and arch
         let product: WsProductData = WsProductData::from_value(data)?;
-        // The bitbake segment contains all the bitbake related data
-        // needed when executing a bitbake task defined in the build
-        // config
-        let bitbake: WsBitbakeData = WsBitbakeData::from_value(data, settings)?;
         // The include segment is to define additional json files that contains
         // defined tasks that are used by multiple build configs
         let include: WsIncludeData = WsIncludeData::from_value(data, settings)?;
@@ -65,9 +60,7 @@ impl WsBuildData {
         // be available
         // TODO: use local to get the date and time format correct
         let ctx_built_in_variables: IndexMap<String, String> = indexmap! {
-            context::CTX_KEY_MACHINE.to_string() => bitbake.machine().to_string(),
             context::CTX_KEY_ARCH.to_string() => product.arch().to_string(),
-            context::CTX_KEY_DISTRO.to_string() => bitbake.distro().to_string(),
             context::CTX_KEY_NAME.to_string() => product.name().to_string(),
             context::CTX_KEY_PRODUCT_NAME.to_string() => product.product().to_string(),
             context::CTX_KEY_PROJECT_NAME.to_string() => product.project().to_string(),
@@ -86,12 +79,8 @@ impl WsBuildData {
             .builds_dir()
             .clone()
             .join(PathBuf::from(product.name().to_string()));
-        let bb_deploy_dir: PathBuf = bb_build_dir
-            .clone()
-            .join(PathBuf::from(bitbake.deploy_dir().clone()));
         let ctx_bitbake_variables: IndexMap<String, String> = indexmap! {
             context::CTX_KEY_BB_BUILD_DIR.to_string() => bb_build_dir.to_string_lossy().to_string(),
-            context::CTX_KEY_BB_DEPLOY_DIR.to_string() => bb_deploy_dir.to_string_lossy().to_string(),
         };
         context.update(&ctx_bitbake_variables);
 
@@ -99,7 +88,6 @@ impl WsBuildData {
             data: data.to_owned(),
             config,
             product,
-            bitbake,
             include,
             context,
             settings: settings.clone(), // for now lets clone it
@@ -213,19 +201,16 @@ impl WsBuildData {
     pub fn expand_ctx(&mut self) -> Result<(), BError> {
         //self.config.expand_ctx(self.context.ctx());
         //self.product.expand_ctx(self.context.ctx());
-        self.bitbake.expand_ctx(self.context.ctx())?;
+        //self.bitbake.expand_ctx(self.context.ctx())?;
         Ok(())
     }
 
     pub fn product(&self) -> &WsProductData {
         &self.product
     }
-
-    pub fn bitbake(&self) -> &WsBitbakeData {
-        &self.bitbake
-    }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use chrono;
@@ -598,3 +583,4 @@ mod tests {
         );
     }
 }
+*/

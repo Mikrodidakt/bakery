@@ -1,6 +1,6 @@
 # Introduction
 
-The build config is what describes building the product for bakery. A typical build config would have a similare format as bellow
+The build config is what describes building the product for yaab. A typical build config would have a similare format as bellow
 
 
 ```json
@@ -13,38 +13,24 @@ The build config is what describes building the product for bakery. A typical bu
         "arch": "",
         "context": [
         ],
-        "bb": {
-                "machine": "",
-                "distro": "",
-                "deploydir": "",
-                "initenv": "",
-                "localconf": [
-                ],
-                "bblayersconf": [
-                ]
-        },
         "include": [
         ],
         "tasks": {
-                "task1": {
+                "task": {
                         "index": "0",
-                        "name": "task1",
-                        "disabled": "false",
-                        "condition": "true",
-                        "recipes": [],
-                        "artifacts": []
-                },
-                "task2": {
-                        "index": "1",
-                        "type": "non-bitbake",
-                        "disabled": "false",
-                        "condition": "true",
-                        "name": "task2",
+                        "name": "task",
+                        "type": "hlos|non-hlos|qssi|vendor|kernel",
+                        "initenv": "",
+                        "disabled": "true|false",
+                        "condition": "true|false",
                         "builddir": "",
                         "build": "",
                         "clean": "",
                         "artifacts": []
                 }
+        },
+        "flash": {
+                "cmd": ""
         },
         "deploy": {
                 "cmd": ""
@@ -66,7 +52,6 @@ The build config can be split up in
 * Config data   - configuration data specific for config like config file format version and config name which is currently the same as the product name.
 * Product data  - product data like name, description, arch.
 * Context data  - context variables that can be used throught the build config.
-* Bitbake data  - bitbake data distro, machine, deploy dir, init-env script, local.conf and bblayers.conf.
 * Tasks data    - to build a product multiple tasks might be required. The tasks data contains a list of tasks and defines what each task should do.
   * Artifacts data - The artifacts data is part of the task data and contains what artifacts to collect for each task.
 * Deploy data   - information on how to deploy an image to the target.

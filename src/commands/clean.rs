@@ -205,7 +205,7 @@ mod tests {
                 "task-name": {
                     "index": "1",
                     "name": "task-name",
-                    "type": "non-bitbake",
+                    "type": "non-hlos",
                     "builddir": "test-dir",
                     "build": "test.sh",
                     "clean": "rm -rf dir-to-delete"

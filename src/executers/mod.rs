@@ -1,15 +1,13 @@
-pub mod bitbake;
 pub mod customsubcmd;
 pub mod docker;
-pub mod nonbitbake;
-pub mod recipe;
+pub mod nonhlos;
+pub mod hlos;
 
-pub use bitbake::{BBBuildExecuter, BBCleanExecuter};
+pub use hlos::{HLOSBuildExecuter, HLOSCleanExecuter};
 pub use customsubcmd::CustomSubCmdExecuter;
 pub use docker::Docker;
 pub use docker::DockerImage;
-pub use nonbitbake::{NonBBBuildExecuter, NonBBCleanExecuter};
-pub use recipe::Recipe;
+pub use nonhlos::{NonHLOSBuildExecuter, NonHLOSCleanExecuter};
 
 use crate::error::BError;
 

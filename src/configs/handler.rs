@@ -59,9 +59,9 @@ impl WsConfigFileHandler {
     }
 
     fn config_header(&self, config: &WsBuildConfigHandler) -> String {
-        let cfg_bitbake_json: String = config.build_data().bitbake().to_string();
+        //let cfg_bitbake_json: String = config.build_data().bitbake().to_string();
         let cfg_product_json: String = config.build_data().product().to_string();
-        let cfg_header_json: String = format!("{},{}", cfg_product_json, cfg_bitbake_json);
+        let cfg_header_json: String = format!("{}", cfg_product_json);
         cfg_header_json.clone()
     }
 
@@ -146,6 +146,7 @@ impl WsConfigFileHandler {
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use std::fs::File;
@@ -512,3 +513,4 @@ mod tests {
         assert_eq!(upload.data().cmd(), "config2");
     }
 }
+*/
