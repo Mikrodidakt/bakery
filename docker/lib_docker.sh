@@ -3,12 +3,12 @@ set -e
 WORKSPACE=$(pwd)
 . ${WORKSPACE}/scripts/lib.sh
 SETTINGS_FILE=${WORKSPACE}/settings.json
-_ARTIFACT_SERVER="https://bakery.jfrog.io/baker"
+_ARTIFACT_SERVER="https://yaab.jfrog.io/yaab"
 _DOCKER_REGISTRY="ghcr.io"
-_DOCKER_IMAGE="mikrodidakt/bakery/bakery-workspace"
+_DOCKER_IMAGE="mikrodidakt/yaab/yaab-workspace"
 _DOCKER_DIR=${WORKSPACE}/docker
-_DOCKER_TAG=$(get_bakery_version ${WORKSPACE}/Cargo.toml)
-_DOCKER_ARGS="--name bakery-workspace \
+_DOCKER_TAG=$(get_yaab_version ${WORKSPACE}/Cargo.toml)
+_DOCKER_ARGS="--name yaab-workspace \
     --rm \
     -it \
     --dns=8.8.8.8 \

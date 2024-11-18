@@ -1,8 +1,8 @@
-# /etc/bakery/bakery.bashrc sourced in by /etc/bash.bashrc
-# when running a bakery-workspace
-BAKERY_BIN_DIR="/usr/bin"
-BAKERY_VERSION=$(${BAKERY_BIN_DIR}/bakery --version)
-BAKERY_VERSION=${BAKERY_VERSION##* }
+# /etc/yaab/yaab.bashrc sourced in by /etc/bash.bashrc
+# when running a yaab-workspace
+YAAB_BIN_DIR="/usr/bin"
+YAAB_VERSION=$(${YAAB_BIN_DIR}/yaab --version)
+YAAB_VERSION=${YAAB_VERSION##* }
 
 # If not running interactively, don't do anything
 case $- in
@@ -59,7 +59,7 @@ if [ -n "$force_color_prompt" ]; then
 fi
 
 if [ "$color_prompt" = yes ]; then
-    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@bakery-v${BAKERY_VERSION}[${BAKERY_CURRENT_BUILD_CONFIG}]\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@yaab-v${YAAB_VERSION}[${YAAB_CURRENT_BUILD_CONFIG}]\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
 else
     PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
 fi
@@ -118,45 +118,45 @@ if ! shopt -oq posix; then
   fi
 fi
 
-PATH=${BAKERY_BIN_DIR}:${PATH}
-# The BAKERY_CURRENT_BUILD_CONFIG will be set by
-# bakery when initializing a workspace shell
+PATH=${YAAB_BIN_DIR}:${PATH}
+# The YAAB_CURRENT_BUILD_CONFIG will be set by
+# yaab when initializing a workspace shell
 build() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" build -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+    (cd "${YAAB_WORKSPACE}"; "${YAAB_BIN_DIR}/yaab" build -c "${YAAB_CURRENT_BUILD_CONFIG}" "$@")
 }
 
 clean() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" clean -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+    (cd "${YAAB_WORKSPACE}"; "${YAAB_BIN_DIR}/yaab" clean -c "${YAAB_CURRENT_BUILD_CONFIG}" "$@")
 }
 
 deploy() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" deploy -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+    (cd "${YAAB_WORKSPACE}"; "${YAAB_BIN_DIR}/yaab" deploy -c "${YAAB_CURRENT_BUILD_CONFIG}" "$@")
 }
 
 upload() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" upload -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+    (cd "${YAAB_WORKSPACE}"; "${YAAB_BIN_DIR}/yaab" upload -c "${YAAB_CURRENT_BUILD_CONFIG}" "$@")
 }
 
 setup() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" setup -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+    (cd "${YAAB_WORKSPACE}"; "${YAAB_BIN_DIR}/yaab" setup -c "${YAAB_CURRENT_BUILD_CONFIG}" "$@")
 }
 
 sync() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" sync -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+    (cd "${YAAB_WORKSPACE}"; "${YAAB_BIN_DIR}/yaab" sync -c "${YAAB_CURRENT_BUILD_CONFIG}" "$@")
 }
 
 help() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" help "$@")
+    (cd "${YAAB_WORKSPACE}"; "${YAAB_BIN_DIR}/yaab" help "$@")
 }
 
 list() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" list -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+    (cd "${YAAB_WORKSPACE}"; "${YAAB_BIN_DIR}/yaab" list -c "${YAAB_CURRENT_BUILD_CONFIG}" "$@")
 }
 
 shell() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" shell "$@")
+    (cd "${YAAB_WORKSPACE}"; "${YAAB_BIN_DIR}/yaab" shell "$@")
 }
 
 version() {
-    "${BAKERY_BIN_DIR}/bakery" --version
+    "${YAAB_BIN_DIR}/yaab" --version
 }

@@ -7,7 +7,7 @@ DOCKER_DIR=${WORK_DIR}/docker
 
 mkdir -p ${ARTIFACTS_DIR}
 
-get_bakery_version() {
+get_yaab_version() {
   local cargo_file=$1
   if [ -f $cargo_file ]; then
     version=$(grep version $cargo_file)
@@ -20,10 +20,10 @@ get_bakery_version() {
   fi
 }
 
-get_bakery_major() {
+get_yaab_major() {
   local cargo_file=$1
   if [ -f $cargo_file ]; then
-    version=$(get_bakery_version $cargo_file)
+    version=$(get_yaab_version $cargo_file)
     major=${version%%.*}
     echo $major
   else
@@ -31,10 +31,10 @@ get_bakery_major() {
   fi
 }
 
-get_bakery_minor() {
+get_yaab_minor() {
   local cargo_file=$1
   if [ -f $cargo_file ]; then
-    version=$(get_bakery_version $cargo_file)
+    version=$(get_yaab_version $cargo_file)
     minor=${version#*.}
     minor=${minor%%.*}
     echo $minor
@@ -43,10 +43,10 @@ get_bakery_minor() {
   fi
 }
 
-get_bakery_build() {
+get_yaab_build() {
   local cargo_file=$1
   if [ -f $cargo_file ]; then
-    version=$(get_bakery_version $cargo_file)
+    version=$(get_yaab_version $cargo_file)
     build=${version##*.}
     echo $build
   else
