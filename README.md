@@ -4,11 +4,11 @@
 
 ## Introduction
 
-Bakery is a versatile command-line tool designed to simplify and streamline the process of building Yocto Project or OpenEmbedded projects. It serves as a wrapper around the powerful bitbake tool, leveraging Docker to ensure consistent environments across local and CI (Continuous Integration) builds.
+Yaab is a versatile command-line tool designed to simplify and streamline the process of building Android projects. It serves as a wrapper around the powerful bitbake tool, leveraging Docker to ensure consistent environments across local and CI (Continuous Integration) builds.
 
-### Why Bakery?
+### Why Yaab?
 
-Building complex Yocto Project or OpenEmbedded projects can often involve intricate scripts and directory structures, making maintenance challenging. Bakery addresses this challenge by introducing a standardized approach while preserving flexibility. It aims to enhance the development experience by consolidating essential project configuration into JSON files, promoting a cleaner and more maintainable workflow.
+Building complex Android projects can often involve intricate scripts and directory structures, making maintenance challenging. Yaab addresses this challenge by introducing a standardized approach while preserving flexibility. It aims to enhance the development experience by consolidating essential project configuration into JSON files, promoting a cleaner and more maintainable workflow.
 
 ## Installation
 
@@ -17,25 +17,25 @@ Building complex Yocto Project or OpenEmbedded projects can often involve intric
 Download one of the deb-packages releases.
 
 ```bash
-user@node:/dir$ BAKERY_VERSION=x.y.z
-user@node:/dir$ wget https://github.com/Mikrodidakt/bakery/releases/download/v${BAKERY_VERSION}/bakery-v${BAKERY_VERSION}.deb
-user@node:/dir$ sudo dpkg -i bakery-v${BAKERY_VERSION}.deb
+user@node:/dir$ YAAB_VERSION=x.y.z
+user@node:/dir$ wget https://github.com/Mikrodidakt/bakery/releases/download/v${YAAB_VERSION}/yaab-v${YAAB_VERSION}.deb
+user@node:/dir$ sudo dpkg -i yaab-v${YAAB_VERSION}.deb
 ```
 
-Because bakery is written in Rust bakery is a single binary depending only on libc. It will be installed under /usr/bin/bakery.
+Because yaab is written in Rust yaab is a single binary depending only on libc. It will be installed under /usr/bin/yaab.
 
 ## Build Source Code
 
-Please see [build source code](documentation/build-bakery.md) for information on how to build bakery.
+Please see [build source code](documentation/build-yaab.md) for information on how to build yaab.
 
 ## Docker
 
-By default, Bakery utilizes Docker. Refer to the [Docker setup guide](documentation/docker.md) for detailed instructions on setting up Docker on your host system. Additionally, if you wish to run Bakery without Docker, please consult the guide on [disabling Docker](documentation/workspace-config.md#disabled) for detailed instructions. To test out that docker works run
+By default, yaab utilizes Docker. Refer to the [Docker setup guide](documentation/docker.md) for detailed instructions on setting up Docker on your host system. Additionally, if you wish to run Yaab without Docker, please consult the guide on [disabling Docker](documentation/workspace-config.md#disabled) for detailed instructions. To test out that docker works run
 
 
 ```bash
-user@node:/dir$ BAKERY_VERSION=x.y.z
-user@node:/dir$ docker run -it ghcr.io/mikrodidakt/bakery/bakery-workspace:${BAKERY_VERSION} /bin/bash
+user@node:/dir$ YAAB_VERSION=x.y.z
+user@node:/dir$ docker run -it ghcr.io/mikrodidakt/bakery/bakery-workspace:${YAAB_VERSION} /bin/bash
 ```
 
 ## Usage
@@ -43,7 +43,7 @@ user@node:/dir$ docker run -it ghcr.io/mikrodidakt/bakery/bakery-workspace:${BAK
 ```bash
 Build engine for the Yocto/OE
 
-Usage: bakery <COMMAND>
+Usage: yaab <COMMAND>
 
 Commands:
   sync    Sync workspace e.g sync/update git submodules
@@ -66,76 +66,59 @@ For detailed instructions on using each sub-command, please refer to the [sub-co
 
 
 ```bash
-user@node:/dir$ bakery shell -c <config>
+user@node:/dir$ yaab shell -c <config>
 ```
 
-When starting a Bakery shell the config will be selected and used inside the shell. The terminal will present the following information
+When starting a Yaab shell the config will be selected and used inside the shell. The terminal will present the following information
 
 ```bash
-<user>@bakery-v<version>[<config>]:~/$
+<user>@yaab-v<version>[<config>]:~/$
 ```
 
 Each subcommand will be available as an alias with the build config predefined. Simply type the subcommand from any location to run it. To get a list of the current subcommands run
 
 
 ```bash
-<user>@bakery-v<version>[<config>]:~/$ help
+<user>@yaab-v<version>[<config>]:~/$ help
 ```
 
 To start a build run
 
 ```bash
-<user>@bakery-v<version>[<config>]:~/$ build
+<user>@yaab-v<version>[<config>]:~/$ build
 ```
 
 For more information on how to use the shell and any sub-command please refere to [shell](documentation/sub-commands.md#shell).
-
-## Template Project
-
-To try bakery out the easiest way is to use the template workspace under tests/template-workspace. Run
-
-```bash
-user@node:/dir$ cd tests/template-workspace
-user@node:/dir$ git submodule update
-```
-
-This will pull down poky and together with the workspace and the build config beaglebone black can be built using the bakery workspace shell.
-
-```bash
-user@bakery-vx.y.z[beaglebone]:~/$
-```
 
 ## Setup A Project
 
 To setup a project from scratch mainly four things are required
 
-* bakery - the bakery tool. Please see [Installation](#Installation)
+* yaab - the yaab tool. Please see [Installation](#Installation)
 * workspace - the workspace config defining the workspace structure. Please see [Setup Workspace](documentation/workspace-config.md).
 * build config - the build config defining how to build a product. Please see [Build Config](documentation/build-config.md).
-* meta layers - the meta data used by bitbake when producing the artifacts needed by the product. Please see [Meta Layers](documentation/meta-layers.md).
 
 ## Key Features
 
-- **Docker Integration:** Bakery seamlessly integrates with Docker to create reproducible build environments, ensuring consistency across different development setups.
+- **Docker Integration:** Yaab seamlessly integrates with Docker to create reproducible build environments, ensuring consistency across different development setups.
 
 - **JSON Configuration:** Project-specific configuration is defined in JSON files – the build config and the workspace config. The build config encapsulates all the necessary local.conf and bblayers.conf settings, simplifying the build process.
 
-- **Task-Based Workflow:** Bakery organizes tasks within a build, allowing users to define various operations, from building image recipes to signing firmware or packaging images for redistribution. Tasks can be BitBake tasks or custom scripts, providing flexibility in project workflows.
+- **Task-Based Workflow:** Yaab organizes tasks within a build, allowing users to define various operations, from building image recipes to signing firmware or packaging images for redistribution. Tasks can be BitBake tasks or custom scripts, providing flexibility in project workflows.
 
-- **Developer-Centric CI Alignment:** Bakery promotes a development environment where CI builds are defined using tasks in the build config. This ensures that CI processes are transparent and understandable, allowing developers to effortlessly reproduce the CI build locally.
+- **Developer-Centric CI Alignment:** Yaab promotes a development environment where CI builds are defined using tasks in the build config. This ensures that CI processes are transparent and understandable, allowing developers to effortlessly reproduce the CI build locally.
 
-    - **Consistency Across Environments:** With Bakery, the CI build process is aligned with local builds, promoting consistency. Developers can replicate CI builds effortlessly, reducing the chances of discrepancies between development and CI environments.
+    - **Consistency Across Environments:** With Yaab, the CI build process is aligned with local builds, promoting consistency. Developers can replicate CI builds effortlessly, reducing the chances of discrepancies between development and CI environments.
 
     - **Debugging Made Easy:** Developers can quickly identify and resolve issues by reproducing the exact CI build locally. This tight integration between CI and local development simplifies debugging, leading to faster issue resolution.
 
-    - **Improved Developer Experience:** By aligning CI with local builds, Bakery enhances the overall developer experience. Developers gain confidence in the reliability of their builds and can iterate more efficiently on their projects.
+    - **Improved Developer Experience:** By aligning CI with local builds, Yaab enhances the overall developer experience. Developers gain confidence in the reliability of their builds and can iterate more efficiently on their projects.
 
-### What Bakery Does Not Do
+### What Yaab Does Not Do
 
-While Bakery simplifies many aspects of Yocto Project and OpenEmbedded development, it's essential to understand its limitations:
+While Yaab simplifies many aspects of Android development, it's essential to understand its limitations:
 
-- **Meta Layer Setup:** Bakery does not handle the initial setup of meta layers. Developers are encouraged to use Git submodules or the Android Repo tool for managing meta layers independently.
-- **Tool Replacement:** Bakery does not replace BitBake or any other tools available for Yocto Project or OpenEmbedded projects. It complements existing tools by wrapping some complexity to make it more straightforward for users with varying levels of knowledge.
+- **Tool Replacement:** Yaab does not replace Soong or any other tools available for Android projects. It complements existing tools by wrapping some complexity to make it more straightforward for users with varying levels of knowledge.
 
-Bakery strives to maintain the flexibility for developers who seek complete control of their projects, ensuring compatibility with all tools and workflows available in a Yocto Project and OpenEmbedded project.
+Yaab strives to maintain the flexibility for developers who seek complete control of their projects, ensuring compatibility with all tools and workflows available in a Android project.
 

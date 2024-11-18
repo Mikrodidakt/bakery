@@ -1,9 +1,9 @@
-pub mod bakery;
+pub mod yaab;
 pub mod cli;
 pub mod logger;
 pub mod system;
 
-pub use bakery::Bakery;
+pub use yaab::Yaab;
 pub use cli::Cli;
 #[cfg(test)]
 pub use logger::MockLogger;

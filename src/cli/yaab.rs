@@ -9,11 +9,11 @@ use std::path::PathBuf;
 
 use super::BSystem;
 
-pub struct Bakery {
+pub struct Yaab {
     cli: Cli,
 }
 
-impl Bakery {
+impl Yaab {
     pub fn new() -> Self {
         /*
             TODO: We should try and use command! macro in clap so
@@ -32,7 +32,7 @@ impl Bakery {
             None,
         );
 
-        Bakery { cli: cli }
+        Yaab { cli: cli }
     }
 
     pub fn match_or_exit<T>(&self, result: Result<T, BError>) -> T {

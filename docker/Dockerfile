@@ -64,13 +64,13 @@ ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
-WORKDIR /bakery
-COPY ../artifacts/bakery.deb bakery.deb
-RUN dpkg -i bakery.deb
+WORKDIR /yaab
+COPY ../artifacts/yaab.deb yaab.deb
+RUN dpkg -i yaab.deb
 
-# Setting up a bakery specific bash env pulled in by /etc/bash.bashrc 
-RUN mkdir -p /etc/bakery && \
-     echo "source /etc/bakery/bakery.bashrc" >> /etc/bash.bashrc
+# Setting up a yaab specific bash env pulled in by /etc/bash.bashrc 
+RUN mkdir -p /etc/yaab && \
+     echo "source /etc/yaab/yaab.bashrc" >> /etc/bash.bashrc
 
 RUN rm /bin/sh && \
     ln -s /bin/bash /bin/sh

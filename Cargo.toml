@@ -1,5 +1,5 @@
 [package]
-name = "thebakery"
+name = "yaab"
 version = "0.1.49"
 description = "Build engine for the Yocto/OE Projects"
 catagories = ["command-line-utilities", "development-tools::build-utils"]
@@ -12,7 +12,7 @@ license-file = "LICENSE"
 exclude = ["docker/", "scripts/", "Makefile", "tests/", ".*"]
 
 [[bin]]
-name = "bakery"
+name = "yaab"
 path = "src/main.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

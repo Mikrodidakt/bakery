@@ -903,31 +903,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3369f5ac52d5eb6ab48c6b4ffdc8efbcad6b89c765749064ba298f2c68a16a76"
 
 [[package]]
-name = "thebakery"
-version = "0.1.49"
-dependencies = [
- "bzip2",
- "chrono",
- "clap",
- "flate2",
- "glob",
- "indexmap",
- "mockall",
- "os_pipe",
- "rand 0.8.5",
- "regex",
- "regexp",
- "serde",
- "serde_json",
- "subprocess",
- "tar",
- "tempdir",
- "thiserror",
- "users",
- "zip",
-]
-
-[[package]]
 name = "thiserror"
 version = "1.0.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1226,6 +1201,31 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f4686009f71ff3e5c4dbcf1a282d0a44db3f021ba69350cd42086b3e5f1c6985"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "yaab"
+version = "0.1.49"
+dependencies = [
+ "bzip2",
+ "chrono",
+ "clap",
+ "flate2",
+ "glob",
+ "indexmap",
+ "mockall",
+ "os_pipe",
+ "rand 0.8.5",
+ "regex",
+ "regexp",
+ "serde",
+ "serde_json",
+ "subprocess",
+ "tar",
+ "tempdir",
+ "thiserror",
+ "users",
+ "zip",
 ]
 
 [[package]]

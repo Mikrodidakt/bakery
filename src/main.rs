@@ -9,9 +9,9 @@ mod fs;
 mod helper;
 mod workspace;
 
-use crate::cli::bakery::Bakery;
+use crate::cli::yaab::Yaab;
 
 fn main() {
-    let bakery: Bakery = Bakery::new();
+    let bakery: Yaab = Yaab::new();
     bakery.bake();
 }

@@ -166,7 +166,7 @@ mod tests {
         let cli: Cli = Cli::new(
             Box::new(mlogger),
             Box::new(msystem),
-            clap::Command::new("bakery"),
+            clap::Command::new("yaab"),
             Some(cmd_line),
         );
         let cmd: ListCommand = ListCommand::new();
@@ -176,7 +176,7 @@ mod tests {
     #[test]
     fn test_cmd_list_build_config() {
         let temp_dir: TempDir =
-            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+            TempDir::new("yaab-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let json_ws_settings: &str = r#"
         {
@@ -248,14 +248,14 @@ mod tests {
             json_build_config,
             mocked_logger,
             MockSystem::new(),
-            vec!["bakery", "list", "--config", "default"],
+            vec!["yaab", "list", "--config", "default"],
         );
     }
 
     #[test]
     fn test_cmd_list_invalid_build_config() {
         let temp_dir: TempDir =
-            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+            TempDir::new("yaab-test-dir").expect("Failed to create temp directory");
         let work_dir: PathBuf = temp_dir.into_path();
         let json_ws_settings: &str = r#"
         {
@@ -293,7 +293,7 @@ mod tests {
             json_build_config,
             MockLogger::new(),
             MockSystem::new(),
-            vec!["bakery", "list", "--config", "invalid"],
+            vec!["yaab", "list", "--config", "invalid"],
         );
         match result {
             Ok(_status) => {
