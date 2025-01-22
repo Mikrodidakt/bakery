@@ -46,7 +46,12 @@ impl BCommand for ShellCommand {
         let env: Vec<String> = self.get_arg_many(cli, "env", BCOMMAND)?;
         let cmd: String = self.get_arg_str(cli, "run", BCOMMAND)?;
         let docker_pull: bool = self.get_arg_flag(cli, "docker_pull", BCOMMAND)?;
-        let interactive: bool = self.get_arg_flag(cli, "interactive", BCOMMAND)?;
+        let interactive_str: String = self.get_arg_str(cli, "interactive", BCOMMAND)?;
+        let mut interactive: bool = false;
+
+        if interactive_str == "true" {
+            interactive = true;
+        }
 
         /*
          * If docker is enabled in the workspace settings then bakery will be bootstraped into a docker container
