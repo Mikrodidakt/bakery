@@ -46,6 +46,7 @@ impl BCommand for ShellCommand {
         let env: Vec<String> = self.get_arg_many(cli, "env", BCOMMAND)?;
         let cmd: String = self.get_arg_str(cli, "run", BCOMMAND)?;
         let docker_pull: bool = self.get_arg_flag(cli, "docker_pull", BCOMMAND)?;
+        let interactive: bool = self.get_arg_flag(cli, "interactive", BCOMMAND)?;
 
         /*
          * If docker is enabled in the workspace settings then bakery will be bootstraped into a docker container
@@ -91,14 +92,14 @@ impl BCommand for ShellCommand {
 
                 cmd_line.append(&mut vec![String::from("-r"), format!("\"{}\"", cmd)]);
 
-                return self.bootstrap(&cmd_line, cli, workspace, &volumes, true);
+                return self.bootstrap(&cmd_line, cli, workspace, &volumes, interactive);
             }
 
-            return self.bootstrap(&cli.get_cmd_line(), cli, workspace, &volumes, true);
+            return self.bootstrap(&cli.get_cmd_line(), cli, workspace, &volumes, interactive);
         }
 
         if config == "NA" {
-            return self.run_shell(cli, workspace, &docker);
+            return self.run_shell(cli, workspace, &docker, interactive);
         }
 
         if !workspace.valid_config(config.as_str()) {
@@ -114,7 +115,7 @@ impl BCommand for ShellCommand {
             return self.run_bitbake_shell(cli, workspace, &self.setup_env(env), &docker);
         }
 
-        self.run_cmd(&cmd, cli, workspace, &self.setup_env(env), &docker)
+        self.run_cmd(&cmd, cli, workspace, &self.setup_env(env), &docker, interactive)
     }
 }
 
@@ -159,6 +160,15 @@ impl ShellCommand {
                 .value_name("registry/image:tag")
                 .default_value("")
                 .help("Use a custome docker image when creating a shell"),
+        )
+        .arg(
+            clap::Arg::new("interactive")
+                .short('i')
+                .long("interactive")
+                .value_name("interactive")
+                .default_value("true")
+                .value_parser(["true", "false"])
+                .help("Determines if a shell/command inside docker should be interactive or not can be useful to set to false when running in the CI"),
         )
         .arg(
             clap::Arg::new("docker_pull")
@@ -295,6 +305,7 @@ impl ShellCommand {
         workspace: &Workspace,
         args_env_variables: &HashMap<String, String>,
         docker: &String,
+        interactive: bool,
     ) -> Result<(), BError> {
         let cmd_line: Vec<String> = vec![
             String::from("/bin/bash"),
@@ -310,7 +321,7 @@ impl ShellCommand {
         cli.info(format!("Running command '{}'", cmd));
         if !docker.is_empty() {
             let image: DockerImage = DockerImage::new(&docker)?;
-            let executer: Docker = Docker::new(image, true);
+            let executer: Docker = Docker::new(image, interactive);
             return executer.run_cmd(&cmd_line, &env, &workspace.settings().work_dir(), cli);
         }
 
@@ -322,13 +333,14 @@ impl ShellCommand {
         cli: &Cli,
         workspace: &Workspace,
         docker: &String,
+        interactive: bool,
     ) -> Result<(), BError> {
         let cmd_line: Vec<String> = vec![String::from("/bin/bash"), String::from("-i")];
 
         cli.info(String::from("Starting shell"));
         if !docker.is_empty() {
             let image: DockerImage = DockerImage::new(&docker)?;
-            let executer: Docker = Docker::new(image, true);
+            let executer: Docker = Docker::new(image, interactive);
             return executer.run_cmd(
                 &cmd_line,
                 &HashMap::new(),
