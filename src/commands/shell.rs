@@ -120,7 +120,14 @@ impl BCommand for ShellCommand {
             return self.run_bitbake_shell(cli, workspace, &self.setup_env(env), &docker);
         }
 
-        self.run_cmd(&cmd, cli, workspace, &self.setup_env(env), &docker, interactive)
+        self.run_cmd(
+            &cmd,
+            cli,
+            workspace,
+            &self.setup_env(env),
+            &docker,
+            interactive,
+        )
     }
 }
 

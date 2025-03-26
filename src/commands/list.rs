@@ -91,7 +91,7 @@ impl BCommand for ListCommand {
                             }
                         ));
                     });
-               }
+                }
             } else {
                 return Err(BError::CliError(format!(
                     "Unsupported build config '{}'",
