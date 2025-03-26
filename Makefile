@@ -1,17 +1,33 @@
+## Bakery can be built using glibc or musl. Using musl means the binary will be statically
+## linked while using glibc it will be dynamically linked. Default is to build using musl.
+##
+VARIANT ?= musl
+
+export PATH := $(HOME)/.cargo/bin:$(PATH)
+
 ## help               - Show this help.
 .PHONY: help
 help:
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-## build              - Build bakery using cargo
+## build              - Build bakery for x86_64 using musl
 .PHONY: build
-build:
+build: build-musl
+
+## build-glibc        - Build bakery for x86_64 using glibc
+.PHONY: build-glibc
+build-glibc:
 	cargo build
 
-## build-release      - Build release using cargo
+## build-musl         - Build bakery for x86_64 using musl
+.PHONY: build-musl
+build-musl:
+	cargo build --target x86_64-unknown-linux-musl
+
+## build-release      - Build release using glibc or musl, default is musl
 .PHONY: build-release
 build-release:
-	./scripts/do_build_release.sh
+	./scripts/do_build_release.sh $(VARIANT)
 
 ## format             - Format the code using rustfmt
 .PHONY: format
@@ -28,15 +44,15 @@ test:
 install:
 	cargo install --path .
 
-## install-deb        - Install latest locally built bakery under /usr/bin using deb package
+## install-deb        - Install latest locally built bakery. Install it under /usr/bin using deb package
 .PHONY: install-deb
 install-deb:
 	sudo dpkg -i artifacts/bakery.deb
 
-## deb-package        - Create a debian package from the latest release build
+## deb-package        - Create a debian package from the latest release build either using glibc or using musl
 .PHONY: deb-package
 deb-package: build-release
-	./scripts/do_deb_package.sh
+	./scripts/do_deb_package.sh $(VARIANT)
 
 ## inc-version        - Increment minor version
 .PHONY: inc-version
@@ -53,20 +69,17 @@ setup-rust:
 setup-docker:
 	./scripts/setup-docker.sh
 
-## docker-build       - Build a bakery workspace docker image
-.PHONY: docker-build
-docker-build:
-	(./docker/do_docker_build.sh)
-
 ## docker-shell       - Open a bakery workspace docker shell
 docker-shell:
+	mkdir -p $(HOME)/.cargo
+	mkdir -p $(HOME)/.rustup
 	(./docker/do_docker_shell.sh)
 
-## release            - Create a release build, tag and push it to github to trigger a release job
+## release            - Create a release build, tag and push it to git repo to trigger a release job
 .PHONY: release
-release: inc-version
-	./scripts/do_build_release.sh
-	./scripts/do_deb_package.sh
+release: clean inc-version
+	./scripts/do_build_release.sh $(VARIANT)
+	./scripts/do_deb_package.sh $(VARIANT)
 	./scripts/do_release.sh
 	git push
 	git push --tags

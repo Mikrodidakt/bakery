@@ -53,3 +53,11 @@ get_bakery_build() {
     echo NA
   fi
 }
+
+check_variant() {
+  local variant=$1
+  if [ "$variant" != "glibc" ] && [ "$variant" != "musl" ]; then
+    echo "ERROR: Invalid target '${variant}'. Accepted values are 'glibc' or 'musl'." >&2
+    exit 1
+  fi
+}

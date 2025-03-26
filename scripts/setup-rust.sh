@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-set -eux
+set -eu
 
 # For now lets install rust in the default
 # location which is the home directory
@@ -9,7 +9,7 @@ set -eux
 #export RUSTUP_HOME=/usr/local/rustup
 #export CARGO_HOME=/usr/local/cargo
 #export PATH=$HOME/.cargo/bin:$PATH
-RUST_VERSION=1.71.1
+RUST_VERSION=1.81.0
 
 dpkgArch="$(dpkg --print-architecture)"
 case "${dpkgArch##*-}" in
@@ -20,13 +20,20 @@ case "${dpkgArch##*-}" in
 	*) echo >&2 "unsupported architecture: ${dpkgArch}"; exit 1 ;;
 esac
 
+echo "INFO: setup rustup init"
 url="https://static.rust-lang.org/rustup/archive/1.26.0/${rustArch}/rustup-init"
 wget "$url"
 echo "${rustupSha256} *rustup-init" | sha256sum -c -
 chmod +x rustup-init
+
+echo "INFO: setup rust ${RUST_VERSION}"
 ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host ${rustArch}
 rm rustup-init
 source "$HOME/.cargo/env"
 rustup --version
 cargo --version
 rustc --version
+
+echo "INFO: Setup musl"
+rustup target add x86_64-unknown-linux-musl
+sudo apt install musl musl-tools musl-dev

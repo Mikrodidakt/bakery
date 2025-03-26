@@ -16,7 +16,7 @@ env:
 
 jobs:
   release:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
@@ -35,6 +35,9 @@ jobs:
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Setup build env
+      run: make setup-rust
 
     - name: Clean
       run: |
@@ -60,11 +63,20 @@ jobs:
         echo 'EOF' >> $GITHUB_OUTPUT
       shell: bash
 
-    - name: Build and Tests
+    - name: Tests
       run: make test
 
-    - name: Package
-      run: make deb-package
+    - name: Build glibc x86_64 
+      run: make build-release VARIANT=glibc
+
+    - name: Package glibc x86_64
+      run: make deb-package VARIANT=glibc
+
+    - name: Build musl x86_64 
+      run: make build-release VARIANT=musl
+
+    - name: Package musl x86_64
+      run: make deb-package VARIANT=musl
 
     - name: Create Release
       id: create_release
@@ -78,14 +90,24 @@ jobs:
         draft: false
         prerelease: false
 
-    - name: Upload Release
+    - name: Upload glibc x86_64 Release
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/bakery.deb
-        asset_name: bakery-${{ env.CURRENT_TAG }}.deb
+        asset_path: artifacts/bakery-x86_64-glibc-${{ env.CURRENT_TAG }}.deb
+        asset_name: bakery-x86_64-glibc-${{ env.CURRENT_TAG }}.deb
+        asset_content_type: application/deb
+
+    - name: Upload musl x86_64 Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/bakery-x86_64-musl-${{ env.CURRENT_TAG }}.deb
+        asset_name: bakery-x86_64-musl-${{ env.CURRENT_TAG }}.deb
         asset_content_type: application/deb
 
     - name: Set up Docker Buildx

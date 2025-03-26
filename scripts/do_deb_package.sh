@@ -2,11 +2,18 @@
 #
 set -e
 
+VARIANT=$1
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . ${SCRIPT_DIR}/lib.sh
-
 VERSION=$(get_bakery_version ${WORK_DIR}/Cargo.toml)
 TEMP_WORK_DIR=$(mktemp -d --suffix=-bakery-deb)
+
+if [ ! -n "${VARIANT}" ]; then
+    VARIANT=glibc
+fi
+
+check_variant ${VARIANT}
 
 mkdir -p ${TEMP_WORK_DIR}/bakery
 TEMP_WORK_DIR=${TEMP_WORK_DIR}/bakery
@@ -29,5 +36,6 @@ EOT
 
 dpkg-deb --root-owner-group --build ${TEMP_WORK_DIR}
 
-cp ${TEMP_WORK_DIR}/../bakery.deb ${ARTIFACTS_DIR}/bakery.deb
+cp ${TEMP_WORK_DIR}/../bakery.deb ${ARTIFACTS_DIR}/bakery-x86_64-${VARIANT}-v${VERSION}.deb
+(cd ${ARTIFACTS_DIR}; ln -sf bakery-x86_64-${VARIANT}-v${VERSION}.deb bakery.deb && ln -sf bakery-x86_64-${VARIANT}-v${VERSION}.deb bakery-x86_64-${VARIANT}.deb)
 
