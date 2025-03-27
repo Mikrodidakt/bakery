@@ -44,14 +44,14 @@ impl WsSettingsHandler {
     }
 
     pub fn verify_ws(&self) -> Result<(), BError> {
+        let ws_config: PathBuf = self.work_dir().join("workspace.json");
+        if !ws_config.exists() || !ws_config.is_file() {
+            return Err(BError::WsError(format!(
+                "Not a deej workspace, file 'workspace.json' missing"
+            )));
+        }
         self.verify_ws_dir(self.configs_dir().as_path())?;
-        // Some directories should be created during run time
-        //self.verify_ws_dir(self.builds_dir().as_path())?;
-        //self.verify_ws_dir(self.artifacts_dir().as_path())?;
-        // Some directories are optional
-        //self.verify_ws_dir(self.include_dir().as_path())?;
-        //self.verify_ws_dir(self.scripts_dir().as_path())?;
-        //self.verify_ws_dir(self.docker_dir().as_path())?;
+        self.verify_ws_dir(self.scripts_dir().as_path())?;
         Ok(())
     }
 

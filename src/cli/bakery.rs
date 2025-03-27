@@ -35,38 +35,33 @@ impl Bakery {
         Bakery { cli: cli }
     }
 
-    pub fn match_or_exit<T>(&self, result: Result<T, BError>) -> T {
-        match result {
-            Ok(content) => {
-                return content;
-            }
-            Err(err) => {
-                self.cli.error(format!("{}", err.to_string()));
-                std::process::exit(1);
-            }
-        }
+    pub fn unwrap_or_exit<T>(&self, result: Result<T, BError>) -> T {
+        result.unwrap_or_else(|err| {
+            self.cli.error(err.to_string());
+            std::process::exit(1);
+        })
     }
 
     pub fn bake(&self) {
         let work_dir: PathBuf = self.cli.get_curr_dir();
         let home_dir: PathBuf = self.cli.get_home_dir();
         let cfg_handler: WsConfigFileHandler = WsConfigFileHandler::new(&work_dir, &home_dir);
-        let settings: WsSettingsHandler =
-            self.match_or_exit::<WsSettingsHandler>(cfg_handler.ws_settings());
+        let settings: WsSettingsHandler = self.unwrap_or_exit(cfg_handler.ws_settings());
         let cmd_name: &str = self.cli.get_args().subcommand_name().unwrap();
         let cmd_result: Result<&Box<dyn BCommand>, BError> = self.cli.get_command(cmd_name);
+        let mut _res: () = self.unwrap_or_exit(settings.verify_ws());
 
         match cmd_result {
             Ok(command) => {
-                let config: WsBuildConfigHandler = self.match_or_exit(
+                let config: WsBuildConfigHandler = self.unwrap_or_exit(
                     cfg_handler.build_config(&command.get_config_name(&self.cli), &settings),
                 );
-                let mut workspace: Workspace = self.match_or_exit::<Workspace>(Workspace::new(
+                let mut workspace: Workspace = self.unwrap_or_exit(Workspace::new(
                     Some(work_dir),
                     Some(settings),
                     Some(config),
                 ));
-                let _res: () = self.match_or_exit::<()>(command.execute(&self.cli, &mut workspace));
+                _res = self.unwrap_or_exit::<()>(command.execute(&self.cli, &mut workspace));
             }
             Err(err) => {
                 self.cli.error(format!("{}", err.to_string()));
