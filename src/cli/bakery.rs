@@ -61,7 +61,15 @@ impl Bakery {
                     Some(settings),
                     Some(config),
                 ));
-                _res = self.unwrap_or_exit::<()>(command.execute(&self.cli, &mut workspace));
+                let res = command.execute(&self.cli, &mut workspace);
+                res.unwrap_or_else(|err| {
+                    self.cli.error(format!(
+                        "Failed to execute '{}', with error '{}'",
+                        cmd_name,
+                        err.to_string()
+                    ));
+                    std::process::exit(1);
+                });
             }
             Err(err) => {
                 self.cli.error(format!("{}", err.to_string()));

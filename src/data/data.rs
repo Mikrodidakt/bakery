@@ -143,11 +143,32 @@ impl WsBuildData {
             Some(value) => {
                 if value.is_object() {
                     if let Some(task_map) = value.as_object() {
-                        let mut tasks: IndexMap<String, WsTaskHandler> = IndexMap::new();
+                        let mut tasks_vec: Vec<(usize, String, WsTaskHandler)> = vec![];
+
                         for (name, data) in task_map.iter() {
                             let task: WsTaskHandler = self.get_task(data)?;
-                            tasks.insert(name.clone(), task);
+                            if let Some(index) = data
+                                .get("index")
+                                .and_then(|v| v.as_str())
+                                .and_then(|s| s.parse::<usize>().ok())
+                            {
+                                tasks_vec.push((index, name.clone(), task));
+                            } else {
+                                return Err(BError::ParseError(
+                                    "Missing or invalid index".to_string(),
+                                ));
+                            }
                         }
+
+                        // Sort by index
+                        tasks_vec.sort_by_key(|(index, _, _)| *index);
+
+                        // Insert in sorted order
+                        let mut tasks: IndexMap<String, WsTaskHandler> = IndexMap::new();
+                        for (_, name, task) in tasks_vec {
+                            tasks.insert(name, task);
+                        }
+
                         return Ok(tasks);
                     }
                     return Err(BError::ParseTasksError(
@@ -387,6 +408,42 @@ mod tests {
             assert_eq!(task.data().name(), &format!("task{}", i));
             i += 1;
         });
+    }
+
+    #[test]
+    fn test_ws_build_tasks_order() {
+        let json_build_config: &str = r#"
+        {
+            "version": "5",
+            "name": "test-name",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "tasks": {
+                "btask": {
+                    "index": "1",
+                    "name": "btask",
+                    "type": "non-bitbake"
+                },
+                "atask": {
+                    "index": "2",
+                    "name": "atask",
+                    "type": "non-bitbake"
+                }
+            }
+        }"#;
+        let work_dir: PathBuf = PathBuf::from("/workspace");
+        let data: WsBuildData = Helper::setup_build_data(&work_dir, Some(json_build_config), None);
+        let json_data: Value =
+            ConfigFileReader::parse(json_build_config).expect("Failed to parse json");
+        let tasks: IndexMap<String, WsTaskHandler> =
+            data.get_tasks(&json_data).expect("Failed to parse tasks");
+        assert!(!tasks.is_empty());
+        let (name_0, task_0) = tasks.get_index(0).unwrap();
+        assert_eq!(name_0.as_str(), "btask");
+        assert_eq!(task_0.data().name(), "btask");
+        let (name_1, task_1) = tasks.get_index(1).unwrap();
+        assert_eq!(name_1.as_str(), "atask");
+        assert_eq!(task_1.data().name(), "atask");
     }
 
     #[test]
