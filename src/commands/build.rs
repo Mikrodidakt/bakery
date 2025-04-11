@@ -565,7 +565,7 @@ mod tests {
         local_conf_content.push_str("BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"\n");
         local_conf_content.push_str("PARALLEL_MAKE ?= \"-j ${@oe.utils.cpu_count()}\"\n");
         local_conf_content.push_str("MACHINE ?= \"raspberrypi3\"\n");
-        local_conf_content.push_str("PRODUCT_NAME ?= \"default\"\n");
+        local_conf_content.push_str("BKRY_PRODUCT_NAME ?= \"default\"\n");
         local_conf_content.push_str("DISTRO ?= \"strix\"\n");
         local_conf_content.push_str(&format!(
             "SSTATE_DIR ?= \"{}/.cache/test-arch/sstate-cache\"\n",

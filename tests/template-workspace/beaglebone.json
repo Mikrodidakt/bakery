@@ -44,15 +44,15 @@
 			],
 			"artifacts": [
 				{
-					"source": "$#[BKRY_BB_DEPLOY_DIR]/images/$#[MACHINE]/*.dtb"
+					"source": "$#[BKRY_BB_DEPLOY_DIR]/images/$#[BKRY_MACHINE]/*.dtb"
 				},
 				{
 					"type": "link",
 					"name": "core-image-minimak-beaglebone.wic",
-					"source": "$#[BKRY_BB_DEPLOY_DIR]/images/$#[MACHINE]/core-image-minimal-beaglebone-yocto.rootfs.wic"
+					"source": "$#[BKRY_BB_DEPLOY_DIR]/images/$#[BKRY_MACHINE]/core-image-minimal-beaglebone-yocto.rootfs.wic"
 				},
 				{
-					"source": "$#[BKRY_BB_DEPLOY_DIR]/images/$#[MACHINE]/core-image-minimal.env"
+					"source": "$#[BKRY_BB_DEPLOY_DIR]/images/$#[BKRY_MACHINE]/core-image-minimal.env"
 				}
 			]
 		}

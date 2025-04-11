@@ -110,7 +110,7 @@ impl WsBitbakeData {
         }
         conf_str.push_str(&format!("MACHINE ?= \"{}\"\n", self.machine()));
         // TODO: we should define a method product_name() call that instead
-        conf_str.push_str(&format!("PRODUCT_NAME ?= \"{}\"\n", self.product));
+        conf_str.push_str(&format!("BKRY_PRODUCT_NAME ?= \"{}\"\n", self.product));
         conf_str.push_str(&format!("DISTRO ?= \"{}\"\n", self.distro));
         conf_str.push_str(&format!(
             "SSTATE_DIR ?= \"{}\"\n",
@@ -320,7 +320,7 @@ mod tests {
         conf_str.push_str("BB_LOCAL_CONF_TEST_LINE_2\n");
         conf_str.push_str("BB_LOCAL_CONF_TEST_LINE_3\n");
         conf_str.push_str("MACHINE ?= \"test-machine\"\n");
-        conf_str.push_str("PRODUCT_NAME ?= \"test-name\"\n");
+        conf_str.push_str("BKRY_PRODUCT_NAME ?= \"test-name\"\n");
         conf_str.push_str("DISTRO ?= \"test-distro\"\n");
         conf_str.push_str("SSTATE_DIR ?= \"/workspace/.cache/test-arch/sstate-cache\"\n");
         conf_str.push_str("DL_DIR ?= \"/workspace/.cache/download\"\n");
