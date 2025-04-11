@@ -105,36 +105,36 @@ impl BCommand for BuildCommand {
         let mut args_context: IndexMap<String, String> = self.setup_context(ctx);
 
         let mut extra_ctx: IndexMap<String, String> = indexmap! {
-            "PLATFORM_VERSION".to_string() => version.clone(),
-            "BUILD_ID".to_string() => build_id.clone(),
-            "BUILD_SHA".to_string() => sha,
-            "RELEASE_BUILD".to_string() => "0".to_string(),
-            "BUILD_VARIANT".to_string() => variant.clone(),
-            "PLATFORM_RELEASE".to_string() => format!("{}-{}", version, build_id),
+            "BKRY_PLATFORM_VERSION".to_string() => version.clone(),
+            "BKRY_BUILD_ID".to_string() => build_id.clone(),
+            "BKRY_BUILD_SHA".to_string() => sha,
+            "BKRY_RELEASE_BUILD".to_string() => "0".to_string(),
+            "BKRY_BUILD_VARIANT".to_string() => variant.clone(),
+            "BKRY_PLATFORM_RELEASE".to_string() => format!("{}-{}", version, build_id),
         };
 
         if archiver {
             bb_variables.push("INHERIT += \"archiver\"".to_string());
             bb_variables.push("ARCHIVER_MODE[src] = \"original\"".to_string());
-            args_context.insert("ARCHIVER".to_string(), "1".to_string());
+            args_context.insert("BKRY_ARCHIVER".to_string(), "1".to_string());
         }
 
         if debug_symbols {
             bb_variables.push("IMAGE_GEN_DEBUGFS = \"1\"".to_string());
             bb_variables.push("IMAGE_FSTYPES_DEBUGFS = \"tar.bz2\"".to_string());
-            args_context.insert("DEBUG_SYMBOLS".to_string(), "1".to_string());
+            args_context.insert("BKRY_DEBUG_SYMBOLS".to_string(), "1".to_string());
         }
 
         if variant == "release" {
             /*
              * Build commands defined in the build config needs to
              * know if it is release build or not running by including
-             * the BUILD_VARIANT to the context we can expose this to
-             * the build commands. We are keeping RELEASE_BUILD for
-             * backwards compatibility but should be replaced with BUILD_VARIANT
+             * the BKRY_BUILD_VARIANT to the context we can expose this to
+             * the build commands. We are keeping BKRY_RELEASE_BUILD for
+             * backwards compatibility but should be replaced with BKRY_BUILD_VARIANT
              */
-            extra_ctx.insert("BUILD_VARIANT".to_string(), "release".to_string());
-            extra_ctx.insert("RELEASE_BUILD".to_string(), "1".to_string());
+            extra_ctx.insert("BKRY_BUILD_VARIANT".to_string(), "release".to_string());
+            extra_ctx.insert("BKRY_RELEASE_BUILD".to_string(), "1".to_string());
         }
 
         // We need to add the extra context variables to the list of bitbake variables
@@ -270,13 +270,13 @@ impl BuildCommand {
                 clap::Arg::new("archiver")
                     .action(clap::ArgAction::SetTrue)
                     .long("archiver")
-                    .help("Setting context variable ARCHIVER to 1 which will result in adding the archiver class to the local.conf. For more information see https://www.yoctoproject.org/docs/latest/mega-manual/mega-manual.html#ref-classes-archiver."),
+                    .help("Setting context variable BKRY_ARCHIVER to 1 which will result in adding the archiver class to the local.conf. For more information see https://www.yoctoproject.org/docs/latest/mega-manual/mega-manual.html#ref-classes-archiver."),
             )
             .arg(
                 clap::Arg::new("debug_symbols")
                     .action(clap::ArgAction::SetTrue)
                     .long("debug-symbols")
-                    .help("Setting context variable DEBUG_SYMBOLS to 1 which will result in adding IMAGE_GEN_DEBUGFS=1 to the local.conf. For more information see https://www.yoctoproject.org/docs/latest/mega-manual/mega-manual.html#platdev-gdb-remotedebug."),
+                    .help("Setting context variable BKRY_DEBUG_SYMBOLS to 1 which will result in adding IMAGE_GEN_DEBUGFS=1 to the local.conf. For more information see https://www.yoctoproject.org/docs/latest/mega-manual/mega-manual.html#platdev-gdb-remotedebug."),
             )
             .arg(
                 clap::Arg::new("dry_run")
@@ -296,7 +296,7 @@ impl BuildCommand {
                     .long("platform-version")
                     .value_name("x.y.z")
                     .default_value("0.0.0")
-                    .help("Platform version number for the build. Will be available as context variable PLATFORM_VERSION"),
+                    .help("Platform version number for the build. Will be available as context variable BKRY_PLATFORM_VERSION"),
             )
             .arg(
                 clap::Arg::new("build_sha")
@@ -304,7 +304,7 @@ impl BuildCommand {
                     .long("build-sha")
                     .value_name("sha")
                     .default_value("dev")
-                    .help("Sha for the current build. Will be available as a context variable BUILD_SHA"),
+                    .help("Sha for the current build. Will be available as a context variable BKRY_BUILD_SHA"),
             )
             .arg(
                 clap::Arg::new("variant")
@@ -314,7 +314,7 @@ impl BuildCommand {
                     .default_value("dev")
                     .value_parser(["dev", "test", "release"])
                     .default_value("dev")
-                    .help("Specify the variant of the build it can be one of release, dev or test. Will be available as a context variable BUILD_VARIANT"),
+                    .help("Specify the variant of the build it can be one of release, dev or test. Will be available as a context variable BKRY_BUILD_VARIANT"),
             )
             .arg(
                 clap::Arg::new("interactive")
@@ -331,7 +331,7 @@ impl BuildCommand {
                     .long("build-id")
                     .value_name("nbr")
                     .default_value("0")
-                    .help("Build id number can be used if x.y.z is not enough for some reason and will be part of PLATFORM_RELEASE x.y.z-w"),
+                    .help("Build id number can be used if x.y.z is not enough for some reason and will be part of BKRY_PLATFORM_RELEASE x.y.z-w"),
             )
             .arg(
                 clap::Arg::new("ctx")
@@ -442,7 +442,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -577,12 +577,12 @@ mod tests {
         ));
         local_conf_content.push_str(lines.unwrap_or(""));
         let mut default_bb_variables: String = String::from("");
-        default_bb_variables.push_str("PLATFORM_VERSION ?= \"0.0.0\"\n");
-        default_bb_variables.push_str("BUILD_ID ?= \"0\"\n");
-        default_bb_variables.push_str("BUILD_SHA ?= \"dev\"\n");
-        default_bb_variables.push_str("RELEASE_BUILD ?= \"0\"\n");
-        default_bb_variables.push_str("BUILD_VARIANT ?= \"dev\"\n");
-        default_bb_variables.push_str("PLATFORM_RELEASE ?= \"0.0.0-0\"\n");
+        default_bb_variables.push_str("BKRY_PLATFORM_VERSION ?= \"0.0.0\"\n");
+        default_bb_variables.push_str("BKRY_BUILD_ID ?= \"0\"\n");
+        default_bb_variables.push_str("BKRY_BUILD_SHA ?= \"dev\"\n");
+        default_bb_variables.push_str("BKRY_RELEASE_BUILD ?= \"0\"\n");
+        default_bb_variables.push_str("BKRY_BUILD_VARIANT ?= \"dev\"\n");
+        default_bb_variables.push_str("BKRY_PLATFORM_RELEASE ?= \"0.0.0-0\"\n");
         local_conf_content.push_str(bb_variables.unwrap_or(&default_bb_variables));
         helper_verify_bitbake_conf(
             &local_conf_path,
@@ -608,7 +608,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -682,7 +682,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -748,7 +748,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -822,7 +822,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -905,7 +905,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -977,7 +977,7 @@ mod tests {
     fn test_cmd_build_docker_args() {
         let json_ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"
@@ -991,7 +991,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -1068,7 +1068,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -1150,7 +1150,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -1289,12 +1289,12 @@ mod tests {
     #[test]
     fn test_cmd_build_arg_bitbake_variables() {
         let mut bb_variables: String = String::from("");
-        bb_variables.push_str("PLATFORM_VERSION ?= \"1.2.3\"\n");
-        bb_variables.push_str("BUILD_ID ?= \"4\"\n");
-        bb_variables.push_str("BUILD_SHA ?= \"abcdefgh\"\n");
-        bb_variables.push_str("RELEASE_BUILD ?= \"1\"\n");
-        bb_variables.push_str("BUILD_VARIANT ?= \"release\"\n");
-        bb_variables.push_str("PLATFORM_RELEASE ?= \"1.2.3-4\"\n");
+        bb_variables.push_str("BKRY_PLATFORM_VERSION ?= \"1.2.3\"\n");
+        bb_variables.push_str("BKRY_BUILD_ID ?= \"4\"\n");
+        bb_variables.push_str("BKRY_BUILD_SHA ?= \"abcdefgh\"\n");
+        bb_variables.push_str("BKRY_RELEASE_BUILD ?= \"1\"\n");
+        bb_variables.push_str("BKRY_BUILD_VARIANT ?= \"release\"\n");
+        bb_variables.push_str("BKRY_PLATFORM_RELEASE ?= \"1.2.3-4\"\n");
         helper_test_local_conf_args(
             &mut vec![
                 "--platform-version=1.2.3",
@@ -1310,12 +1310,12 @@ mod tests {
     #[test]
     fn test_cmd_build_arg_variant_test() {
         let mut bb_variables: String = String::from("");
-        bb_variables.push_str("PLATFORM_VERSION ?= \"0.0.0\"\n");
-        bb_variables.push_str("BUILD_ID ?= \"0\"\n");
-        bb_variables.push_str("BUILD_SHA ?= \"dev\"\n");
-        bb_variables.push_str("RELEASE_BUILD ?= \"0\"\n");
-        bb_variables.push_str("BUILD_VARIANT ?= \"test\"\n");
-        bb_variables.push_str("PLATFORM_RELEASE ?= \"0.0.0-0\"\n");
+        bb_variables.push_str("BKRY_PLATFORM_VERSION ?= \"0.0.0\"\n");
+        bb_variables.push_str("BKRY_BUILD_ID ?= \"0\"\n");
+        bb_variables.push_str("BKRY_BUILD_SHA ?= \"dev\"\n");
+        bb_variables.push_str("BKRY_RELEASE_BUILD ?= \"0\"\n");
+        bb_variables.push_str("BKRY_BUILD_VARIANT ?= \"test\"\n");
+        bb_variables.push_str("BKRY_PLATFORM_RELEASE ?= \"0.0.0-0\"\n");
         helper_test_local_conf_args(&mut vec!["--variant=test"], None, Some(&bb_variables));
     }
 
@@ -1335,7 +1335,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -1417,7 +1417,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",

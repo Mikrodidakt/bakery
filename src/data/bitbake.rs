@@ -257,7 +257,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "arch": "test-arch",
             "bb": {
@@ -347,7 +347,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "arch": "test-arch",
             "bb": {
@@ -355,16 +355,16 @@ mod tests {
                 "distro": "test-distro",
                 "deploydir": "tmp/test/deploy",
                 "docker": "test-registry/test-image:0.1",
-                "initenv": "$#[LAYERS_DIR]/meta-test/oe-my-init-env",
+                "initenv": "$#[BKRY_LAYERS_DIR]/meta-test/oe-my-init-env",
                 "bblayersconf": [
                     "BAKERY_WORKDIR=\"${TOPDIR}/../..\"",
                     "BBLAYERS ?= \" \\",
-                    "       $#[LAYERS_DIR]/meta-test \\",
-                    "       $#[BUILDS_DIR]/workspace \\",
+                    "       $#[BKRY_LAYERS_DIR]/meta-test \\",
+                    "       $#[BKRY_BUILDS_DIR]/workspace \\",
                     "\""
                 ],
                 "localconf": [
-                    "BAKERY_WORKSPACE_DIR ?= \"$#[BUILDS_DIR]/workspace\"",
+                    "BAKERY_WORKSPACE_DIR ?= \"$#[BKRY_BUILDS_DIR]/workspace\"",
                     "PACKAGE_CLASSES ?= \"package_rpm\"",
                     "BB_DISKMON_DIRS ?= \"\\",
                     "    STOPTASKS,${TMPDIR},1G,100K \\",
@@ -380,8 +380,8 @@ mod tests {
         let mut data: WsBitbakeData = WsBitbakeData::from_str(json_build_config, &settings)
             .expect("Failed to parse product data");
         let variables: IndexMap<String, String> = indexmap! {
-            "BUILDS_DIR".to_string() => settings.builds_dir().to_string_lossy().to_string(),
-            "LAYERS_DIR".to_string() => settings.layers_dir().to_string_lossy().to_string()
+            "BKRY_BUILDS_DIR".to_string() => settings.builds_dir().to_string_lossy().to_string(),
+            "BKRY_LAYERS_DIR".to_string() => settings.layers_dir().to_string_lossy().to_string()
         };
         let context: Context = Context::new(&variables);
         data.expand_ctx(&context).unwrap();
@@ -397,7 +397,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "arch": "test-arch",
             "bb": {

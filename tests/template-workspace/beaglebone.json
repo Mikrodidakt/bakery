@@ -1,5 +1,5 @@
 {
-	"version": "5",
+	"version": "6",
 	"name": "beaglebone",
 	"description": "beaglebone black",
 	"arch": "cortexa8hf",
@@ -7,7 +7,7 @@
 		"machine": "beaglebone-yocto",
 		"distro": "poky",
 		"deploydir": "tmp/deploy",
-		"initenv": "$#[LAYERS_DIR]/poky/oe-init-build-env",
+		"initenv": "$#[BKRY_LAYERS_DIR]/poky/oe-init-build-env",
 		"localconf": [
 			"EXTRA_IMAGE_FEATURES ?= \"debug-tweaks\"",
 			"USER_CLASSES ?= \"buildstats\"",
@@ -29,9 +29,9 @@
 			"BBPATH = \"${TOPDIR}\"",
 			"BBFILES ?= \"\"",
 			"BBLAYERS ?= \" \\",
-			"       $#[LAYERS_DIR]/poky/meta-poky \\",
-			"       $#[LAYERS_DIR]/poky/meta \\",
-			"       $#[LAYERS_DIR]/poky/meta-yocto-bsp \\",
+			"       $#[BKRY_LAYERS_DIR]/poky/meta-poky \\",
+			"       $#[BKRY_LAYERS_DIR]/poky/meta \\",
+			"       $#[BKRY_LAYERS_DIR]/poky/meta-yocto-bsp \\",
 			"\""
 		]
 	},
@@ -44,15 +44,15 @@
 			],
 			"artifacts": [
 				{
-					"source": "$#[BB_DEPLOY_DIR]/images/$#[MACHINE]/*.dtb"
+					"source": "$#[BKRY_BB_DEPLOY_DIR]/images/$#[MACHINE]/*.dtb"
 				},
 				{
 					"type": "link",
 					"name": "core-image-minimak-beaglebone.wic",
-					"source": "$#[BB_DEPLOY_DIR]/images/$#[MACHINE]/core-image-minimal-beaglebone-yocto.rootfs.wic"
+					"source": "$#[BKRY_BB_DEPLOY_DIR]/images/$#[MACHINE]/core-image-minimal-beaglebone-yocto.rootfs.wic"
 				},
 				{
-					"source": "$#[BB_DEPLOY_DIR]/images/$#[MACHINE]/core-image-minimal.env"
+					"source": "$#[BKRY_BB_DEPLOY_DIR]/images/$#[MACHINE]/core-image-minimal.env"
 				}
 			]
 		}

@@ -56,7 +56,7 @@ mod tests {
     fn test_ws_deploy_handler() {
         let json_build_config = r#"
         {
-            "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
+            "cmd": "$#[BKRY_SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
         }"#;
         let handler: WsCustomSubCmdHandler =
             WsCustomSubCmdHandler::from_str("deploy", json_build_config)
@@ -66,7 +66,7 @@ mod tests {
             .expect_check_call()
             .with(mockall::predicate::eq(CallParams {
                 cmd_line: vec![
-                    "$#[SCRIPTS_DIR]/script.sh",
+                    "$#[BKRY_SCRIPTS_DIR]/script.sh",
                     "$#[ARG1]",
                     "$#[ARG2]",
                     "$#[ARG3]",

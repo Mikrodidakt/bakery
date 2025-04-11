@@ -272,7 +272,7 @@ mod tests {
     fn test_ws_build_data_no_tasks() {
         let json_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch"
@@ -290,7 +290,7 @@ mod tests {
     fn test_ws_build_data_tasks_error() {
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -327,7 +327,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch"
@@ -357,7 +357,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -378,7 +378,7 @@ mod tests {
     fn test_ws_build_tasks() {
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -414,7 +414,7 @@ mod tests {
     fn test_ws_build_tasks_order() {
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -505,7 +505,7 @@ mod tests {
     fn test_ws_build_data_expand_artifact() {
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -545,8 +545,8 @@ mod tests {
             "type": "manifest",
             "name": "test-manifest",
             "content": {
-                "date": "$#[DATE]",
-                "time": "$#[TIME]"
+                "date": "$#[BKRY_DATE]",
+                "time": "$#[BKRY_TIME]"
             }
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
@@ -615,7 +615,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -624,20 +624,20 @@ mod tests {
                 "distro": "test-distro",
                 "deploydir": "tmp/test/deploy",
                 "docker": "test-registry/test-image:0.1",
-                "initenv": "$#[LAYERS_DIR]/meta-test/oe-my-init-env",
+                "initenv": "$#[BKRY_LAYERS_DIR]/meta-test/oe-my-init-env",
                 "bblayersconf": [
                     "BAKERY_WORKDIR=\"${TOPDIR}/../..\"",
                     "BBLAYERS ?= \" \\",
-                    "       $#[LAYERS_DIR]/meta-test \\",
-                    "       $#[BUILDS_DIR]/workspace \\",
+                    "       $#[BKRY_LAYERS_DIR]/meta-test \\",
+                    "       $#[BKRY_BUILDS_DIR]/workspace \\",
                     "\""
                 ],
                 "localconf": [
-                    "ARTIFACTS_DIR ?= $#[ARTIFACTS_DIR]",
-                    "LAYERS_DIR ?= $#[LAYERS_DIR]",
-                    "SCRIPTS_DIR ?= $#[SCRIPTS_DIR]",
-                    "BUILD_DIR ?= $#[BUILDS_DIR]",
-                    "WORK_DIR ?= $#[WORK_DIR]"
+                    "ARTIFACTS_DIR ?= $#[BKRY_ARTIFACTS_DIR]",
+                    "LAYERS_DIR ?= $#[BKRY_LAYERS_DIR]",
+                    "SCRIPTS_DIR ?= $#[BKRY_SCRIPTS_DIR]",
+                    "BUILDS_DIR ?= $#[BKRY_BUILDS_DIR]",
+                    "WORK_DIR ?= $#[BKRY_WORK_DIR]"
                 ]
             }
 
@@ -647,7 +647,7 @@ mod tests {
             Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         data.expand_ctx().unwrap();
         let bitbake: &WsBitbakeData = data.bitbake();
-        assert_eq!(bitbake.local_conf(), "ARTIFACTS_DIR ?= /workspace/artifacts\nLAYERS_DIR ?= /workspace/layers\nSCRIPTS_DIR ?= /workspace/scripts\nBUILD_DIR ?= /workspace/builds\nWORK_DIR ?= /workspace\nMACHINE ?= \"test-machine\"\nPRODUCT_NAME ?= \"test-name\"\nDISTRO ?= \"test-distro\"\nSSTATE_DIR ?= \"/workspace/.cache/test-arch/sstate-cache\"\nDL_DIR ?= \"/workspace/.cache/download\"\n");
+        assert_eq!(bitbake.local_conf(), "ARTIFACTS_DIR ?= /workspace/artifacts\nLAYERS_DIR ?= /workspace/layers\nSCRIPTS_DIR ?= /workspace/scripts\nBUILDS_DIR ?= /workspace/builds\nWORK_DIR ?= /workspace\nMACHINE ?= \"test-machine\"\nPRODUCT_NAME ?= \"test-name\"\nDISTRO ?= \"test-distro\"\nSSTATE_DIR ?= \"/workspace/.cache/test-arch/sstate-cache\"\nDL_DIR ?= \"/workspace/.cache/download\"\n");
         assert_eq!(bitbake.bblayers_conf(), "BAKERY_WORKDIR=\"${TOPDIR}/../..\"\nBBLAYERS ?= \" \\\n       /workspace/layers/meta-test \\\n       /workspace/builds/workspace \\\n\"\n");
         assert_eq!(
             bitbake.init_env_file(),

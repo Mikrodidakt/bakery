@@ -125,7 +125,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -136,7 +136,7 @@ mod tests {
                 "ARG3=arg3"
             ],
             "setup": {
-                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
+                "cmd": "$#[BKRY_SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
             }
         }
         "#;
@@ -193,7 +193,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -204,7 +204,7 @@ mod tests {
                 "ARG3=arg3"
             ],
             "setup": {
-                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
+                "cmd": "$#[BKRY_SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
             }
         }
         "#;

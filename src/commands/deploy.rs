@@ -109,7 +109,7 @@ impl DeployCommand {
                 .long("device")
                 .value_name("device")
                 .default_value("NA")
-                .help("The device can either be an IP or a device file like /dev/ttyUSB. Will be exposed as a context variable $#[DEVICE]"),
+                .help("The device can either be an IP or a device file like /dev/ttyUSB. Will be exposed as a context variable $#[BKRY_DEVICE]"),
         )
         .arg(
             clap::Arg::new("image")
@@ -118,7 +118,7 @@ impl DeployCommand {
                 .long("image")
                 .value_name("image")
                 .default_value("NA")
-                .help("The image will be exposed as a context variable $#[IMAGE]"),
+                .help("The image will be exposed as a context variable $#[BKRY_IMAGE]"),
           );
         // Initialize and return a new DeployCommand instance
         DeployCommand {
@@ -160,7 +160,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -171,7 +171,7 @@ mod tests {
                 "ARG3=arg3"
             ],
             "deploy": {
-                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
+                "cmd": "$#[BKRY_SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
             }
         }
         "#;
@@ -228,7 +228,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -239,7 +239,7 @@ mod tests {
                 "ARG3=arg3"
             ],
             "deploy": {
-                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
+                "cmd": "$#[BKRY_SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
             }
         }
         "#;
@@ -303,7 +303,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -313,7 +313,7 @@ mod tests {
                 "ARG3=arg3"
             ],
             "deploy": {
-                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[DEVICE] $#[ARG2] $#[ARG3]"
+                "cmd": "$#[BKRY_SCRIPTS_DIR]/script.sh $#[BKRY_DEVICE] $#[ARG2] $#[ARG3]"
             }
         }
         "#;
@@ -377,16 +377,16 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
             "bb": {},
             "context": [
-                "DEVICE=192.168.253.90"
+                "BKRY_DEVICE=192.168.253.90"
             ],
             "deploy": {
-                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[DEVICE]"
+                "cmd": "$#[BKRY_SCRIPTS_DIR]/script.sh $#[BKRY_DEVICE]"
             }
         }
         "#;
@@ -441,16 +441,16 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
             "bb": {},
             "context": [
-                "DEVICE=192.168.253.90"
+                "BKRY_DEVICE=192.168.253.90"
             ],
             "deploy": {
-                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[DEVICE]"
+                "cmd": "$#[BKRY_SCRIPTS_DIR]/script.sh $#[BKRY_DEVICE]"
             }
         }
         "#;
@@ -512,16 +512,16 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
             "bb": {},
             "context": [
-                "IMAGE=ctx-test-image"
+                "BKRY_IMAGE=ctx-test-image"
             ],
             "deploy": {
-                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[IMAGE]"
+                "cmd": "$#[BKRY_SCRIPTS_DIR]/script.sh $#[BKRY_IMAGE]"
             }
         }
         "#;
@@ -576,16 +576,16 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
             "bb": {},
             "context": [
-                "IMAGE=ctx-test-image"
+                "BKRY_IMAGE=ctx-test-image"
             ],
             "deploy": {
-                "cmd": "$#[SCRIPTS_DIR]/script.sh $#[IMAGE]"
+                "cmd": "$#[BKRY_SCRIPTS_DIR]/script.sh $#[BKRY_IMAGE]"
             }
         }
         "#;

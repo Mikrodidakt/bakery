@@ -190,7 +190,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -270,7 +270,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -326,14 +326,14 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
             "context": [
-                "PLATFORM_VERSION=x.y.z",
-                "BUILD_ID=abcdef",
-                "BUILD_VARIANT=test"
+                "BKRY_PLATFORM_VERSION=x.y.z",
+                "BKRY_BUILD_ID=abcdef",
+                "BKRY_BUILD_VARIANT=test"
             ],
             "bb": {
                 "machine": "test-machine",
@@ -353,32 +353,32 @@ mod tests {
             .once()
             .returning(|_x| ());
         let ctx_variables: IndexMap<String, String> = indexmap! {
-            "MACHINE".to_string() => "test-machine".to_string(),
-            "ARCH".to_string() => "test-arch".to_string(),
-            "DISTRO".to_string() => "test-distro".to_string(),
-            "PRODUCT_NAME".to_string() => "default".to_string(),
-            "NAME".to_string() => "default".to_string(),
-            "PRODUCT_NAME".to_string() => "default".to_string(),
-            "PROJECT_NAME".to_string() => "default".to_string(),
-            "BB_BUILD_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("builds/default")).display()),
-            "BB_DEPLOY_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("builds/default/tmp/deploy/images")).display()),
-            "ARTIFACTS_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("artifacts")).display()),
-            "LAYERS_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("layers")).display()),
-            "SCRIPTS_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("scripts")).display()),
-            "BUILDS_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("builds")).display()),
-            "WORK_DIR".to_string() => format!("{}", work_dir.display()),
-            "PLATFORM_VERSION".to_string() => "x.y.z".to_string(),
-            "BUILD_ID".to_string() => "abcdef".to_string(),
-            "PLATFORM_RELEASE".to_string() => "".to_string(),
-            "BUILD_SHA".to_string() => "".to_string(),
-            "RELEASE_BUILD".to_string() => "".to_string(),
-            "BUILD_VARIANT".to_string() => "test".to_string(),
-            "ARCHIVER".to_string() => "".to_string(),
-            "DEBUG_SYMBOLS".to_string() => "".to_string(),
-            "DEVICE".to_string() => "".to_string(),
-            "IMAGE".to_string() => "".to_string(),
-            "DATE".to_string() => chrono::offset::Local::now().format("%Y-%m-%d").to_string(),
-            "TIME".to_string() => chrono::offset::Local::now().format("%H:%M").to_string(),
+            "BKRY_MACHINE".to_string() => "test-machine".to_string(),
+            "BKRY_ARCH".to_string() => "test-arch".to_string(),
+            "BKRY_DISTRO".to_string() => "test-distro".to_string(),
+            "BKRY_PRODUCT_NAME".to_string() => "default".to_string(),
+            "BKRY_NAME".to_string() => "default".to_string(),
+            "BKRY_PRODUCT_NAME".to_string() => "default".to_string(),
+            "BKRY_PROJECT_NAME".to_string() => "default".to_string(),
+            "BKRY_BB_BUILD_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("builds/default")).display()),
+            "BKRY_BB_DEPLOY_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("builds/default/tmp/deploy/images")).display()),
+            "BKRY_ARTIFACTS_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("artifacts")).display()),
+            "BKRY_LAYERS_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("layers")).display()),
+            "BKRY_SCRIPTS_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("scripts")).display()),
+            "BKRY_BUILDS_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("builds")).display()),
+            "BKRY_WORK_DIR".to_string() => format!("{}", work_dir.display()),
+            "BKRY_PLATFORM_VERSION".to_string() => "x.y.z".to_string(),
+            "BKRY_BUILD_ID".to_string() => "abcdef".to_string(),
+            "BKRY_PLATFORM_RELEASE".to_string() => "".to_string(),
+            "BKRY_BUILD_SHA".to_string() => "".to_string(),
+            "BKRY_RELEASE_BUILD".to_string() => "".to_string(),
+            "BKRY_BUILD_VARIANT".to_string() => "test".to_string(),
+            "BKRY_ARCHIVER".to_string() => "".to_string(),
+            "BKRY_DEBUG_SYMBOLS".to_string() => "".to_string(),
+            "BKRY_DEVICE".to_string() => "".to_string(),
+            "BKRY_IMAGE".to_string() => "".to_string(),
+            "BKRY_DATE".to_string() => chrono::offset::Local::now().format("%Y-%m-%d").to_string(),
+            "BKRY_TIME".to_string() => chrono::offset::Local::now().format("%H:%M").to_string(),
         };
         ctx_variables.iter().for_each(|(key, value)| {
             mocked_logger

@@ -24,7 +24,7 @@ impl WsBuildConfigHandler {
         let tasks: IndexMap<String, WsTaskHandler> = build_data.get_tasks(data)?;
         let subcmds: IndexMap<String, WsCustomSubCmdHandler> = build_data.get_subcmds(data)?;
 
-        if build_data.version() != "5" {
+        if build_data.version() != "6" {
             return Err(BError::InvalidBuildConfigError(
                 build_data.version().to_string(),
             ));
@@ -180,11 +180,11 @@ mod tests {
     fn test_ws_config_default() {
         let json_settings = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let json_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch"
@@ -195,7 +195,7 @@ mod tests {
         let ws_config: WsBuildConfigHandler =
             WsBuildConfigHandler::from_str(json_build_config, &mut ws_settings)
                 .expect("Failed to parse build config");
-        assert_eq!(ws_config.build_data().version(), "5".to_string());
+        assert_eq!(ws_config.build_data().version(), "6".to_string());
         assert_eq!(ws_config.build_data().name(), "test-name".to_string());
         assert_eq!(
             ws_config.build_data().product().name(),
@@ -278,11 +278,11 @@ mod tests {
     fn test_ws_config_context_docker() {
         let json_settings = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let json_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -316,7 +316,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch"
@@ -338,7 +338,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -442,7 +442,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -491,7 +491,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -558,7 +558,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -667,7 +667,7 @@ mod tests {
         }"#;
         let json_main_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "main",
             "description": "Test Description",
             "arch": "test-arch",
@@ -692,7 +692,7 @@ mod tests {
         }"#;
         let json_include_config1 = r#"
         {
-            "version": "5",
+            "version": "6",
             "tasks": {
                 "task0": {
                     "index": "0",
@@ -730,7 +730,7 @@ mod tests {
         }"#;
         let json_include_config2 = r#"
         {
-            "version": "5",
+            "version": "6",
             "tasks": {
                 "task2": {
                     "index": "2",

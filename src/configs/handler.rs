@@ -53,7 +53,7 @@ impl WsConfigFileHandler {
          */
         let default_settings: &str = r#"
         {
-            "version": "5"
+            "version": "6"
         }"#;
         return WsSettingsHandler::from_str(&self.work_dir, default_settings);
     }
@@ -131,7 +131,7 @@ impl WsConfigFileHandler {
         if build_config.display().to_string() == "NA.json".to_string() {
             let dummy_config_json: &str = r#"
                 {
-                    "version": "5",
+                    "version": "6",
                     "name": "all",
                     "description": "Dummy build config to be able to handle 'list' sub-command",
                     "arch": "NA"
@@ -306,7 +306,7 @@ mod tests {
         Helper::setup_test_ws_default_dirs(&work_dir);
         let build_conf_ws_root_dir = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "ws-root-build-config",
             "description": "Test Description",
             "arch": "test-arch"
@@ -317,7 +317,7 @@ mod tests {
         );
         let build_conf_configs_dir = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "ws-configs-build-config",
             "description": "Test Description",
             "arch": "test-arch"
@@ -348,7 +348,7 @@ mod tests {
         Helper::setup_test_ws_default_dirs(&work_dir);
         let build_conf_configs_dir = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "ws-configs-build-config",
             "description": "Test Description",
             "arch": "test-arch"
@@ -376,7 +376,7 @@ mod tests {
         Helper::setup_test_ws_default_dirs(&work_dir);
         let main_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-product",
             "description": "Test Description",
             "arch": "test-arch",
@@ -423,7 +423,7 @@ mod tests {
         write_json_conf(&settings.work_dir().join("main.json"), main_build_config);
         let build_config1 = r#"
         {
-            "version": "5",
+            "version": "6",
             "tasks": {
                 "task0": {
                     "index": "0",
@@ -461,7 +461,7 @@ mod tests {
         write_json_conf(&settings.include_dir().join("config1.json"), build_config1);
         let build_config2 = r#"
         {
-            "version": "5",
+            "version": "6",
             "tasks": {
                 "task2": {
                     "index": "2",

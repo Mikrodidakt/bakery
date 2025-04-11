@@ -66,7 +66,7 @@ impl Workspace {
                 // the tests.
                 let default_config: &str = r#"
                 {
-                    "version": "5",
+                    "version": "6",
                     "name": "default",
                     "description": "Default build config",
                     "arch": "NA"
@@ -248,7 +248,7 @@ mod tests {
         let mut configs: IndexMap<PathBuf, String> = IndexMap::new();
         let config1_str: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name1",
             "description": "Test1 Description",
             "arch": "test-arch",
@@ -256,7 +256,7 @@ mod tests {
         }"#;
         let config2_str: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name2",
             "description": "Test2 Description",
             "arch": "test-arch",
@@ -309,7 +309,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",
@@ -367,7 +367,7 @@ mod tests {
         let mut configs: IndexMap<PathBuf, String> = IndexMap::new();
         let config_str: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",

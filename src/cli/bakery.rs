@@ -61,7 +61,7 @@ impl Bakery {
                     Some(settings),
                     Some(config),
                 ));
-                let res = command.execute(&self.cli, &mut workspace);
+                let res: Result<(), BError> = command.execute(&self.cli, &mut workspace);
                 res.unwrap_or_else(|err| {
                     self.cli.error(format!(
                         "Failed to execute '{}', with error '{}'",

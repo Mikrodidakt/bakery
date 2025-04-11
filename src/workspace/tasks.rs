@@ -380,7 +380,7 @@ mod tests {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",

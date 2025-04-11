@@ -98,19 +98,19 @@ mod tests {
             "ARG1".to_string() => "arg1".to_string(),
             "ARG2".to_string() => "arg2".to_string(),
             "ARG3".to_string() => "arg3".to_string(),
-            "SCRIPTS_DIR".to_string() => "/path/to/deploy".to_string()
+            "BKRY_SCRIPTS_DIR".to_string() => "/path/to/deploy".to_string()
         };
         let ctx: Context = Context::new(&variables);
         let json_build_config = r#"
         {
-            "cmd": "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
+            "cmd": "$#[BKRY_SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
         }"#;
         let mut data: WsCustomSubCmdData =
             WsCustomSubCmdData::from_str("deploy", json_build_config)
                 .expect("Failed to parse config data");
         assert_eq!(
             data.cmd(),
-            "$#[SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
+            "$#[BKRY_SCRIPTS_DIR]/script.sh $#[ARG1] $#[ARG2] $#[ARG3]"
         );
         data.expand_ctx(&ctx).unwrap();
         assert_eq!(data.cmd(), "/path/to/deploy/script.sh arg1 arg2 arg3");

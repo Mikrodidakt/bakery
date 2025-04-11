@@ -11,33 +11,33 @@ pub struct WsContextData {
 }
 
 // Built in context variables
-pub const CTX_KEY_MACHINE: &str = "MACHINE";
-pub const CTX_KEY_ARCH: &str = "ARCH";
-pub const CTX_KEY_DISTRO: &str = "DISTRO";
-pub const CTX_KEY_BB_BUILD_DIR: &str = "BB_BUILD_DIR";
-pub const CTX_KEY_BB_DEPLOY_DIR: &str = "BB_DEPLOY_DIR";
-pub const CTX_KEY_ARTIFACTS_DIR: &str = "ARTIFACTS_DIR";
-pub const CTX_KEY_LAYERS_DIR: &str = "LAYERS_DIR";
-pub const CTX_KEY_SCRIPTS_DIR: &str = "SCRIPTS_DIR";
-pub const CTX_KEY_BUILDS_DIR: &str = "BUILDS_DIR";
-pub const CTX_KEY_WORK_DIR: &str = "WORK_DIR";
-pub const CTX_KEY_PLATFORM_VERSION: &str = "PLATFORM_VERSION";
-pub const CTX_KEY_BUILD_ID: &str = "BUILD_ID";
-pub const CTX_KEY_PLATFORM_RELEASE: &str = "PLATFORM_RELEASE";
-pub const CTX_KEY_BUILD_SHA: &str = "BUILD_SHA";
-pub const CTX_KEY_BUILD_VARIANT: &str = "BUILD_VARIANT";
-pub const CTX_KEY_RELEASE_BUILD: &str = "RELEASE_BUILD";
-pub const CTX_KEY_ARCHIVER: &str = "ARCHIVER";
-pub const CTX_KEY_DEBUG_SYMBOLS: &str = "DEBUG_SYMBOLS";
-pub const CTX_KEY_DEVICE: &str = "DEVICE";
-pub const CTX_KEY_IMAGE: &str = "IMAGE";
-pub const CTX_KEY_DATE: &str = "DATE";
-pub const CTX_KEY_TIME: &str = "TIME";
+pub const CTX_KEY_MACHINE: &str = "BKRY_MACHINE";
+pub const CTX_KEY_ARCH: &str = "BKRY_ARCH";
+pub const CTX_KEY_DISTRO: &str = "BKRY_DISTRO";
+pub const CTX_KEY_BB_BUILD_DIR: &str = "BKRY_BB_BUILD_DIR";
+pub const CTX_KEY_BB_DEPLOY_DIR: &str = "BKRY_BB_DEPLOY_DIR";
+pub const CTX_KEY_ARTIFACTS_DIR: &str = "BKRY_ARTIFACTS_DIR";
+pub const CTX_KEY_LAYERS_DIR: &str = "BKRY_LAYERS_DIR";
+pub const CTX_KEY_SCRIPTS_DIR: &str = "BKRY_SCRIPTS_DIR";
+pub const CTX_KEY_BUILDS_DIR: &str = "BKRY_BUILDS_DIR";
+pub const CTX_KEY_WORK_DIR: &str = "BKRY_WORK_DIR";
+pub const CTX_KEY_PLATFORM_VERSION: &str = "BKRY_PLATFORM_VERSION";
+pub const CTX_KEY_BUILD_ID: &str = "BKRY_BUILD_ID";
+pub const CTX_KEY_PLATFORM_RELEASE: &str = "BKRY_PLATFORM_RELEASE";
+pub const CTX_KEY_BUILD_SHA: &str = "BKRY_BUILD_SHA";
+pub const CTX_KEY_BUILD_VARIANT: &str = "BKRY_BUILD_VARIANT";
+pub const CTX_KEY_RELEASE_BUILD: &str = "BKRY_RELEASE_BUILD";
+pub const CTX_KEY_ARCHIVER: &str = "BKRY_ARCHIVER";
+pub const CTX_KEY_DEBUG_SYMBOLS: &str = "BKRY_DEBUG_SYMBOLS";
+pub const CTX_KEY_DEVICE: &str = "BKRY_DEVICE";
+pub const CTX_KEY_IMAGE: &str = "BKRY_IMAGE";
+pub const CTX_KEY_DATE: &str = "BKRY_DATE";
+pub const CTX_KEY_TIME: &str = "BKRY_TIME";
 // By default all of these are the same unless they
 // are specificly defined in the build config
-pub const CTX_KEY_PRODUCT_NAME: &str = "PRODUCT_NAME";
-pub const CTX_KEY_PROJECT_NAME: &str = "PROJECT_NAME";
-pub const CTX_KEY_NAME: &str = "NAME";
+pub const CTX_KEY_PRODUCT_NAME: &str = "BKRY_PRODUCT_NAME";
+pub const CTX_KEY_PROJECT_NAME: &str = "BKRY_PROJECT_NAME";
+pub const CTX_KEY_NAME: &str = "BKRY_NAME";
 
 impl Config for WsContextData {}
 
@@ -229,7 +229,7 @@ mod tests {
         }"#;
         let json_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "context": [
                 "KEY1=value1",
                 "KEY2=value2",
@@ -265,10 +265,10 @@ mod tests {
     fn test_ws_builtin_context_data() {
         let json_build_config = r#"
         {
-            "version": "5",
+            "version": "6",
             "context": [
-                "IMAGE=image",
-                "DEVICE=device"
+                "BKRY_IMAGE=image",
+                "BKRY_DEVICE=device"
             ]
         }"#;
         let data: WsContextData =

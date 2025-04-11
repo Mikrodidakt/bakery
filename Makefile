@@ -44,9 +44,9 @@ test:
 install:
 	cargo install --path .
 
-## install-deb        - Install latest locally built bakery. Install it under /usr/bin using deb package
+## install-deb        - Update the current deb bakery package by building a release, create a deb package and install it on the system
 .PHONY: install-deb
-install-deb:
+install-deb: build-release deb-package
 	sudo dpkg -i artifacts/bakery.deb
 
 ## deb-package        - Create a debian package from the latest release build either using glibc or using musl

@@ -196,7 +196,7 @@ mod tests {
         }"#;
         let json_build_config: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
