@@ -340,7 +340,7 @@ mod tests {
                 "default",
                 "-b",
                 "test-branch",
-                "--reset"
+                "--reset",
             ]),
         );
         let cmd: SyncCommand = SyncCommand::new();

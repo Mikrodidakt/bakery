@@ -11,7 +11,7 @@ pub mod task;
 pub use artifact::{AType, WsArtifactData};
 pub use bitbake::WsBitbakeData;
 pub use config::WsConfigData;
-pub use context::{WsContextData, CTX_KEY_DEVICE, CTX_KEY_IMAGE, CTX_KEY_BRANCH, CTX_KEY_RESET};
+pub use context::{WsContextData, CTX_KEY_BRANCH, CTX_KEY_DEVICE, CTX_KEY_IMAGE, CTX_KEY_RESET};
 pub use customsubcmd::WsCustomSubCmdData;
 pub use data::WsBuildData;
 pub use include::WsIncludeData;

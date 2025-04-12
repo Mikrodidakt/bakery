@@ -324,7 +324,14 @@ mod tests {
             Box::new(BLogger::new()),
             Box::new(mocked_system),
             clap::Command::new("bakery"),
-            Some(vec!["bakery", "setup", "-c", "default", "-b", "test-branch"]),
+            Some(vec![
+                "bakery",
+                "setup",
+                "-c",
+                "default",
+                "-b",
+                "test-branch",
+            ]),
         );
         let cmd: SetupCommand = SetupCommand::new();
         let _result: Result<(), BError> = cmd.execute(&cli, &mut workspace);
