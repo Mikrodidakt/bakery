@@ -178,7 +178,6 @@ help() {
     echo -e "\e[1;4mHelpers:\e[0m"
     echo -e "  \e[1mversion\e[0m  Print version of bakery"
     echo -e "  \e[1mconfig\e[0m   Print current bakery build config and build variant"
-    echo -e "  \e[1mvariant\e[0m  Print current build variant"
     echo -e "  \e[1mbenv\e[0m     Print all bakery env variables available starting with BKRY"
     echo -e "  \e[1mctx\e[0m      Print all ctx variables available for a '${BKRY_BUILD_CONFIG}'"
     echo
