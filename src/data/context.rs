@@ -34,6 +34,7 @@ pub const CTX_KEY_IMAGE: &str = "BKRY_IMAGE";
 pub const CTX_KEY_DATE: &str = "BKRY_DATE";
 pub const CTX_KEY_TIME: &str = "BKRY_TIME";
 pub const CTX_KEY_BRANCH: &str = "BKRY_BRANCH";
+pub const CTX_KEY_RESET: &str = "BKRY_RESET";
 // By default all of these are the same unless they
 // are specificly defined in the build config
 pub const CTX_KEY_PRODUCT_NAME: &str = "BKRY_PRODUCT_NAME";
@@ -59,6 +60,7 @@ impl WsContextData {
             | CTX_KEY_DATE
             | CTX_KEY_TIME
             | CTX_KEY_BRANCH
+            | CTX_KEY_RESET
             | CTX_KEY_DEBUG_SYMBOLS => true,
             CTX_KEY_MACHINE
             | CTX_KEY_ARCH
@@ -126,6 +128,7 @@ impl WsContextData {
             CTX_KEY_TIME.to_string() => "".to_string(),
             CTX_KEY_DATE.to_string() => "".to_string(),
             CTX_KEY_BRANCH.to_string() => "NA".to_string(),
+            CTX_KEY_RESET.to_string() => "false".to_string(),
         };
         let mut ctx: Context = Context::new(&ctx_default_variables);
         ctx.update(&variables);
@@ -179,7 +182,7 @@ mod tests {
     use std::path::PathBuf;
 
     use crate::data::context::{
-        CTX_KEY_ARCH, CTX_KEY_ARCHIVER, CTX_KEY_ARTIFACTS_DIR, CTX_KEY_BRANCH, CTX_KEY_BB_BUILD_DIR,
+        CTX_KEY_ARCH, CTX_KEY_ARCHIVER, CTX_KEY_ARTIFACTS_DIR, CTX_KEY_BRANCH, CTX_KEY_RESET, CTX_KEY_BB_BUILD_DIR,
         CTX_KEY_BB_DEPLOY_DIR, CTX_KEY_BUILDS_DIR, CTX_KEY_BUILD_ID, CTX_KEY_BUILD_SHA,
         CTX_KEY_BUILD_VARIANT, CTX_KEY_DATE, CTX_KEY_DEBUG_SYMBOLS, CTX_KEY_DEVICE, CTX_KEY_DISTRO,
         CTX_KEY_IMAGE, CTX_KEY_LAYERS_DIR, CTX_KEY_MACHINE, CTX_KEY_NAME, CTX_KEY_PLATFORM_RELEASE,
@@ -229,6 +232,7 @@ mod tests {
         assert!(data.get_ctx_value(CTX_KEY_ARCHIVER).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_DEBUG_SYMBOLS).is_empty());
         assert_eq!(data.get_ctx_value(CTX_KEY_BRANCH), String::from("NA"));
+        assert_eq!(data.get_ctx_value(CTX_KEY_RESET), String::from("false"));
     }
 
     #[test]
@@ -279,13 +283,15 @@ mod tests {
             "context": [
                 "BKRY_IMAGE=image",
                 "BKRY_DEVICE=device",
-                "BKRY_BRANCH=branch"
+                "BKRY_BRANCH=branch",
+                "BKRY_RESET=true"
             ]
         }"#;
         let data: WsContextData =
             WsContextData::from_str(json_build_config).expect("Failed to parse context data");
         assert_eq!(data.get_ctx_value(CTX_KEY_IMAGE), "image");
         assert_eq!(data.get_ctx_value(CTX_KEY_DEVICE), "device");
-        assert_eq!(data.get_ctx_value(CTX_KEY_BRANCH), "branch"); 
+        assert_eq!(data.get_ctx_value(CTX_KEY_BRANCH), "branch");
+        assert_eq!(data.get_ctx_value(CTX_KEY_RESET), "true");
     }
 }

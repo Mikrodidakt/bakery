@@ -2,7 +2,7 @@ use indexmap::{indexmap, IndexMap};
 
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
-use crate::data::{WsContextData, CTX_KEY_BRANCH};
+use crate::data::{WsContextData, CTX_KEY_BRANCH, CTX_KEY_RESET};
 use crate::workspace::Workspace;
 use crate::workspace::WsCustomSubCmdHandler;
 
@@ -42,6 +42,7 @@ impl BCommand for SyncCommand {
         let config: String = self.get_arg_str(cli, "config", BCOMMAND)?;
         let branch: String = self.get_arg_str(cli, "branch", BCOMMAND)?;
         let ctx: Vec<String> = self.get_arg_many(cli, "ctx", BCOMMAND)?;
+        let reset: bool = self.get_arg_flag(cli, "reset", BCOMMAND)?;
         let args_context: IndexMap<String, String> = self.setup_context(ctx);
         let mut context: WsContextData = WsContextData::new(&args_context)?;
 
@@ -50,6 +51,10 @@ impl BCommand for SyncCommand {
                 CTX_KEY_BRANCH.to_string() => branch,
             });
         }
+
+        context.update(&indexmap! {
+            CTX_KEY_RESET.to_string() => reset.to_string(),
+        });
 
         if !workspace.valid_config(config.as_str()) {
             return Err(BError::CliError(format!(
@@ -91,6 +96,12 @@ impl SyncCommand {
             .action(clap::ArgAction::SetTrue)
             .long("verbose")
             .help("Set verbose level."),
+      )
+      .arg(
+        clap::Arg::new("reset")
+            .action(clap::ArgAction::SetTrue)
+            .long("reset")
+            .help("Reset workspace, all changes will be lost"),
       )
       .arg(
         clap::Arg::new("ctx")
@@ -288,7 +299,7 @@ mod tests {
             "description": "Test Description",
             "arch": "test-arch",
             "sync": {
-                "cmd": "$#[BKRY_SCRIPTS_DIR]/script.sh $#[BKRY_BRANCH]"
+                "cmd": "$#[BKRY_SCRIPTS_DIR]/script.sh $#[BKRY_BRANCH] $#[BKRY_RESET]"
             }
         }
         "#;
@@ -299,6 +310,7 @@ mod tests {
                 cmd_line: vec![
                     &format!("{}/scripts/script.sh", work_dir.display()),
                     "test-branch",
+                    "true",
                 ]
                 .iter()
                 .map(|s| s.to_string())
@@ -327,7 +339,8 @@ mod tests {
                 "-c",
                 "default",
                 "-b",
-                "test-branch"
+                "test-branch",
+                "--reset"
             ]),
         );
         let cmd: SyncCommand = SyncCommand::new();
