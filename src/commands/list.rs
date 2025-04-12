@@ -358,6 +358,7 @@ mod tests {
             "BKRY_DISTRO".to_string() => "test-distro".to_string(),
             "BKRY_PRODUCT_NAME".to_string() => "default".to_string(),
             "BKRY_NAME".to_string() => "default".to_string(),
+            "BKRY_BUILD_CONFIG".to_string() => "default".to_string(),
             "BKRY_PRODUCT_NAME".to_string() => "default".to_string(),
             "BKRY_PROJECT_NAME".to_string() => "default".to_string(),
             "BKRY_BB_BUILD_DIR".to_string() => format!("{}", work_dir.join(PathBuf::from("builds/default")).display()),

@@ -35,11 +35,19 @@ pub const CTX_KEY_DATE: &str = "BKRY_DATE";
 pub const CTX_KEY_TIME: &str = "BKRY_TIME";
 pub const CTX_KEY_BRANCH: &str = "BKRY_BRANCH";
 pub const CTX_KEY_RESET: &str = "BKRY_RESET";
+
+// TODO: we should clean this up in some way it should
+// not have to be this many context variables for
+// almost the same thing.
+
 // By default all of these are the same unless they
 // are specificly defined in the build config
 pub const CTX_KEY_PRODUCT_NAME: &str = "BKRY_PRODUCT_NAME";
 pub const CTX_KEY_PROJECT_NAME: &str = "BKRY_PROJECT_NAME";
 pub const CTX_KEY_NAME: &str = "BKRY_NAME";
+// The build config should always match the BKRY_NAME used
+// by the bakery.bashrc
+pub const CTX_KEY_CONFIG: &str = "BKRY_BUILD_CONFIG";
 
 impl Config for WsContextData {}
 
@@ -70,6 +78,7 @@ impl WsContextData {
             | CTX_KEY_PRODUCT_NAME
             | CTX_KEY_PROJECT_NAME
             | CTX_KEY_NAME
+            | CTX_KEY_CONFIG
             | CTX_KEY_WORK_DIR
             | CTX_KEY_LAYERS_DIR
             | CTX_KEY_BUILDS_DIR => false,
@@ -108,6 +117,7 @@ impl WsContextData {
             CTX_KEY_PRODUCT_NAME.to_string() => "".to_string(),
             CTX_KEY_PROJECT_NAME.to_string() => "".to_string(),
             CTX_KEY_NAME.to_string() => "".to_string(),
+            CTX_KEY_CONFIG.to_string() => "".to_string(),
             CTX_KEY_BB_BUILD_DIR.to_string() => "".to_string(),
             CTX_KEY_BB_DEPLOY_DIR.to_string() => "".to_string(),
             CTX_KEY_ARTIFACTS_DIR.to_string() => "".to_string(),
@@ -129,6 +139,7 @@ impl WsContextData {
             CTX_KEY_DATE.to_string() => "".to_string(),
             CTX_KEY_BRANCH.to_string() => "NA".to_string(),
             CTX_KEY_RESET.to_string() => "false".to_string(),
+            CTX_KEY_CONFIG.to_string() => "NA".to_string(),
         };
         let mut ctx: Context = Context::new(&ctx_default_variables);
         ctx.update(&variables);
@@ -188,7 +199,7 @@ mod tests {
         CTX_KEY_DEVICE, CTX_KEY_DISTRO, CTX_KEY_IMAGE, CTX_KEY_LAYERS_DIR, CTX_KEY_MACHINE,
         CTX_KEY_NAME, CTX_KEY_PLATFORM_RELEASE, CTX_KEY_PLATFORM_VERSION, CTX_KEY_PRODUCT_NAME,
         CTX_KEY_PROJECT_NAME, CTX_KEY_RELEASE_BUILD, CTX_KEY_RESET, CTX_KEY_SCRIPTS_DIR,
-        CTX_KEY_TIME, CTX_KEY_WORK_DIR,
+        CTX_KEY_TIME, CTX_KEY_WORK_DIR, CTX_KEY_CONFIG
     };
     use crate::data::WsContextData;
     use crate::workspace::WsSettingsHandler;
@@ -234,6 +245,7 @@ mod tests {
         assert!(data.get_ctx_value(CTX_KEY_DEBUG_SYMBOLS).is_empty());
         assert_eq!(data.get_ctx_value(CTX_KEY_BRANCH), String::from("NA"));
         assert_eq!(data.get_ctx_value(CTX_KEY_RESET), String::from("false"));
+        assert_eq!(data.get_ctx_value(CTX_KEY_CONFIG), String::from("NA"));
     }
 
     #[test]

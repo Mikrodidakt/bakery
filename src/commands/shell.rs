@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use indexmap::IndexMap;
 
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
@@ -280,7 +281,7 @@ impl ShellCommand {
 
         let mut env: HashMap<String, String> =
             self.bb_build_env(cli, workspace, args_env_variables)?;
-        
+
         /*
          * Set the BKRY_BUILD_CONFIG and BKRY_WORK_DIR env variable used by the aliases in
          * /etc/bakery/bakery.bashrc which is sourced by /etc/bash.bashrc when running an interactive
@@ -288,19 +289,25 @@ impl ShellCommand {
          * in the shell without having to specify the build config or change directory since it is selected
          * when starting the shell
          */
-        env.insert(
-            String::from("BKRY_WORK_DIR"),
-            workspace
-                .settings()
-                .work_dir()
-                .to_string_lossy()
-                .to_string(),
-        );
 
-        env.insert(
-            String::from("BKRY_BUILD_CONFIG"),
-            workspace.config().build_data().product().name().to_string(),
-        );
+        let ctx: IndexMap<String, String> = workspace.context()?;
+
+        cli.debug(format!("ctx: {:?}", ctx));
+
+        let bkry_env: HashMap<String, String> = ctx
+            .iter()
+            .filter(|(k, _)| k.starts_with("bkry_"))
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+
+        cli.debug(format!("bkry-env: {:?}", bkry_env));
+
+        bkry_env.iter().for_each(|(key, value)| {
+            //println!(format!("{}={}", key.to_ascii_uppercase(), value));
+            env.insert(key.to_ascii_uppercase(), value.clone());
+        });
+
+        env.extend(bkry_env);
 
         cli.info(String::from("Start shell setting up bitbake build env"));
         if !docker.is_empty() {
