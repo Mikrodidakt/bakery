@@ -254,11 +254,11 @@ impl Helper {
     ) -> WsBuildData {
         let json_default_settings: &str = r#"
         {
-            "version": "4"
+            "version": "6"
         }"#;
         let json_default_build_config = r#"
         {
-            "version": "5"
+            "version": "6"
         }"#;
         let ws_settings: WsSettingsHandler =
             WsSettingsHandler::from_str(&work_dir, json_settings.unwrap_or(json_default_settings))

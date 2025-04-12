@@ -25,7 +25,7 @@ This is what is used if the workspace contains a workspace.json with the followi
 
 ```json
     {
-        "version": "5"
+        "version": "6"
     }
 ```
 
@@ -67,7 +67,7 @@ Sometimes one or all of the directories needs to be renamed or moved. The worksp
 
 ```json
     {
-        "version": "5",
+        "version": "6",
         "builds": {
             "supported": [
             ]
@@ -106,7 +106,7 @@ on a new build config in a workspace that is not ready to be used but should be 
 
 ```json
     {
-        "version": "5",
+        "version": "6",
         "builds": {
             "supported": [
                 "config1",
@@ -130,7 +130,7 @@ It is possible to use bakery without docker but some features will be lost if no
 
 ```json
     {
-        "version": "5",
+        "version": "6",
         "docker": {
                 "disabled": "false"
         }
@@ -145,7 +145,7 @@ The topdir is a special case where the build running inside docker needs access 
 
 ```json
     {
-        "version": "5",
+        "version": "6",
         "docker": {
                 "topdir": ".."
         }
@@ -158,7 +158,7 @@ A specific tag for a docker image can be specified
 
 ```json
     {
-        "version": "5",
+        "version": "6",
         "docker": {
                 "tag": "0.1.36"
         }
@@ -171,7 +171,7 @@ A specific docker registry can be selected
 
 ```json
     {
-        "version": "5",
+        "version": "6",
         "docker": {
                 "registry": "my-registry"
         }
@@ -184,7 +184,7 @@ A customized docker image can be selected
 
 ```json
     {
-        "version": "5",
+        "version": "6",
         "docker": {
                 "image": "my-image"
         }

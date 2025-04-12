@@ -145,7 +145,7 @@ mod tests {
         let work_dir: &PathBuf = &temp_dir.into_path();
         let json_ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"
@@ -213,7 +213,7 @@ mod tests {
         let work_dir: &PathBuf = &temp_dir.into_path();
         let json_ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"

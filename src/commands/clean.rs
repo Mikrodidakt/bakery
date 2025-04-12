@@ -184,7 +184,7 @@ mod tests {
     fn test_cmd_clean_nonbitbake() {
         let json_ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"

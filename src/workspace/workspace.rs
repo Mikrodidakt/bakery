@@ -44,7 +44,7 @@ impl Workspace {
                 // the tests.
                 let default_settings: &str = r#"
                 {
-                    "version": "4"
+                    "version": "6"
                 }"#;
                 WsSettingsHandler::from_str(&work_dir, default_settings).unwrap()
             }
@@ -300,7 +300,7 @@ mod tests {
         let test_work_dir: &str = "/test_work_dir";
         let json_settings: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"

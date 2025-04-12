@@ -199,11 +199,11 @@ mod tests {
     fn test_ws_bitbake_data_default() {
         let json_settings: &str = r#"
         {
-            "version": "5"
+            "version": "6"
         }"#;
         let json_build_config = r#"
         {
-            "version": "5"
+            "version": "6"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let settings: WsSettingsHandler = WsSettingsHandler::from_str(&work_dir, json_settings)
@@ -253,7 +253,7 @@ mod tests {
     fn test_ws_bitbake_data() {
         let json_settings: &str = r#"
         {
-            "version": "5"
+            "version": "6"
         }"#;
         let json_build_config = r#"
         {
@@ -343,7 +343,7 @@ mod tests {
     fn test_ws_bitbake_ctx_conf() {
         let json_settings: &str = r#"
         {
-            "version": "5"
+            "version": "6"
         }"#;
         let json_build_config = r#"
         {
@@ -393,7 +393,7 @@ mod tests {
     fn test_ws_bitbake_data_to_string() {
         let json_settings: &str = r#"
         {
-            "version": "5"
+            "version": "6"
         }"#;
         let json_build_config = r#"
         {

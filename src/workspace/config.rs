@@ -180,7 +180,7 @@ mod tests {
     fn test_ws_config_default() {
         let json_settings = r#"
         {
-            "version": "5"
+            "version": "6"
         }"#;
         let json_build_config = r#"
         {
@@ -278,7 +278,7 @@ mod tests {
     fn test_ws_config_context_docker() {
         let json_settings = r#"
         {
-            "version": "5"
+            "version": "6"
         }"#;
         let json_build_config = r#"
         {
@@ -312,7 +312,7 @@ mod tests {
     fn test_ws_config_empty_tasks() {
         let json_settings = r#"
         {
-            "version": "4"
+            "version": "6"
         }"#;
         let json_build_config = r#"
         {
@@ -334,7 +334,7 @@ mod tests {
     fn test_ws_task_config_condition() {
         let json_settings = r#"
         {
-            "version": "4"
+            "version": "6"
         }"#;
         let json_build_config = r#"
         {
@@ -438,7 +438,7 @@ mod tests {
     fn test_ws_task_config_build_dir() {
         let json_settings = r#"
         {
-            "version": "4"
+            "version": "6"
         }"#;
         let json_build_config = r#"
         {
@@ -487,7 +487,7 @@ mod tests {
     fn test_ws_config_context_task_build_dir() {
         let json_settings = r#"
         {
-            "version": "4"
+            "version": "6"
         }"#;
         let json_build_config = r#"
         {
@@ -554,7 +554,7 @@ mod tests {
     fn test_ws_config_tasks() {
         let json_settings = r#"
         {
-            "version": "4"
+            "version": "6"
         }"#;
         let json_build_config = r#"
         {
@@ -631,11 +631,11 @@ mod tests {
     fn test_ws_config_incompatible_version() {
         let json_settings = r#"
         {
-            "version": "4"
+            "version": "5"
         }"#;
         let json_build_config = r#"
         {
-            "version": "4",
+            "version": "5",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch"
@@ -651,8 +651,8 @@ mod tests {
             }
             Err(err) => {
                 assert_eq!(
-                    "The build config version '4' is not compatible with current bakery version. \
-                    Update config to match the format of version '5'",
+                    "The build config version '5' is not compatible with current bakery version. \
+                    Update config to match the format of version '6'",
                     err.to_string()
                 );
             }
@@ -663,7 +663,7 @@ mod tests {
     fn test_ws_config_merge() {
         let json_settings = r#"
         {
-            "version": "4"
+            "version": "6"
         }"#;
         let json_main_build_config = r#"
         {

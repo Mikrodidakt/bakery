@@ -152,7 +152,7 @@ mod tests {
     fn test_settings_default_ws_dirs() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "6"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let settings: WsSettingsHandler =
@@ -177,7 +177,7 @@ mod tests {
     fn test_settings_ws_dirs() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "6",
             "workspace": {
               "configsdir": "configs_test",
               "includedir": "include_test",
@@ -228,7 +228,7 @@ mod tests {
     fn test_settings_ws_top_dir() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "6",
             "workspace": {
               "layersdir": ""
             }
@@ -251,7 +251,7 @@ mod tests {
     fn test_settings_default_docker() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "6"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let settings: WsSettingsHandler =
@@ -270,7 +270,7 @@ mod tests {
     fn test_settings_docker() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "6",
             "docker": {
                 "tag": "0.1",
                 "image": "test-image",
@@ -288,7 +288,7 @@ mod tests {
     fn test_settings_default_docker_args() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "6",
             "docker": {
                 "tag": "0.1",
                 "image": "test-image",
@@ -305,7 +305,7 @@ mod tests {
     fn test_settings_docker_args() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "6",
             "docker": {
                 "tag": "0.1",
                 "image": "test-image",
@@ -330,7 +330,7 @@ mod tests {
     fn test_settings_default_supported_builds() {
         let json_test_str = r#"
         {
-            "version": "4"
+            "version": "6"
         }"#;
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let settings: WsSettingsHandler =
@@ -342,7 +342,7 @@ mod tests {
     fn test_settings_supported_builds() {
         let json_test_str = r#"
         {
-            "version": "4",
+            "version": "6",
             "builds": {
                 "supported": [
                     "build1",

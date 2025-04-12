@@ -264,7 +264,7 @@ mod tests {
     fn test_ws_build_data_default() {
         let work_dir: PathBuf = PathBuf::from("/workspace");
         let data: WsBuildData = Helper::setup_build_data(&work_dir, None, None);
-        assert_eq!(data.version(), "5");
+        assert_eq!(data.version(), "6");
         assert_eq!(data.name(), "NA");
     }
 

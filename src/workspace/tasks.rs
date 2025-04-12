@@ -714,7 +714,7 @@ mod tests {
         let bblayers_conf_path: PathBuf = build_dir.clone().join("conf/bblayers.conf");
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",

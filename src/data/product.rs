@@ -74,7 +74,7 @@ mod tests {
     fn test_ws_product_data_default() {
         let json_default_build_config = r#"
         {
-            "version": "4"
+            "version": "6"
         }"#;
         let data: WsProductData = WsProductData::from_str(json_default_build_config)
             .expect("Failed to parse product data");
@@ -89,7 +89,7 @@ mod tests {
     fn test_ws_product_data() {
         let json_default_build_config = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "test-name",
             "description": "test description",
             "arch": "test-arch"
@@ -107,7 +107,7 @@ mod tests {
     fn test_ws_project_name_data() {
         let json_default_build_config = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "test-name",
             "project": "test-project",
             "description": "test description",
@@ -126,7 +126,7 @@ mod tests {
     fn test_ws_product_name_data() {
         let json_default_build_config = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "test-name",
             "product": "test-product",
             "description": "test description",

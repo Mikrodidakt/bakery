@@ -184,7 +184,7 @@ mod tests {
     fn test_ws_context_data_default() {
         let json_default_build_config = r#"
         {
-            "version": "5"
+            "version": "6"
         }"#;
         let data: WsContextData = WsContextData::from_str(json_default_build_config)
             .expect("Failed to parse context data");
@@ -225,7 +225,7 @@ mod tests {
     fn test_ws_context_data() {
         let json_settings: &str = r#"
         {
-            "version": "5"
+            "version": "6"
         }"#;
         let json_build_config = r#"
         {

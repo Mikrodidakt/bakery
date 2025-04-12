@@ -254,7 +254,7 @@ mod tests {
         let env_variables: HashMap<String, String> = HashMap::new();
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -366,7 +366,7 @@ mod tests {
         let env_variables: HashMap<String, String> = HashMap::new();
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -479,7 +479,7 @@ mod tests {
         let interactive: bool = true;
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -584,7 +584,7 @@ mod tests {
         let env_variables: HashMap<String, String> = HashMap::new();
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -674,7 +674,7 @@ mod tests {
         let env_variables: HashMap<String, String> = HashMap::new();
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -765,7 +765,7 @@ mod tests {
         let bb_variables: Vec<String> = vec![];
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -830,7 +830,7 @@ mod tests {
         let bb_variables: Vec<String> = vec![];
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -915,7 +915,7 @@ mod tests {
         let bb_variables: Vec<String> = vec![];
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",
@@ -1022,7 +1022,7 @@ mod tests {
         let env_variables: HashMap<String, String> = HashMap::new();
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch",

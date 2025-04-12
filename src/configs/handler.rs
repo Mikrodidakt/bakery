@@ -212,7 +212,7 @@ mod tests {
         Helper::setup_test_ws_default_dirs(&work_dir);
         let ws_settings_1: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "workspace": {
                 "configsdir": "work_dir"
             }
@@ -220,7 +220,7 @@ mod tests {
         write_json_conf(&work_dir.clone().join("workspace.json"), ws_settings_1);
         let ws_settings_2: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "workspace": {
                 "configsdir": "home_dir"
             }
@@ -248,7 +248,7 @@ mod tests {
         Helper::setup_test_ws_default_dirs(&work_dir);
         let ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "workspace": {
                 "configsdir": "work_dir"
             }

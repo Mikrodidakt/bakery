@@ -248,7 +248,7 @@ mod tests {
         let task_build_dir: PathBuf = work_dir.clone().join("task/dir");
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "test-name",
             "description": "Test Description",
             "arch": "test-arch",

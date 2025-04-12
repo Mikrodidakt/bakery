@@ -430,7 +430,7 @@ mod tests {
         cmd_line.append(args);
         let json_ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"
@@ -596,7 +596,7 @@ mod tests {
     fn test_cmd_build_bitbake() {
         let json_ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"
@@ -670,7 +670,7 @@ mod tests {
     fn test_cmd_build_non_bitbake() {
         let json_ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"
@@ -739,7 +739,7 @@ mod tests {
     fn test_cmd_build_docker_bitbake() {
         let json_ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"
@@ -813,7 +813,7 @@ mod tests {
     fn test_cmd_build_docker_volumes() {
         let json_ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"
@@ -896,7 +896,7 @@ mod tests {
     fn test_cmd_build_docker_interactive() {
         let json_ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"
@@ -1056,7 +1056,7 @@ mod tests {
     fn test_cmd_build_task() {
         let json_ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"
@@ -1138,7 +1138,7 @@ mod tests {
     fn test_cmd_build_tasks() {
         let json_ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"
@@ -1323,7 +1323,7 @@ mod tests {
     fn test_cmd_build_context() {
         let json_ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"
@@ -1408,7 +1408,7 @@ mod tests {
     fn test_cmd_build_env() {
         let json_ws_settings: &str = r#"
         {
-            "version": "5",
+            "version": "6",
             "builds": {
                 "supported": [
                     "default"

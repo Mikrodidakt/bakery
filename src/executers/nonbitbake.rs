@@ -127,7 +127,7 @@ mod tests {
         let env_variables: HashMap<String, String> = HashMap::new();
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch"
@@ -182,7 +182,7 @@ mod tests {
         let env_variables: HashMap<String, String> = HashMap::new();
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch"
@@ -228,7 +228,7 @@ mod tests {
         let env_variables: HashMap<String, String> = HashMap::new();
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch"
@@ -278,7 +278,7 @@ mod tests {
         let env_variables: HashMap<String, String> = HashMap::new();
         let json_build_config: &str = r#"
         {
-            "version": "4",
+            "version": "6",
             "name": "default",
             "description": "Test Description",
             "arch": "test-arch"
