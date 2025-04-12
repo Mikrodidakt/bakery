@@ -64,13 +64,10 @@ ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
-WORKDIR /bakery
-COPY artifacts/bakery.deb bakery.deb
-RUN dpkg -i bakery.deb
-
-# Setting up a bakery specific bash env pulled in by /etc/bash.bashrc 
-RUN mkdir -p /etc/bakery && \
-     echo "source /etc/bakery/bakery.bashrc" >> /etc/bash.bashrc
+# Setting up the bakery bash env pulled in by /etc/bash.bashrc
+# if using bakery the /etc/bakery/bakery.bashrc will be mounted into
+# docker so the file will exists if not the sourcing will be ignored
+RUN echo '[ -f /etc/bakery/bakery.bashrc ] && source /etc/bakery/bakery.bashrc' >> /etc/bash.bashrc
 
 RUN rm /bin/sh && \
     ln -s /bin/bash /bin/sh

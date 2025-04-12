@@ -49,32 +49,22 @@ If the default bakery workspace image is not enough a custome image can easily b
 When creating the custom bakery workspace make sure to include the following
 
 ```bash
-RUN wget https://github.com/Mikrodidakt/bakery/releases/download/v${BAKERY_VERSION}/bakery-v${BAKERY_VERSION}.deb
-RUN sudo dpkg -i bakery-v${BAKERY_VERSION}.deb
-
-# Setting up a bakery specific bash env pulled in by /etc/bash.bashrc 
-RUN mkdir -p /etc/bakery && \
-     echo "source /etc/bakery/bakery.bashrc" >> /etc/bash.bashrc
+# Setting up a bakery specific bash env pulled in by /etc/bash.bashrc
+# if using bakery the /etc/bakery/bakery.bashrc will be mounted into
+# docker so the file will exists, if not the sourcing will be ignored
+RUN echo '[ -f /etc/bakery/bakery.bashrc ] && source /etc/bakery/bakery.bashrc' >> /etc/bash.bashrc
 ```
 
-if the bakery workflow to use the bakery aliases in the [bakery shell](sub-commands.md) is desired.
+The bakery.bashrc will enable usage of the bakery aliases in the [bakery shell](sub-commands.md).
 
 ## Bootstrap Bakery
 
-When starting bakery the first step is that bakery will bootstrap its self into the bakery-workspace image. In the default bakery-workspace image bakery is installed but sometimes it is not desired to use the version inside the container. This can be accomplished by adding the following to the workspace config file
+When starting bakery the first step is that bakery will bootstrap its self into the bakery-workspace image. The way this works is that
+/usr/bin/bakery is mount binded inside docker using a docker --volume so the same bakery version is used inside docker as outside.
+Bakery will also require to have access to the /etc/bakery/bakery.bashrc which is also mount binded to inside docker using the
+--volume flag.
 
-```json
-        "docker": {
-                "registry": "registry.io",
-                "image": "custom-workspace",
-                "tag": "x.y.z",
-                "args": [
-                    "-v /usr/bin/bakery:/usr/bin/bakery:ro"
-                ]
-        }
-```
 
-This will make sure that the external bakery version is used instead of the internal version.
 
 # Crops
 
