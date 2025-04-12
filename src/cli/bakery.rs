@@ -27,7 +27,7 @@ impl Bakery {
                 .version(env!("CARGO_PKG_VERSION"))
                 .subcommand_required(true)
                 .arg_required_else_help(true)
-                .about("Build engine for the Yocto/OE")
+                .about("Build engine for the Yocto/OE using docker")
                 .author("bakery by Mikrodidakt(mikro.io)"),
             None,
         );

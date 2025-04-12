@@ -1,7 +1,7 @@
 [package]
 name = "thebakery"
 version = "1.1.1"
-description = "Build engine for the Yocto/OE Projects"
+description = "Build engine for the Yocto/OE Projects using docker"
 catagories = ["command-line-utilities", "development-tools::build-utils"]
 keywords = ["cli", "yocto", "openembedded", "build", "docker"]
 edition = "2021"
