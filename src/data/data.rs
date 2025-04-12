@@ -647,7 +647,7 @@ mod tests {
             Helper::setup_build_data(&work_dir, Some(json_build_config), None);
         data.expand_ctx().unwrap();
         let bitbake: &WsBitbakeData = data.bitbake();
-        assert_eq!(bitbake.local_conf(), "ARTIFACTS_DIR ?= /workspace/artifacts\nLAYERS_DIR ?= /workspace/layers\nSCRIPTS_DIR ?= /workspace/scripts\nBUILDS_DIR ?= /workspace/builds\nWORK_DIR ?= /workspace\nMACHINE ?= \"test-machine\"\nPRODUCT_NAME ?= \"test-name\"\nDISTRO ?= \"test-distro\"\nSSTATE_DIR ?= \"/workspace/.cache/test-arch/sstate-cache\"\nDL_DIR ?= \"/workspace/.cache/download\"\n");
+        assert_eq!(bitbake.local_conf(), "ARTIFACTS_DIR ?= /workspace/artifacts\nLAYERS_DIR ?= /workspace/layers\nSCRIPTS_DIR ?= /workspace/scripts\nBUILDS_DIR ?= /workspace/builds\nWORK_DIR ?= /workspace\nMACHINE ?= \"test-machine\"\nBKRY_PRODUCT_NAME ?= \"test-name\"\nDISTRO ?= \"test-distro\"\nSSTATE_DIR ?= \"/workspace/.cache/test-arch/sstate-cache\"\nDL_DIR ?= \"/workspace/.cache/download\"\n");
         assert_eq!(bitbake.bblayers_conf(), "BAKERY_WORKDIR=\"${TOPDIR}/../..\"\nBBLAYERS ?= \" \\\n       /workspace/layers/meta-test \\\n       /workspace/builds/workspace \\\n\"\n");
         assert_eq!(
             bitbake.init_env_file(),
