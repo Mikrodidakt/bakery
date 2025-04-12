@@ -97,6 +97,15 @@ impl Docker {
         ]
     }
 
+    fn bakery(&self) -> Vec<String> {
+        vec![
+            String::from("-v"),
+            String::from("/usr/bin/bakery:/usr/bin/bakery:ro"),
+            String::from("-v"),
+            String::from("/etc/bakery:/etc/bakery:ro"),
+        ]
+    }
+
     fn hidden_home_files(&self) -> Vec<String> {
         vec![
             String::from("-v"),
@@ -152,6 +161,7 @@ impl Docker {
         volumes.iter().for_each(|e| {
             v.append(&mut vec![String::from("-v"), e.to_string()]);
         });
+        v.append(&mut self.bakery());
         v.append(&mut self.etc_files());
         v.append(&mut self.hidden_home_files());
         v.append(&mut self.docker_sock());

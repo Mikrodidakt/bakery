@@ -2,10 +2,7 @@ use std::path::PathBuf;
 
 use crate::error::BError;
 use crate::fs::ConfigFileReader;
-use crate::main;
 use crate::workspace::{WsBuildConfigHandler, WsSettingsHandler};
-
-use super::Config;
 
 const WORKSPACE_SETTINGS: &str = "workspace.json";
 

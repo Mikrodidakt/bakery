@@ -349,6 +349,10 @@ impl Helper {
         }
         cmd_line.append(&mut vec![
             String::from("-v"),
+            String::from("/usr/bin/bakery:/usr/bin/bakery:ro"),
+            String::from("-v"),
+            String::from("/etc/bakery:/etc/bakery:ro"),
+            String::from("-v"),
             String::from("/etc/passwd:/etc/passwd:ro"),
             String::from("-v"),
             String::from("/etc/group:/etc/group:ro"),
