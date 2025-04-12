@@ -1,8 +1,9 @@
 # /etc/bakery/bakery.bashrc sourced in by /etc/bash.bashrc
 # when running a bakery-workspace
-BAKERY_BIN_DIR="/usr/bin"
-BAKERY_VERSION=$(${BAKERY_BIN_DIR}/bakery --version)
-BAKERY_VERSION=${BAKERY_VERSION##* }
+BKRY_BIN_DIR="/usr/bin"
+BKRY_VERSION=$(${BKRY_BIN_DIR}/bakery --version)
+BKRY_VERSION=${BKRY_VERSION##* }
+BKRY_BRANCH=$(cd ${BKRY_WORK_DIR} && git rev-parse --abbrev-ref HEAD)
 
 # If not running interactively, don't do anything
 case $- in
@@ -59,7 +60,7 @@ if [ -n "$force_color_prompt" ]; then
 fi
 
 if [ "$color_prompt" = yes ]; then
-    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@bakery-v${BAKERY_VERSION}[${BAKERY_CURRENT_BUILD_CONFIG}]\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+    PS1='\[\033[01;32m\]${BKRY_BUILD_CONFIG}@[${BKRY_BRANCH}]:\[\033[01;34m\]\w\[\033[00m\]\$ '
 else
     PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
 fi
@@ -118,45 +119,100 @@ if ! shopt -oq posix; then
   fi
 fi
 
-PATH=${BAKERY_BIN_DIR}:${PATH}
-# The BAKERY_CURRENT_BUILD_CONFIG will be set by
+update_ps1() {
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    export BKRY_BRANCH=$(git branch --show-current 2>/dev/null)
+  fi
+
+  if [ -n "${BKRY_BRANCH}" ]; then
+    PS1='\[\033[01;32m\]${BKRY_BUILD_CONFIG}@[${BKRY_BRANCH}]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+  fi
+}
+
+PROMPT_COMMAND=update_ps1
+
+PATH=${BKRY_BIN_DIR}:${PATH}
+
+# The BKRY_BUILD_CONFIG will be set by
 # bakery when initializing a workspace shell
 build() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" build -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+     (cd "${BKRY_WORK_DIR}"; "${BKRY_BIN_DIR}/bakery" build -c "${BKRY_BUILD_CONFIG}" "$@")
 }
 
 clean() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" clean -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+    (cd "${BKRY_WORK_DIR}"; "${BKRY_BIN_DIR}/bakery" clean -c "${BKRY_BUILD_CONFIG}" "$@")
 }
 
 deploy() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" deploy -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+    (cd "${BKRY_WORK_DIR}"; "${BKRY_BIN_DIR}/bakery" deploy -c "${BKRY_BUILD_CONFIG}" "$@")
 }
 
 upload() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" upload -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+    (cd "${BKRY_WORK_DIR}"; "${BKRY_BIN_DIR}/bakery" upload -c "${BKRY_BUILD_CONFIG}" "$@")
 }
 
 setup() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" setup -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+    (cd "${BKRY_WORK_DIR}"; "${BKRY_BIN_DIR}/bakery" setup -c "${BKRY_BUILD_CONFIG}" "$@")
 }
 
 sync() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" sync -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+    (cd "${BKRY_WORK_DIR}"; "${BKRY_BIN_DIR}/bakery" sync -c "${BKRY_BUILD_CONFIG}" "$@")
+}
+
+benv() {
+    env | grep BKRY
 }
 
 help() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" help "$@")
+    (cd "${BKRY_WORK_DIR}"; "${BKRY_BIN_DIR}/bakery" help "$@")
+    echo
+    echo -e "\e[1;4mBakery Shell:\e[0m"
+    echo
+    echo "When inside a bakery shell there are some helpers and aliases available."
+    echo
+    echo -e "\e[1mHelpers:\e[0m has no args but are simple wrappers that can be"
+    echo "usefull and should be easily accessible."
+    echo
+    echo -e "\e[1;4mUsage:\e[0m <HELPER>"
+    echo
+    echo -e "\e[1;4mHelpers:\e[0m"
+    echo -e "  \e[1mversion\e[0m  Print version of bakery"
+    echo -e "  \e[1mconfig\e[0m   Print current bakery build config and build variant"
+    echo -e "  \e[1mvariant\e[0m  Print current build variant"
+    echo -e "  \e[1mbenv\e[0m     Print all bakery env variables available starting with BKRY"
+    echo -e "  \e[1mctx\e[0m      Print all ctx variables available for a '${BKRY_BUILD_CONFIG}'"
+    echo
+    echo -e "\e[1mAliases:\e[0m are making use of the preselected bakery build config and are"
+    echo "connected to a bakery subcommand. An alias doe not require any args"
+    echo "instead bakery <subcommand> -c ${BKRY_BUILD_CONFIG} is used as"
+    echo "default args. Any of the supported args for a subcommand can be used."
+    echo "To get a list of the supported args available for an alias run <alias> -h"
+    echo
+    echo -e "\e[1;4mUsage:\e[0m <ALIAS>"
+    echo
+    echo -e "\e[1;4mAliases:\e[0m"
+    echo -e "  \e[1mlist\e[0m     Aliase for 'bakery list -c ${BKRY_BUILD_CONFIG}', list all tasks available"
+    echo -e "  \e[1mbuild\e[0m    Aliase for 'bakery build -c ${BKRY_BUILD_CONFIG}', build all or a specific task"
+    echo -e "  \e[1mclean\e[0m    Aliase for 'bakery clean -c ${BKRY_BUILD_CONFIG}', clean all or a specific task"
+    echo -e "  \e[1msync\e[0m     Aliase for 'bakery sync -c ${BKRY_BUILD_CONFIG}', sync the workspace"
+    echo -e "  \e[1msetup\e[0m    Aliase for 'bakery setup -c ${BKRY_BUILD_CONFIG}', setup the workspace"
+    echo -e "  \e[1mdeploy\e[0m   Aliase for 'bakery deploy -c ${BKRY_BUILD_CONFIG}', deploy firmware to target"
+    echo -e "  \e[1mupload\e[0m   Aliase for 'bakery upload -c ${BKRY_BUILD_CONFIG}', upload firmware to artifactory server"
+    echo
 }
 
 list() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" list -c "${BAKERY_CURRENT_BUILD_CONFIG}" "$@")
+    (cd "${BKRY_WORK_DIR}"; "${BKRY_BIN_DIR}/bakery" list -c "${BKRY_BUILD_CONFIG}" "$@")
 }
 
-shell() {
-    (cd "${BAKERY_WORKSPACE}"; "${BAKERY_BIN_DIR}/bakery" shell "$@")
+ctx() {
+    (cd "${BKRY_WORK_DIR}"; "${BKRY_BIN_DIR}/bakery" list -c "${BKRY_BUILD_CONFIG}" --ctx)
 }
 
 version() {
-    "${BAKERY_BIN_DIR}/bakery" --version
+    "${BKRY_BIN_DIR}/bakery" --version
+}
+
+config() {
+    echo "name: ${BKRY_BUILD_CONFIG}"
 }

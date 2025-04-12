@@ -47,7 +47,7 @@ impl WsSettingsHandler {
         let ws_config: PathBuf = self.work_dir().join("workspace.json");
         if !ws_config.exists() || !ws_config.is_file() {
             return Err(BError::WsError(format!(
-                "Not a deej workspace, file 'workspace.json' missing"
+                "Not a bakery workspace, file 'workspace.json' missing"
             )));
         }
         self.verify_ws_dir(self.configs_dir().as_path())?;
