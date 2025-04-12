@@ -33,6 +33,7 @@ pub const CTX_KEY_DEVICE: &str = "BKRY_DEVICE";
 pub const CTX_KEY_IMAGE: &str = "BKRY_IMAGE";
 pub const CTX_KEY_DATE: &str = "BKRY_DATE";
 pub const CTX_KEY_TIME: &str = "BKRY_TIME";
+pub const CTX_KEY_BRANCH: &str = "BKRY_BRANCH";
 // By default all of these are the same unless they
 // are specificly defined in the build config
 pub const CTX_KEY_PRODUCT_NAME: &str = "BKRY_PRODUCT_NAME";
@@ -57,6 +58,7 @@ impl WsContextData {
             | CTX_KEY_IMAGE
             | CTX_KEY_DATE
             | CTX_KEY_TIME
+            | CTX_KEY_BRANCH
             | CTX_KEY_DEBUG_SYMBOLS => true,
             CTX_KEY_MACHINE
             | CTX_KEY_ARCH
@@ -85,17 +87,18 @@ impl WsContextData {
 
     pub fn new(variables: &IndexMap<String, String>) -> Result<Self, BError> {
         /*
-         * TODO: If any of these variables are set to anything but an empty string
-         * they risk over write any context variable from the build config.
-         * The reason for this is because we load the context variables first
-         * from the build config and then we update the context with these
-         * built-in variables. The problem is that many of these built-in variables
-         * are getting there values from settings while others are not. Any empty
-         * string will be ignored when updating the context but if the default
-         * value is set here they will overwrite any values coming from the
-         * build config. We should potentially switch the order need to look into
-         * this in more details
-         */
+         * TODO: If any of these variables are set to a non-empty string,
+         * they may unintentionally overwrite context variables defined in the build config.
+         * This happens because we currently load context variables from the build config first,
+         * and then apply these built-in variables afterward.
+         *
+         * The issue is that some built-in variables derive their values from settings,
+         * while others do not. Since we ignore empty strings during updates, they won't overwrite anything.
+         * However, if a built-in variable has a default (non-empty) value here,
+         * it will overwrite whatever was set by the build config.
+         *
+         * We may need to revisit the update order or refine the merge logic to prevent unintended overrides.
+        */
         let ctx_default_variables: IndexMap<String, String> = indexmap! {
             CTX_KEY_MACHINE.to_string() => "".to_string(),
             CTX_KEY_ARCH.to_string() => "".to_string(),
@@ -122,6 +125,7 @@ impl WsContextData {
             CTX_KEY_IMAGE.to_string() => "".to_string(),
             CTX_KEY_TIME.to_string() => "".to_string(),
             CTX_KEY_DATE.to_string() => "".to_string(),
+            CTX_KEY_BRANCH.to_string() => "NA".to_string(),
         };
         let mut ctx: Context = Context::new(&ctx_default_variables);
         ctx.update(&variables);
@@ -137,17 +141,22 @@ impl WsContextData {
     }
 
     pub fn update(&mut self, variables: &IndexMap<String, String>) {
-        /*
-         * We need to make sure that we are not trying to update
-         * any of the context variables with empty values
-         */
         let mut v: IndexMap<String, String> = IndexMap::new();
         for (key, value) in variables {
             //println!("key: {}, value: {}", key, value);
+            /*
+             * Only update the context variable if the new value is not empty.
+             * If the value is "NA" (case-insensitive), we skip the update unless the current context value is empty.
+             * This ensures that "NA" is treated as a placeholder and doesn't overwrite valid data,
+             * but it can be used to initialize an empty field.
+             */
             if !value.is_empty() {
-                v.insert(key.to_owned(), value.to_owned());
+                if value.to_lowercase() != "na" || self.context.value(key).is_empty() {
+                    v.insert(key.to_owned(), value.to_owned());
+                }
             }
         }
+        //println!("{:?}", v);
         self.context.update(&v);
     }
 
@@ -170,7 +179,7 @@ mod tests {
     use std::path::PathBuf;
 
     use crate::data::context::{
-        CTX_KEY_ARCH, CTX_KEY_ARCHIVER, CTX_KEY_ARTIFACTS_DIR, CTX_KEY_BB_BUILD_DIR,
+        CTX_KEY_ARCH, CTX_KEY_ARCHIVER, CTX_KEY_ARTIFACTS_DIR, CTX_KEY_BRANCH, CTX_KEY_BB_BUILD_DIR,
         CTX_KEY_BB_DEPLOY_DIR, CTX_KEY_BUILDS_DIR, CTX_KEY_BUILD_ID, CTX_KEY_BUILD_SHA,
         CTX_KEY_BUILD_VARIANT, CTX_KEY_DATE, CTX_KEY_DEBUG_SYMBOLS, CTX_KEY_DEVICE, CTX_KEY_DISTRO,
         CTX_KEY_IMAGE, CTX_KEY_LAYERS_DIR, CTX_KEY_MACHINE, CTX_KEY_NAME, CTX_KEY_PLATFORM_RELEASE,
@@ -219,6 +228,7 @@ mod tests {
         assert!(data.get_ctx_value(CTX_KEY_RELEASE_BUILD).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_ARCHIVER).is_empty());
         assert!(data.get_ctx_value(CTX_KEY_DEBUG_SYMBOLS).is_empty());
+        assert_eq!(data.get_ctx_value(CTX_KEY_BRANCH), String::from("NA"));
     }
 
     #[test]
@@ -268,12 +278,14 @@ mod tests {
             "version": "6",
             "context": [
                 "BKRY_IMAGE=image",
-                "BKRY_DEVICE=device"
+                "BKRY_DEVICE=device",
+                "BKRY_BRANCH=branch"
             ]
         }"#;
         let data: WsContextData =
             WsContextData::from_str(json_build_config).expect("Failed to parse context data");
         assert_eq!(data.get_ctx_value(CTX_KEY_IMAGE), "image");
         assert_eq!(data.get_ctx_value(CTX_KEY_DEVICE), "device");
+        assert_eq!(data.get_ctx_value(CTX_KEY_BRANCH), "branch"); 
     }
 }

@@ -1,9 +1,8 @@
-use indexmap::IndexMap;
-use std::collections::HashMap;
+use indexmap::{indexmap, IndexMap};
 
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
-use crate::data::WsContextData;
+use crate::data::{WsContextData, CTX_KEY_BRANCH};
 use crate::workspace::Workspace;
 use crate::workspace::WsCustomSubCmdHandler;
 
@@ -41,9 +40,16 @@ impl BCommand for SetupCommand {
 
     fn execute(&self, cli: &Cli, workspace: &mut Workspace) -> Result<(), BError> {
         let config: String = self.get_arg_str(cli, "config", BCOMMAND)?;
+        let branch: String = self.get_arg_str(cli, "branch", BCOMMAND)?;
         let ctx: Vec<String> = self.get_arg_many(cli, "ctx", BCOMMAND)?;
         let args_context: IndexMap<String, String> = self.setup_context(ctx);
-        let context: WsContextData = WsContextData::new(&args_context)?;
+        let mut context: WsContextData = WsContextData::new(&args_context)?;
+
+        if branch != String::from("NA") {
+            context.update(&indexmap! {
+                CTX_KEY_BRANCH.to_string() => branch,
+            });
+        }
 
         if !workspace.valid_config(config.as_str()) {
             return Err(BError::CliError(format!(
@@ -70,6 +76,15 @@ impl SetupCommand {
             .help("The build config defining deploy task")
             .value_name("name")
             .required(true),
+      )
+      .arg(
+        clap::Arg::new("branch")
+            .action(clap::ArgAction::Append)
+            .short('b')
+            .long("branch")
+            .value_name("branch")
+            .default_value("NA")
+            .help("The branch to setup will be exposed as an context/environment variable $#[BKRY_BRANCH]"),
       )
       .arg(
         clap::Arg::new("verbose")
@@ -247,6 +262,69 @@ mod tests {
                 "--context",
                 "ARG3=arg4",
             ]),
+        );
+        let cmd: SetupCommand = SetupCommand::new();
+        let _result: Result<(), BError> = cmd.execute(&cli, &mut workspace);
+    }
+
+    #[test]
+    fn test_cmd_setup_branch() {
+        let temp_dir: TempDir =
+            TempDir::new("bakery-test-dir").expect("Failed to create temp directory");
+        let work_dir: &PathBuf = &temp_dir.into_path();
+        let json_ws_settings: &str = r#"
+        {
+            "version": "6",
+            "builds": {
+                "supported": [
+                    "default"
+                ]
+            }
+        }"#;
+        let json_build_config: &str = r#"
+        {
+            "version": "6",
+            "name": "default",
+            "description": "Test Description",
+            "arch": "test-arch",
+            "context": [
+                "BKRY_BRANCH=test"
+            ],
+            "setup": {
+                "cmd": "$#[BKRY_SCRIPTS_DIR]/script.sh $#[BKRY_BRANCH]"
+            }
+        }
+        "#;
+        let mut mocked_system: MockSystem = MockSystem::new();
+        mocked_system
+            .expect_check_call()
+            .with(mockall::predicate::eq(CallParams {
+                cmd_line: vec![
+                    &format!("{}/scripts/script.sh", work_dir.display()),
+                    "test-branch",
+                ]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+                env: HashMap::new(),
+                shell: true,
+            }))
+            .once()
+            .returning(|_x| Ok(()));
+        mocked_system.expect_env().returning(|| HashMap::new());
+        let settings: WsSettingsHandler = WsSettingsHandler::from_str(work_dir, json_ws_settings)
+            .expect("Failed to parse settings");
+        let config: WsBuildConfigHandler =
+            WsBuildConfigHandler::from_str(json_build_config, &settings)
+                .expect("Failed to parse build config");
+        let mut workspace: Workspace =
+            Workspace::new(Some(work_dir.to_owned()), Some(settings), Some(config))
+                .expect("Failed to setup workspace");
+        let cli: Cli = Cli::new(
+            Box::new(BLogger::new()),
+            Box::new(mocked_system),
+            clap::Command::new("bakery"),
+            Some(vec!["bakery", "setup", "-c", "default", "-b", "test-branch"]),
         );
         let cmd: SetupCommand = SetupCommand::new();
         let _result: Result<(), BError> = cmd.execute(&cli, &mut workspace);
