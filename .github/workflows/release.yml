@@ -153,5 +153,6 @@ jobs:
       env:
         CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
       run: |
+        make build-release VARIANT=musl
         cargo login ${CRATES_IO_TOKEN}
         cargo publish
