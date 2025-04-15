@@ -215,7 +215,7 @@ Bakery will take the localconf data and combine it with the other bitbake data a
 
 Bakery will take the bblayersconf data and generate the bblayers.conf in the builds dir defined in the [workspace conf](workspace-config.md#Customize). The bblayers.conf is used by bitbake to parse meta layers before starting the build.
 
-# Include Multuple Build Configs
+# Include Configs
 
 There are cases where multiple product build configs are defined in a workspace where these product are using the same tasks and/or the custome sub-commands. Each product could have it's own specific context variables that the tasks and custome sub-commands. This will prevent duplication of build data in the build configs. The product build config will contain
 
