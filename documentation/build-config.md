@@ -217,7 +217,7 @@ Bakery will take the bblayersconf data and generate the bblayers.conf in the bui
 
 # Include Configs
 
-There are cases where multiple product build configs are defined in a workspace where these product are using the same tasks and/or the custome sub-commands. Each product could have it's own specific context variables that the tasks and custome sub-commands. This will prevent duplication of build data in the build configs. The product build config will contain
+There are cases where multiple product build configs are defined in a workspace where these product are using the same tasks and/or the custome sub-commands. Each product could have it's own specific context variables that the tasks and custome sub-commands. This will prevent duplication of build data in the build configs. To include config add to the build config
 
 ```json
         "include": [
