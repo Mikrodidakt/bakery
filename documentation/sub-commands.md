@@ -19,28 +19,8 @@ The shell subcommand will start a docker shell and setup the environment for the
 user@node:/dir$ bakery shell -c <config>
 ```
 
-When starting a Bakery shell the config will be selected and used inside the shell. The terminal will present the following information
-
-```bash
-<user>@bakery-v<version>[<config>]:~/$
-```
-
-Each subcommand will be available as an alias with the build config predefined. Simply type the sub-command in the shell from any location
-no need to specify bakery or the build config since it is already preset in the bakery workspace
-
-```bash
-help
-build
-list
-deploy
-upload
-setup
-sync
-```
-
-The idea with the bakery workspace shell is to have an easy environment with direct access to all the tools. If not running a sub-command in a shell most sub-commands will expect the user to specify what build config to use and it must be executed from the workspace directory containing the
-build configs.
-
+The idea with the bakery workspace shell is to have an easy environment with direct access to all the tools.
+Please see [shell](shell.md) for more information.
 
 # Build
 

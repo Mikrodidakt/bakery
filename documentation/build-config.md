@@ -277,6 +277,43 @@ Sometimes a task needs to only run under a specific condition. By default the co
 }
 ```
 
+### Custom Condition
+
+To define a custom condition define a context variable in the [context data](build-config.md#Context Data).
+
+```json
+{
+  "context": [
+    "MY_CONDITION=0"
+  ]
+}
+```
+
+Define a condition task
+
+```json
+{
+  "task": {
+    "index": "0",
+    "name": "task",
+    "condition": "$#[MY_CONDITION]",
+    "recipes": [
+      "recipe"
+    ],
+    "artifacts": []
+  }
+}
+```
+
+The conditional task will only run if condition is 1. The conditional task can now be triggered when running the build command
+using the context flag --ctx that can be used to set any of the context variables.
+
+```
+build --ctx MY_CONDITION=1
+```
+
+This can be usefull when the CI might have some special tasks or if a task only should run during a --variant release build.
+
 ### bitbake
 
 ```json
