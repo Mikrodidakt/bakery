@@ -872,7 +872,7 @@ mod tests {
         local_conf_content.push_str("ABORT,${SSTATE_DIR},100M,1K \\\n");
         local_conf_content.push_str("ABORT,/tmp,10M,1K \"\n");
         local_conf_content.push_str("MACHINE ?= \"raspberrypi3\"\n");
-        local_conf_content.push_str("BKRY_PRODUCT_NAME ?= \"default\"\n");
+        local_conf_content.push_str("PRODUCT_NAME ?= \"default\"\n");
         local_conf_content.push_str("DISTRO ?= \"strix\"\n");
         local_conf_content.push_str(&format!(
             "SSTATE_DIR ?= \"{}/.cache/test-arch/sstate-cache\"\n",

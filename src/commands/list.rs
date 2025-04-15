@@ -76,12 +76,12 @@ impl BCommand for ListCommand {
                     });
                 } else {
                     cli.stdout(format!(
-                        "{:<15} {:<52} {}",
+                        "{:<15} {:<56} {}",
                         "NAME", "DESCRIPTION", "ENABLED/DISABLED"
                     ));
                     workspace.config().tasks().iter().for_each(|(_name, task)| {
                         cli.stdout(format!(
-                            "{:<15} - {:<50} [{}]",
+                            "{:<15} - {:<54} [{}]",
                             task.data().name(),
                             task.data().description(),
                             if task.data().disabled() {
@@ -223,7 +223,7 @@ mod tests {
         mocked_logger
             .expect_stdout()
             .with(mockall::predicate::eq(format!(
-                "{:<15} {:<52} {}",
+                "{:<15} {:<56} {}",
                 "NAME", "DESCRIPTION", "ENABLED/DISABLED"
             )))
             .once()
@@ -231,7 +231,7 @@ mod tests {
         mocked_logger
             .expect_stdout()
             .with(mockall::predicate::eq(format!(
-                "{:<15} - {:<50} [{}]",
+                "{:<15} - {:<54} [{}]",
                 "task1", "NA", "enabled"
             )))
             .once()
@@ -239,7 +239,7 @@ mod tests {
         mocked_logger
             .expect_stdout()
             .with(mockall::predicate::eq(format!(
-                "{:<15} - {:<50} [{}]",
+                "{:<15} - {:<54} [{}]",
                 "task2", "test", "disabled"
             )))
             .once()

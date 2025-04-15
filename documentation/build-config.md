@@ -195,14 +195,6 @@ The value of the machine will be added to the built in context variable
 BKRY_MACHINE
 ```
 
-## deploydir
-
-The deploydir is mapped to the bitbake [DEPLOY_DIR_IMAGE](https://docs.yoctoproject.org/singleindex.html#term-DEPLOY_DIR_IMAGE). The Bakery needs to be aware of this location and needs to be available in the build config.
-
-```
-BKRY_MACHINE
-```
-
 ## initenv
 
 Before running the bitbake command the bitbake environment needs to be setup this is done by sourcing a file
@@ -565,3 +557,69 @@ The sync section currently is just made up of a cmd. This can be used to define 
         "cmd": "$#[BKRY_SCRIPTS_DIR]/sync.sh"
 }
 ```
+
+# Bitbake
+
+## local.conf
+
+The following context variables will also be exposed as bitbake variables in the local.conf file
+
+```
+BKRY_MACHINE
+BKRY_DISTRO
+BKRY_PRODUCT_NAME
+BKRY_PLATFORM_VERSION
+BKRY_BUILD_ID
+BKRY_BUILD_SHA
+BKRY_RELEASE_BUILD
+BKRY_BUILD_VARIANT
+BKRY_PLATFORM_RELEASE
+```
+
+They will get the prefix BKRY stripped appended to the end of the local.conf. Run a build using the --dry-run flag
+to produce the local.conf and bblayers.conf to view the genereated files under the build dir something like bellow
+should be presented in tmp/conf/local.conf.
+
+```
+MACHINE ?= "imx8mm-var-dart"
+PRODUCT_NAME ?= "boss"
+DISTRO ?= "boss"
+SSTATE_DIR ?= "/mnt/workspace/bkry-workspace/.cache/imx8mm/sstate-cache"
+DL_DIR ?= "/mnt/workspace/bkry-workspace/.cache/download"
+PLATFORM_VERSION ?= "0.0.0"
+BUILD_ID ?= "0"
+BUILD_SHA ?= "dev"
+RELEASE_BUILD ?= "0"
+BUILD_VARIANT ?= "dev"
+PLATFORM_RELEASE ?= "0.0.0-0"
+```
+
+The exakt content depends on what has been put in the build config in the [bitbake data](build-config.md#Bitbake Data)
+section. The bitbake data together with the context variables
+
+```
+BKRY_MACHINE
+BKRY_DISTRO
+BKRY_PRODUCT_NAME
+BKRY_PLATFORM_VERSION
+BKRY_BUILD_ID
+BKRY_BUILD_SHA
+BKRY_RELEASE_BUILD
+BKRY_BUILD_VARIANT
+BKRY_PLATFORM_RELEASE
+```
+
+The BKRY_MACHINE, BKRY_DISTRO and BKRY_PRODUCT_NAME are defined by the bitbake data plus the name field while the
+
+```
+BKRY_PLATFORM_VERSION
+BKRY_BUILD_ID
+BKRY_BUILD_SHA
+BKRY_RELEASE_BUILD
+BKRY_BUILD_VARIANT
+BKRY_PLATFORM_RELEASE
+```
+
+can all be set either by assigning them in the [context data](build-config.md#Context Data) section of the build config or by assigning them to values
+from the command line when executing a bakery build command. For more information on what options to use run help
+for the bakery build command.

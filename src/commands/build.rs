@@ -1,8 +1,10 @@
+use clap::builder::Str;
 use indexmap::{indexmap, IndexMap};
 use std::collections::HashMap;
 
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand};
+use crate::data::context::{CTX_KEY_BUILD_ID, CTX_KEY_BUILD_SHA, CTX_KEY_BUILD_VARIANT, CTX_KEY_PLATFORM_RELEASE, CTX_KEY_PLATFORM_VERSION, CTX_KEY_RELEASE_BUILD};
 use crate::data::WsContextData;
 use crate::error::BError;
 use crate::executers::Docker;
@@ -105,12 +107,12 @@ impl BCommand for BuildCommand {
         let mut args_context: IndexMap<String, String> = self.setup_context(ctx);
 
         let mut extra_ctx: IndexMap<String, String> = indexmap! {
-            "BKRY_PLATFORM_VERSION".to_string() => version.clone(),
-            "BKRY_BUILD_ID".to_string() => build_id.clone(),
-            "BKRY_BUILD_SHA".to_string() => sha,
-            "BKRY_RELEASE_BUILD".to_string() => "0".to_string(),
-            "BKRY_BUILD_VARIANT".to_string() => variant.clone(),
-            "BKRY_PLATFORM_RELEASE".to_string() => format!("{}-{}", version, build_id),
+            String::from(CTX_KEY_PLATFORM_VERSION) => version.clone(),
+            String::from(CTX_KEY_BUILD_ID) => build_id.clone(),
+            String::from(CTX_KEY_BUILD_SHA) => sha,
+            String::from(CTX_KEY_RELEASE_BUILD) => "0".to_string(),
+            String::from(CTX_KEY_BUILD_VARIANT) => variant.clone(),
+            String::from(CTX_KEY_PLATFORM_RELEASE) => format!("{}-{}", version, build_id),
         };
 
         if archiver {
@@ -133,15 +135,16 @@ impl BCommand for BuildCommand {
              * the build commands. We are keeping BKRY_RELEASE_BUILD for
              * backwards compatibility but should be replaced with BKRY_BUILD_VARIANT
              */
-            extra_ctx.insert("BKRY_BUILD_VARIANT".to_string(), "release".to_string());
-            extra_ctx.insert("BKRY_RELEASE_BUILD".to_string(), "1".to_string());
+            extra_ctx.insert(String::from(CTX_KEY_BUILD_VARIANT), "release".to_string());
+            extra_ctx.insert(String::from(CTX_KEY_RELEASE_BUILD), "1".to_string());
         }
 
         // We need to add the extra context variables to the list of bitbake variables
         // so they can be added to the bitbake local.conf file if used as env variables
         // they can also be injected as context variables
         for (key, value) in extra_ctx.clone() {
-            bb_variables.push(format!("{} ?= \"{}\"", key, value));
+            let bb_key: &str = key.strip_prefix("BKRY_").unwrap();
+            bb_variables.push(format!("{} ?= \"{}\"", bb_key, value));
         }
 
         // Update the config context with the context from the args
@@ -565,7 +568,7 @@ mod tests {
         local_conf_content.push_str("BB_NUMBER_THREADS ?= \"${@oe.utils.cpu_count()}\"\n");
         local_conf_content.push_str("PARALLEL_MAKE ?= \"-j ${@oe.utils.cpu_count()}\"\n");
         local_conf_content.push_str("MACHINE ?= \"raspberrypi3\"\n");
-        local_conf_content.push_str("BKRY_PRODUCT_NAME ?= \"default\"\n");
+        local_conf_content.push_str("PRODUCT_NAME ?= \"default\"\n");
         local_conf_content.push_str("DISTRO ?= \"strix\"\n");
         local_conf_content.push_str(&format!(
             "SSTATE_DIR ?= \"{}/.cache/test-arch/sstate-cache\"\n",
@@ -577,12 +580,12 @@ mod tests {
         ));
         local_conf_content.push_str(lines.unwrap_or(""));
         let mut default_bb_variables: String = String::from("");
-        default_bb_variables.push_str("BKRY_PLATFORM_VERSION ?= \"0.0.0\"\n");
-        default_bb_variables.push_str("BKRY_BUILD_ID ?= \"0\"\n");
-        default_bb_variables.push_str("BKRY_BUILD_SHA ?= \"dev\"\n");
-        default_bb_variables.push_str("BKRY_RELEASE_BUILD ?= \"0\"\n");
-        default_bb_variables.push_str("BKRY_BUILD_VARIANT ?= \"dev\"\n");
-        default_bb_variables.push_str("BKRY_PLATFORM_RELEASE ?= \"0.0.0-0\"\n");
+        default_bb_variables.push_str("PLATFORM_VERSION ?= \"0.0.0\"\n");
+        default_bb_variables.push_str("BUILD_ID ?= \"0\"\n");
+        default_bb_variables.push_str("BUILD_SHA ?= \"dev\"\n");
+        default_bb_variables.push_str("RELEASE_BUILD ?= \"0\"\n");
+        default_bb_variables.push_str("BUILD_VARIANT ?= \"dev\"\n");
+        default_bb_variables.push_str("PLATFORM_RELEASE ?= \"0.0.0-0\"\n");
         local_conf_content.push_str(bb_variables.unwrap_or(&default_bb_variables));
         helper_verify_bitbake_conf(
             &local_conf_path,
@@ -1289,12 +1292,12 @@ mod tests {
     #[test]
     fn test_cmd_build_arg_bitbake_variables() {
         let mut bb_variables: String = String::from("");
-        bb_variables.push_str("BKRY_PLATFORM_VERSION ?= \"1.2.3\"\n");
-        bb_variables.push_str("BKRY_BUILD_ID ?= \"4\"\n");
-        bb_variables.push_str("BKRY_BUILD_SHA ?= \"abcdefgh\"\n");
-        bb_variables.push_str("BKRY_RELEASE_BUILD ?= \"1\"\n");
-        bb_variables.push_str("BKRY_BUILD_VARIANT ?= \"release\"\n");
-        bb_variables.push_str("BKRY_PLATFORM_RELEASE ?= \"1.2.3-4\"\n");
+        bb_variables.push_str("PLATFORM_VERSION ?= \"1.2.3\"\n");
+        bb_variables.push_str("BUILD_ID ?= \"4\"\n");
+        bb_variables.push_str("BUILD_SHA ?= \"abcdefgh\"\n");
+        bb_variables.push_str("RELEASE_BUILD ?= \"1\"\n");
+        bb_variables.push_str("BUILD_VARIANT ?= \"release\"\n");
+        bb_variables.push_str("PLATFORM_RELEASE ?= \"1.2.3-4\"\n");
         helper_test_local_conf_args(
             &mut vec![
                 "--platform-version=1.2.3",
@@ -1310,12 +1313,12 @@ mod tests {
     #[test]
     fn test_cmd_build_arg_variant_test() {
         let mut bb_variables: String = String::from("");
-        bb_variables.push_str("BKRY_PLATFORM_VERSION ?= \"0.0.0\"\n");
-        bb_variables.push_str("BKRY_BUILD_ID ?= \"0\"\n");
-        bb_variables.push_str("BKRY_BUILD_SHA ?= \"dev\"\n");
-        bb_variables.push_str("BKRY_RELEASE_BUILD ?= \"0\"\n");
-        bb_variables.push_str("BKRY_BUILD_VARIANT ?= \"test\"\n");
-        bb_variables.push_str("BKRY_PLATFORM_RELEASE ?= \"0.0.0-0\"\n");
+        bb_variables.push_str("PLATFORM_VERSION ?= \"0.0.0\"\n");
+        bb_variables.push_str("BUILD_ID ?= \"0\"\n");
+        bb_variables.push_str("BUILD_SHA ?= \"dev\"\n");
+        bb_variables.push_str("RELEASE_BUILD ?= \"0\"\n");
+        bb_variables.push_str("BUILD_VARIANT ?= \"test\"\n");
+        bb_variables.push_str("PLATFORM_RELEASE ?= \"0.0.0-0\"\n");
         helper_test_local_conf_args(&mut vec!["--variant=test"], None, Some(&bb_variables));
     }
 

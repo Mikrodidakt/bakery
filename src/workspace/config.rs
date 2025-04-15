@@ -247,7 +247,7 @@ mod tests {
             ws_config.build_data().bitbake().machine()
         ));
         conf_str.push_str(&format!(
-            "BKRY_PRODUCT_NAME ?= \"{}\"\n",
+            "PRODUCT_NAME ?= \"{}\"\n",
             ws_config.build_data().product().name()
         ));
         conf_str.push_str(&format!(
