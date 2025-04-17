@@ -382,6 +382,7 @@ mod tests {
             "BKRY_TIME".to_string() => chrono::offset::Local::now().format("%H:%M").to_string(),
             "BKRY_BRANCH".to_string() => "NA".to_string(),
             "BKRY_RESET".to_string() => "false".to_string(),
+            "BKRY_EYECANDY".to_string() => "false".to_string(),
         };
         ctx_variables.iter().for_each(|(key, value)| {
             mocked_logger

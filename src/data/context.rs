@@ -35,6 +35,7 @@ pub const CTX_KEY_DATE: &str = "BKRY_DATE";
 pub const CTX_KEY_TIME: &str = "BKRY_TIME";
 pub const CTX_KEY_BRANCH: &str = "BKRY_BRANCH";
 pub const CTX_KEY_RESET: &str = "BKRY_RESET";
+pub const CTX_KEY_EYECANDY: &str = "BKRY_EYECANDY";
 
 // TODO: we should clean this up in some way it should
 // not have to be this many context variables for
@@ -69,6 +70,7 @@ impl WsContextData {
             | CTX_KEY_TIME
             | CTX_KEY_BRANCH
             | CTX_KEY_RESET
+            | CTX_KEY_EYECANDY
             | CTX_KEY_DEBUG_SYMBOLS => true,
             CTX_KEY_MACHINE
             | CTX_KEY_ARCH
@@ -140,6 +142,7 @@ impl WsContextData {
             CTX_KEY_BRANCH.to_string() => "NA".to_string(),
             CTX_KEY_RESET.to_string() => "false".to_string(),
             CTX_KEY_CONFIG.to_string() => "NA".to_string(),
+            CTX_KEY_EYECANDY.to_string() => "false".to_string(),
         };
         let mut ctx: Context = Context::new(&ctx_default_variables);
         ctx.update(&variables);
@@ -199,7 +202,7 @@ mod tests {
         CTX_KEY_DEVICE, CTX_KEY_DISTRO, CTX_KEY_IMAGE, CTX_KEY_LAYERS_DIR, CTX_KEY_MACHINE,
         CTX_KEY_NAME, CTX_KEY_PLATFORM_RELEASE, CTX_KEY_PLATFORM_VERSION, CTX_KEY_PRODUCT_NAME,
         CTX_KEY_PROJECT_NAME, CTX_KEY_RELEASE_BUILD, CTX_KEY_RESET, CTX_KEY_SCRIPTS_DIR,
-        CTX_KEY_TIME, CTX_KEY_WORK_DIR, CTX_KEY_CONFIG
+        CTX_KEY_TIME, CTX_KEY_WORK_DIR, CTX_KEY_CONFIG, CTX_KEY_EYECANDY
     };
     use crate::data::WsContextData;
     use crate::workspace::WsSettingsHandler;
@@ -246,6 +249,7 @@ mod tests {
         assert_eq!(data.get_ctx_value(CTX_KEY_BRANCH), String::from("NA"));
         assert_eq!(data.get_ctx_value(CTX_KEY_RESET), String::from("false"));
         assert_eq!(data.get_ctx_value(CTX_KEY_CONFIG), String::from("NA"));
+        assert_eq!(data.get_ctx_value(CTX_KEY_EYECANDY), String::from("false"));
     }
 
     #[test]
@@ -297,7 +301,8 @@ mod tests {
                 "BKRY_IMAGE=image",
                 "BKRY_DEVICE=device",
                 "BKRY_BRANCH=branch",
-                "BKRY_RESET=true"
+                "BKRY_RESET=true",
+                "BKRY_EYECANDY=true"
             ]
         }"#;
         let data: WsContextData =
@@ -306,5 +311,6 @@ mod tests {
         assert_eq!(data.get_ctx_value(CTX_KEY_DEVICE), "device");
         assert_eq!(data.get_ctx_value(CTX_KEY_BRANCH), "branch");
         assert_eq!(data.get_ctx_value(CTX_KEY_RESET), "true");
+        assert_eq!(data.get_ctx_value(CTX_KEY_EYECANDY), "true");
     }
 }

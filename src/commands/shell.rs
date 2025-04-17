@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use indexmap::IndexMap;
+use indexmap::{indexmap, IndexMap};
 
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
 use crate::executers::{Docker, DockerImage};
 use crate::workspace::Workspace;
+use crate::data::{WsContextData, CTX_KEY_EYECANDY};
 
 static BCOMMAND: &str = "shell";
 static BCOMMAND_ABOUT: &str =
@@ -47,6 +48,7 @@ impl BCommand for ShellCommand {
         let env: Vec<String> = self.get_arg_many(cli, "env", BCOMMAND)?;
         let cmd: String = self.get_arg_str(cli, "run", BCOMMAND)?;
         let docker_pull: bool = self.get_arg_flag(cli, "docker_pull", BCOMMAND)?;
+        let eyecandy: bool = self.get_arg_flag(cli, "eyecandy", BCOMMAND)?;
         let interactive_str: String = self.get_arg_str(cli, "interactive", BCOMMAND)?;
         let mut interactive: bool = false;
 
@@ -104,6 +106,12 @@ impl BCommand for ShellCommand {
             return self.bootstrap(&cli.get_cmd_line(), cli, workspace, &volumes, interactive);
         }
 
+        let mut context: WsContextData = WsContextData::new(&indexmap!{})?;
+
+        context.update(&indexmap! {
+            CTX_KEY_EYECANDY.to_string() => eyecandy.to_string(),
+        });
+
         if config == "NA" {
             return self.run_shell(cli, workspace, &docker, interactive);
         }
@@ -115,6 +123,7 @@ impl BCommand for ShellCommand {
             )));
         }
 
+        workspace.update_ctx(&context)?;
         workspace.expand_ctx()?;
 
         if cmd.is_empty() {
@@ -188,6 +197,12 @@ impl ShellCommand {
                 .action(clap::ArgAction::SetTrue)
                 .long("docker-pull")
                 .help("Force the bakery shell to pull down the latest docker image from registry."),
+        )
+        .arg(
+            clap::Arg::new("eyecandy")
+                .action(clap::ArgAction::SetTrue)
+                .long("eyecandy")
+                .help("Enable starship https://starship.rs/ if available inside the docker container."),
         )
         .arg(
             clap::Arg::new("run")
