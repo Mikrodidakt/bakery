@@ -32,6 +32,23 @@ The default starship config is based on
 
    https://starship.rs/presets/gruvbox-rainbow
 
+### workspace.json
+
+To run starship inside docker add the following to the workspace.json
+
+<pre>
+ "-v ${HOME}/.cache/starship:${HOME}/.cache/starship"
+</pre>
+
+This will expose the .cache/starship which starship needs to be able to
+write to. Before starting a shell make sure there is a directory in your
+home folder by running
+
+<pre>
+mkdir -p ~/.cache/starship
+</pre>
+
+
 ## Eyecandy
 
 To enter eyecandy mode start a shell
