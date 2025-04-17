@@ -64,10 +64,14 @@ ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
+RUN curl -sS https://starship.rs/install.sh > starship-install.sh && \
+    chmod 775 starship-install.sh && \
+    ./starship-install.sh -y 
+
 # Setting up the bakery bash env pulled in by /etc/bash.bashrc
-# if using bakery the /etc/bakery/bakery.bashrc will be mounted into
-# docker so the file will exists if not the sourcing will be ignored
-RUN echo '[ -f /etc/bakery/bakery.bashrc ] && source /etc/bakery/bakery.bashrc' >> /etc/bash.bashrc
+# if using bakery the /etc/bakery/bkry.bashrc will be mounted into
+# docker so the file will exists, if not the sourcing will be ignored
+RUN echo '[ -f /etc/bakery/bkry.bashrc ] && source /etc/bakery/bkry.bashrc' >> /etc/bash.bashrc
 
 RUN rm /bin/sh && \
     ln -s /bin/bash /bin/sh

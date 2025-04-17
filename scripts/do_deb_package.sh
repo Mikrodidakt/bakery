@@ -20,7 +20,8 @@ TEMP_WORK_DIR=${TEMP_WORK_DIR}/bakery
 mkdir -p ${TEMP_WORK_DIR}/usr/bin
 mkdir -p ${TEMP_WORK_DIR}/etc/bakery
 cp ${ARTIFACTS_DIR}/bakery ${TEMP_WORK_DIR}/usr/bin/
-cp ${SCRIPT_DIR}/bakery.bashrc ${TEMP_WORK_DIR}/etc/bakery/bakery.bashrc
+cp ${SCRIPT_DIR}/bkry.bashrc ${TEMP_WORK_DIR}/etc/bakery/bkry.bashrc
+cp ${SCRIPT_DIR}/bkry-starship.toml ${TEMP_WORK_DIR}/etc/bakery/bkry-starship.toml
 
 mkdir -p ${TEMP_WORK_DIR}/DEBIAN
 touch ${TEMP_WORK_DIR}/DEBIAN/control
