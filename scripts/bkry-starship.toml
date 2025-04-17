@@ -3,7 +3,7 @@
 format = """
 [](color_orange)\
 $os\
-$username\
+${env_var.bkry_config}\
 [](bg:color_yellow fg:color_orange)\
 $directory\
 [](fg:color_yellow bg:color_aqua)\
@@ -71,6 +71,12 @@ show_always = true
 style_user = "bg:color_orange fg:color_fg0"
 style_root = "bg:color_orange fg:color_fg0"
 format = '[ $user ]($style)'
+
+[env_var.bkry_config]
+variable = 'BKRY_BUILD_CONFIG'
+format = '[ $env_value ]($style)'
+style = "bg:color_orange fg:color_fg0"
+default = 'na'
 
 [directory]
 style = "fg:color_fg0 bg:color_yellow"
