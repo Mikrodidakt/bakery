@@ -4,7 +4,10 @@ use std::collections::HashMap;
 
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand};
-use crate::data::context::{CTX_KEY_BUILD_ID, CTX_KEY_BUILD_SHA, CTX_KEY_BUILD_VARIANT, CTX_KEY_PLATFORM_RELEASE, CTX_KEY_PLATFORM_VERSION, CTX_KEY_RELEASE_BUILD};
+use crate::data::context::{
+    CTX_KEY_BUILD_ID, CTX_KEY_BUILD_SHA, CTX_KEY_BUILD_VARIANT, CTX_KEY_PLATFORM_RELEASE,
+    CTX_KEY_PLATFORM_VERSION, CTX_KEY_RELEASE_BUILD,
+};
 use crate::data::WsContextData;
 use crate::error::BError;
 use crate::executers::Docker;

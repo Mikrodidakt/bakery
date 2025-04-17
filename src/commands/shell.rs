@@ -1,12 +1,12 @@
+use indexmap::{indexmap, IndexMap};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use indexmap::{indexmap, IndexMap};
 
 use crate::cli::Cli;
 use crate::commands::{BBaseCommand, BCommand, BError};
+use crate::data::{WsContextData, CTX_KEY_EYECANDY};
 use crate::executers::{Docker, DockerImage};
 use crate::workspace::Workspace;
-use crate::data::{WsContextData, CTX_KEY_EYECANDY};
 
 static BCOMMAND: &str = "shell";
 static BCOMMAND_ABOUT: &str =
@@ -106,7 +106,7 @@ impl BCommand for ShellCommand {
             return self.bootstrap(&cli.get_cmd_line(), cli, workspace, &volumes, interactive);
         }
 
-        let mut context: WsContextData = WsContextData::new(&indexmap!{})?;
+        let mut context: WsContextData = WsContextData::new(&indexmap! {})?;
 
         context.update(&indexmap! {
             CTX_KEY_EYECANDY.to_string() => eyecandy.to_string(),
