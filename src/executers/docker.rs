@@ -130,8 +130,8 @@ impl Docker {
         ]
     }
 
-    fn work_dir(&self, _dir: &PathBuf) -> Vec<String> {
-        vec![String::from("-w"), format!("/bkry-v{}-workspace", concat!(env!("CARGO_PKG_VERSION")))]
+    fn work_dir(&self, dir: &PathBuf) -> Vec<String> {
+        vec![String::from("-w"), format!("{}", dir.display())]
     }
 
     fn docker_sock(&self) -> Vec<String> {
@@ -178,7 +178,7 @@ impl Docker {
     fn top_dir(&self, dir: &PathBuf) -> Vec<String> {
         vec![
             String::from("-v"),
-            format!("{}:/bkry-v{}-workspace", dir.display(), concat!(env!("CARGO_PKG_VERSION"))),
+            format!("{}:{}", dir.display(), dir.display()),
         ]
     }
 

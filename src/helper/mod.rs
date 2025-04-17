@@ -381,11 +381,11 @@ impl Helper {
             String::from("-u"),
             format!("{}:{}", users::get_current_uid(), users::get_current_gid()),
             String::from("-v"),
-            format!("{}:/bkry-v{}-workspace", top_dir.display(), concat!(env!("CARGO_PKG_VERSION"))),
+            format!("{}:{}", top_dir.display(), top_dir.display()),
         ]);
         cmd_line.append(&mut vec![
             String::from("-w"),
-            format!("/bkry-v{}-workspace", concat!(env!("CARGO_PKG_VERSION"))),
+            format!("{}", work_dir.display()),
         ]);
         if !args.is_empty() {
             cmd_line.append(&mut args.clone());
@@ -415,7 +415,7 @@ impl Helper {
             String::from("-v"),
             format!("{}:{}", Helper::env_home(), Helper::env_home()),
             String::from("-w"),
-            format!("/bkry-v{}-workspace", concat!(env!("CARGO_PKG_VERSION"))),
+            format!("{}", work_dir.display()),
             String::from("-t"),
             String::from("--rm"),
         ];
