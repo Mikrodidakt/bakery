@@ -2,7 +2,6 @@
 
 format = """
 [](color_orange)\
-$os\
 ${env_var.bkry_config}\
 [](bg:color_yellow fg:color_orange)\
 $directory\
