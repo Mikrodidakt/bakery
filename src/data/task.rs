@@ -120,6 +120,7 @@ impl WsTaskData {
         self.clean = ctx.expand_str(&self.clean)?;
         self.condition = ctx.expand_str(&self.condition)?;
         self.disabled = ctx.expand_str(&self.disabled)?;
+        self.description = ctx.expand_str(&self.description)?;
         for r in self.recipes.iter_mut() {
             *r = ctx.expand_str(r)?;
         }
@@ -273,6 +274,7 @@ mod tests {
         {
             "index": "2",
             "name": "$#[TASK_NAME]",
+            "description": "Test $#[TASK_NAME]",
             "recipes": [
                 "$#[IMAGE_RECIPE]",
                 "$#[IMAGE_RECIPE_SDK]"
@@ -294,6 +296,7 @@ mod tests {
         assert_eq!(task.name(), "task1-name");
         assert_eq!(task.disabled(), false);
         assert_eq!(task.condition(), true);
+        assert_eq!(task.description(), "Test task1-name");
         assert_eq!(task.ttype(), &TType::Bitbake);
         assert_eq!(
             task.build_dir(),
